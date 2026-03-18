@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="max-w-lg w-full">
         <CardContent className="p-12 text-center">
           <div className="text-blue-500 mb-6">

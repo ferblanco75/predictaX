@@ -89,7 +89,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
   const potentialGain = ((100 - prediction) / 100) * betAmount;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Back button */}
         <Link

@@ -16,8 +16,8 @@ export default function GlobalError({
 
   return (
     <html lang="es">
-      <body className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-lg w-full bg-white rounded-lg shadow-lg p-12 text-center">
+      <body className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-lg w-full bg-card rounded-lg shadow-lg p-12 text-center">
           <div className="text-red-500 mb-6">
             <AlertTriangle className="h-20 w-20 mx-auto" />
           </div>
@@ -48,7 +48,7 @@ export default function GlobalError({
             </button>
             <a
               href="/"
-              className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 bg-card text-card-foreground border border-border rounded-lg hover:bg-accent transition-colors"
             >
               <Home className="h-4 w-4 mr-2" />
               Volver al inicio

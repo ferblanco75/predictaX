@@ -35,7 +35,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
