@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,6 +11,7 @@ import {
   DollarSign,
   Clock,
   ArrowLeft,
+  AlertCircle,
 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MarketCard } from '@/components/markets/MarketCard';
+import { MarketDetailSkeleton } from '@/components/markets/MarketDetailSkeleton';
+import { EmptyPredictions } from '@/components/ui/EmptyState';
 import { cn } from '@/lib/utils';
 
 export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,9 +36,40 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
   const [prediction, setPrediction] = useState(50);
   const [betAmount, setBetAmount] = useState(100);
   const [timeframe, setTimeframe] = useState('ALL');
+  const [isLoading, setIsLoading] = useState(false);
+  const [predictionError, setPredictionError] = useState<string>();
+
+  const handlePredictionSubmit = () => {
+    if (betAmount < 1) {
+      setPredictionError('Debes apostar al menos 1 punto');
+      return;
+    }
+    if (betAmount > 10000) {
+      setPredictionError('El máximo de puntos es 10,000');
+      return;
+    }
+    setPredictionError(undefined);
+    // Handle prediction submission
+    alert(`Predicción confirmada: ${prediction}% con ${betAmount} puntos`);
+  };
+
+  // Simulate loading (disabled for build)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [resolvedParams.id]);
 
   if (!market) {
     notFound();
+  }
+
+  if (isLoading) {
+    return <MarketDetailSkeleton />;
   }
 
   const relatedMarkets = getRelatedMarkets(market.id);
@@ -204,24 +238,36 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                     <Input
                       type="number"
                       value={betAmount}
-                      onChange={(e) => setBetAmount(Number(e.target.value))}
+                      onChange={(e) => {
+                        setBetAmount(Number(e.target.value));
+                        setPredictionError(undefined);
+                      }}
                       min={1}
                       max={10000}
+                      aria-invalid={!!predictionError}
                     />
+                    {predictionError && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600 mt-2">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{predictionError}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Potential gain */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Ganancia potencial</span>
-                      <span className="text-xl font-bold text-blue-600">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        Ganancia potencial
+                      </span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                         +{potentialGain.toFixed(0)} puntos
                       </span>
                     </div>
                   </div>
 
                   {/* CTA Button */}
-                  <Button size="lg" className="w-full">
+                  <Button size="lg" className="w-full" onClick={handlePredictionSubmit}>
                     Confirmar predicción
                   </Button>
 
@@ -260,6 +306,17 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                     {market.status === 'active' ? 'Activo' : 'Resuelto'}
                   </Badge>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Predictions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Predicciones recientes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Empty state - In a real app, this would check if there are predictions */}
+                <EmptyPredictions />
               </CardContent>
             </Card>
 

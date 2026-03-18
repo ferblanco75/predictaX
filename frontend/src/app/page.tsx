@@ -1,16 +1,30 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Users, Trophy, Smartphone, Bitcoin, ArrowRight } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
+import { MarketCardSkeleton } from '@/components/markets/MarketCardSkeleton';
+import { CategoryCardSkeletonGrid } from '@/components/ui/CategoryCardSkeleton';
 import { getTrendingMarkets } from '@/lib/data';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false);
   const trendingMarkets = getTrendingMarkets(6);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const categoryIcons = {
     TrendingUp,
@@ -54,29 +68,33 @@ export default function Home() {
       {/* Categories Grid */}
       <section className="container mx-auto px-4 py-12">
         <h2 className="text-3xl font-bold mb-8">Explora por categoría</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {categories.map((category) => {
-            const Icon = categoryIcons[category.icon as keyof typeof categoryIcons];
-            return (
-              <Link key={category.id} href={`/markets?category=${category.id}`}>
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardHeader className="text-center space-y-3">
-                    <div
-                      className="w-12 h-12 rounded-full mx-auto flex items-center justify-center"
-                      style={{ backgroundColor: `${category.color}20` }}
-                    >
-                      {Icon && <Icon className="h-6 w-6" style={{ color: category.color }} />}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{category.name}</h3>
-                      <p className="text-sm text-gray-500">{category.count} mercados</p>
-                    </div>
-                  </CardHeader>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        {isLoading ? (
+          <CategoryCardSkeletonGrid />
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {categories.map((category) => {
+              const Icon = categoryIcons[category.icon as keyof typeof categoryIcons];
+              return (
+                <Link key={category.id} href={`/markets?category=${category.id}`}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                    <CardHeader className="text-center space-y-3">
+                      <div
+                        className="w-12 h-12 rounded-full mx-auto flex items-center justify-center"
+                        style={{ backgroundColor: `${category.color}20` }}
+                      >
+                        {Icon && <Icon className="h-6 w-6" style={{ color: category.color }} />}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{category.name}</h3>
+                        <p className="text-sm text-gray-500">{category.count} mercados</p>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Featured/Trending Markets */}
@@ -92,11 +110,19 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trendingMarkets.map((market) => (
-            <MarketCard key={market.id} market={market} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <MarketCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trendingMarkets.map((market) => (
+              <MarketCard key={market.id} market={market} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}

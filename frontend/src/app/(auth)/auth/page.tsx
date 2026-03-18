@@ -6,13 +6,90 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, AlertCircle } from 'lucide-react';
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  name?: string;
+  passwordConfirm?: string;
+  terms?: string;
+}
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [loginErrors, setLoginErrors] = useState<FormErrors>({});
+  const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validateEmail = (email: string): string | undefined => {
+    if (!email) return 'El email es requerido';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Email inválido';
+    return undefined;
+  };
+
+  const validatePassword = (password: string): string | undefined => {
+    if (!password) return 'La contraseña es requerida';
+    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
+    return undefined;
+  };
+
+  const validateName = (name: string): string | undefined => {
+    if (!name) return 'El nombre es requerido';
+    if (name.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+    return undefined;
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const errors: FormErrors = {};
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    if (emailError) errors.email = emailError;
+    if (passwordError) errors.password = passwordError;
+
+    if (Object.keys(errors).length > 0) {
+      setLoginErrors(errors);
+      return;
+    }
+
+    setLoginErrors({});
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => setIsLoading(false), 1000);
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const passwordConfirm = formData.get('passwordConfirm') as string;
+    const terms = formData.get('terms') as string;
+
+    const errors: FormErrors = {};
+    const nameError = validateName(name);
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    if (nameError) errors.name = nameError;
+    if (emailError) errors.email = emailError;
+    if (passwordError) errors.password = passwordError;
+    if (password !== passwordConfirm) errors.passwordConfirm = 'Las contraseñas no coinciden';
+    if (!terms) errors.terms = 'Debes aceptar los términos y condiciones';
+
+    if (Object.keys(errors).length > 0) {
+      setRegisterErrors(errors);
+      return;
+    }
+
+    setRegisterErrors({});
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => setIsLoading(false), 1000);
@@ -47,18 +124,26 @@ export default function AuthPage() {
 
               {/* Login Tab */}
               <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="email-login" className="text-sm font-medium">
                       Email
                     </label>
                     <Input
                       id="email-login"
+                      name="email"
                       type="email"
                       placeholder="tu@email.com"
-                      required
                       autoComplete="email"
+                      aria-invalid={!!loginErrors.email}
+                      onChange={() => setLoginErrors({ ...loginErrors, email: undefined })}
                     />
+                    {loginErrors.email && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{loginErrors.email}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -75,11 +160,19 @@ export default function AuthPage() {
                     </div>
                     <Input
                       id="password-login"
+                      name="password"
                       type="password"
                       placeholder="••••••••"
-                      required
                       autoComplete="current-password"
+                      aria-invalid={!!loginErrors.password}
+                      onChange={() => setLoginErrors({ ...loginErrors, password: undefined })}
                     />
+                    {loginErrors.password && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{loginErrors.password}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -142,18 +235,26 @@ export default function AuthPage() {
 
               {/* Register Tab */}
               <TabsContent value="register">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleRegisterSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="name" className="text-sm font-medium">
                       Nombre completo
                     </label>
                     <Input
                       id="name"
+                      name="name"
                       type="text"
                       placeholder="Juan Pérez"
-                      required
                       autoComplete="name"
+                      aria-invalid={!!registerErrors.name}
+                      onChange={() => setRegisterErrors({ ...registerErrors, name: undefined })}
                     />
+                    {registerErrors.name && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.name}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -162,11 +263,19 @@ export default function AuthPage() {
                     </label>
                     <Input
                       id="email-register"
+                      name="email"
                       type="email"
                       placeholder="tu@email.com"
-                      required
                       autoComplete="email"
+                      aria-invalid={!!registerErrors.email}
+                      onChange={() => setRegisterErrors({ ...registerErrors, email: undefined })}
                     />
+                    {registerErrors.email && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.email}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -175,11 +284,19 @@ export default function AuthPage() {
                     </label>
                     <Input
                       id="password-register"
+                      name="password"
                       type="password"
                       placeholder="••••••••"
-                      required
                       autoComplete="new-password"
+                      aria-invalid={!!registerErrors.password}
+                      onChange={() => setRegisterErrors({ ...registerErrors, password: undefined })}
                     />
+                    {registerErrors.password && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.password}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -188,30 +305,49 @@ export default function AuthPage() {
                     </label>
                     <Input
                       id="password-confirm"
+                      name="passwordConfirm"
                       type="password"
                       placeholder="••••••••"
-                      required
                       autoComplete="new-password"
+                      aria-invalid={!!registerErrors.passwordConfirm}
+                      onChange={() =>
+                        setRegisterErrors({ ...registerErrors, passwordConfirm: undefined })
+                      }
                     />
+                    {registerErrors.passwordConfirm && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.passwordConfirm}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      className="rounded border-gray-300 mt-1"
-                      required
-                    />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
-                      Acepto los{' '}
-                      <Link href="/terms" className="text-blue-600 hover:underline">
-                        términos y condiciones
-                      </Link>{' '}
-                      y la{' '}
-                      <Link href="/privacy" className="text-blue-600 hover:underline">
-                        política de privacidad
-                      </Link>
-                    </label>
+                  <div className="space-y-2">
+                    <div className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        name="terms"
+                        className="rounded border-gray-300 mt-1"
+                        onChange={() => setRegisterErrors({ ...registerErrors, terms: undefined })}
+                      />
+                      <label htmlFor="terms" className="text-sm text-gray-600">
+                        Acepto los{' '}
+                        <Link href="/terms" className="text-blue-600 hover:underline">
+                          términos y condiciones
+                        </Link>{' '}
+                        y la{' '}
+                        <Link href="/privacy" className="text-blue-600 hover:underline">
+                          política de privacidad
+                        </Link>
+                      </label>
+                    </div>
+                    {registerErrors.terms && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.terms}</span>
+                      </div>
+                    )}
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isLoading}>

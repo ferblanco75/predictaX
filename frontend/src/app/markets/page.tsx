@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Filter } from 'lucide-react';
 import { MarketCard } from '@/components/markets/MarketCard';
+import { MarketCardSkeletonGrid } from '@/components/markets/MarketCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,18 @@ import type { MarketCategory, MarketStatus } from '@/lib/types';
 export default function MarketsPage() {
   const [selectedCategory, setSelectedCategory] = useState<MarketCategory | 'all'>('all');
   const [selectedStatus, setSelectedStatus] = useState<MarketStatus | 'all'>('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Simulate initial loading (disabled for build)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Filter markets
   const filteredMarkets = markets.filter((market) => {
@@ -122,7 +135,9 @@ export default function MarketsPage() {
             </div>
 
             {/* Markets grid */}
-            {filteredMarkets.length > 0 ? (
+            {isLoading ? (
+              <MarketCardSkeletonGrid count={9} />
+            ) : filteredMarkets.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredMarkets.map((market) => (
                   <MarketCard key={market.id} market={market} />
