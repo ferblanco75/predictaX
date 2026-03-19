@@ -20,8 +20,10 @@ interface AppState {
   // Market filters
   selectedCategory: MarketCategory | 'all';
   selectedStatus: MarketStatus | 'all';
+  searchQuery: string;
   setCategory: (category: MarketCategory | 'all') => void;
   setStatus: (status: MarketStatus | 'all') => void;
+  setSearchQuery: (query: string) => void;
   resetFilters: () => void;
 
   // User actions (mock)
@@ -37,13 +39,15 @@ export const useAppStore = create<AppState>()(
       user: null,
       selectedCategory: 'all',
       selectedStatus: 'all',
+      searchQuery: '',
 
       // Actions
       login: (user) => set({ isLoggedIn: true, user }),
       logout: () => set({ isLoggedIn: false, user: null }),
       setCategory: (category) => set({ selectedCategory: category }),
       setStatus: (status) => set({ selectedStatus: status }),
-      resetFilters: () => set({ selectedCategory: 'all', selectedStatus: 'all' }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      resetFilters: () => set({ selectedCategory: 'all', selectedStatus: 'all', searchQuery: '' }),
       addPoints: (amount) =>
         set((state) => ({
           user: state.user ? { ...state.user, points: state.user.points + amount } : null,

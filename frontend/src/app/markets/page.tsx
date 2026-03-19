@@ -6,14 +6,19 @@ import { MarketList } from '@/components/markets/MarketList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { markets, getMarketsByCategory } from '@/lib/data';
+import { Pagination } from '@/components/ui/Pagination';
+import { getAllMarkets, searchMarkets } from '@/lib/api/markets';
 import { categories } from '@/lib/data/categories';
 import { useAppStore } from '@/lib/stores/app-store';
 import type { MarketCategory, MarketStatus } from '@/lib/types';
 
+const MARKETS_PER_PAGE = 12;
+
 export default function MarketsPage() {
-  const { selectedCategory, selectedStatus, setCategory, setStatus, resetFilters } = useAppStore();
+  const { selectedCategory, selectedStatus, searchQuery, setCategory, setStatus, resetFilters } =
+    useAppStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Simulate initial loading (disabled for build)
   useEffect(() => {
@@ -26,12 +31,31 @@ export default function MarketsPage() {
     }
   }, []);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedStatus, searchQuery]);
+
   // Filter markets
-  const filteredMarkets = markets.filter((market) => {
-    const categoryMatch = selectedCategory === 'all' || market.category === selectedCategory;
-    const statusMatch = selectedStatus === 'all' || market.status === selectedStatus;
-    return categoryMatch && statusMatch;
-  });
+  const filteredMarkets = (() => {
+    // First apply search filter
+    const searchResults = searchQuery ? searchMarkets(searchQuery) : getAllMarkets();
+
+    // Then apply category and status filters
+    return searchResults.filter((market) => {
+      const categoryMatch = selectedCategory === 'all' || market.category === selectedCategory;
+      const statusMatch = selectedStatus === 'all' || market.status === selectedStatus;
+      return categoryMatch && statusMatch;
+    });
+  })();
+
+  const allMarkets = getAllMarkets();
+
+  // Pagination
+  const totalPages = Math.ceil(filteredMarkets.length / MARKETS_PER_PAGE);
+  const startIndex = (currentPage - 1) * MARKETS_PER_PAGE;
+  const endIndex = startIndex + MARKETS_PER_PAGE;
+  const paginatedMarkets = filteredMarkets.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,7 +90,7 @@ export default function MarketsPage() {
                           : 'hover:bg-gray-100'
                       }`}
                     >
-                      Todos ({markets.length})
+                      Todos ({allMarkets.length})
                     </button>
                     {categories.map((category) => (
                       <button
@@ -130,15 +154,27 @@ export default function MarketsPage() {
             <div className="mb-6">
               <p className="text-gray-600">
                 {filteredMarkets.length} {filteredMarkets.length === 1 ? 'mercado' : 'mercados'}
+                {searchQuery && ` para "${searchQuery}"`}
               </p>
             </div>
 
             {/* Markets grid */}
             <MarketList
-              markets={filteredMarkets}
+              markets={paginatedMarkets}
               isLoading={isLoading}
               onClearFilters={resetFilters}
             />
+
+            {/* Pagination */}
+            {!isLoading && totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

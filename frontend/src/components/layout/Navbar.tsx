@@ -19,7 +19,7 @@ const categories = [
 ];
 
 export function Navbar() {
-  const { selectedCategory, setCategory } = useAppStore();
+  const { selectedCategory, setCategory, searchQuery, setSearchQuery } = useAppStore();
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -40,6 +40,8 @@ export function Navbar() {
                 type="search"
                 placeholder="Buscar mercados..."
                 className="pl-10 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
@@ -75,7 +77,7 @@ export function Navbar() {
             return (
               <Link
                 key={category.id}
-                href={`/markets?category=${category.id}`}
+                href={`/markets/category/${category.id}`}
                 onClick={() => setCategory(category.id as MarketCategory)}
                 className={cn(
                   buttonVariants({

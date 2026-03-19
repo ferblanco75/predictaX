@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TrendingUp, Users, Trophy, Smartphone, Bitcoin, ArrowRight } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { MarketCardSkeleton } from '@/components/markets/MarketCardSkeleton';
 import { CategoryCardSkeletonGrid } from '@/components/ui/CategoryCardSkeleton';
-import { getTrendingMarkets } from '@/lib/data';
+import { getTrendingMarkets } from '@/lib/api/markets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 
@@ -75,7 +76,7 @@ export default function Home() {
             {categories.map((category) => {
               const Icon = categoryIcons[category.icon as keyof typeof categoryIcons];
               return (
-                <Link key={category.id} href={`/markets?category=${category.id}`}>
+                <Link key={category.id} href={`/markets/category/${category.id}`}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardHeader className="text-center space-y-3">
                       <div

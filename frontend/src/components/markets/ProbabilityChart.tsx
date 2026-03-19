@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,6 +12,16 @@ interface ProbabilityChartProps {
 }
 
 export function ProbabilityChart({ data, categoryColor }: ProbabilityChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-80 flex items-center justify-center text-gray-400">Cargando gráfico...</div>;
+  }
+
   return (
     <div className="h-80">
       <ResponsiveContainer width="100%" height="100%">

@@ -22,22 +22,22 @@ export function Footer() {
             <h3 className="font-semibold mb-3">Mercados</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
-                <Link href="/markets?category=economia" className="hover:text-gray-900">
+                <Link href="/markets/category/economia" className="hover:text-gray-900">
                   Economía
                 </Link>
               </li>
               <li>
-                <Link href="/markets?category=politica" className="hover:text-gray-900">
+                <Link href="/markets/category/politica" className="hover:text-gray-900">
                   Política
                 </Link>
               </li>
               <li>
-                <Link href="/markets?category=deportes" className="hover:text-gray-900">
+                <Link href="/markets/category/deportes" className="hover:text-gray-900">
                   Deportes
                 </Link>
               </li>
               <li>
-                <Link href="/markets?category=tecnologia" className="hover:text-gray-900">
+                <Link href="/markets/category/tecnologia" className="hover:text-gray-900">
                   Tecnología
                 </Link>
               </li>
