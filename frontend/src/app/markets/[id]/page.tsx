@@ -16,39 +16,29 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMarketById, getRelatedMarkets } from '@/lib/data';
 import { getCategoryColor } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { MarketDetailSkeleton } from '@/components/markets/MarketDetailSkeleton';
 import { EmptyPredictions } from '@/components/ui/EmptyState';
+import { ProbabilityChart } from '@/components/markets/ProbabilityChart';
+import { TimeframeSelector, type Timeframe } from '@/components/markets/TimeframeSelector';
+import { PredictionForm } from '@/components/markets/PredictionForm';
+import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
 
 export default function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const market = getMarketById(resolvedParams.id);
+  const { isLoggedIn } = useAppStore();
 
-  const [prediction, setPrediction] = useState(50);
-  const [betAmount, setBetAmount] = useState(100);
-  const [timeframe, setTimeframe] = useState('ALL');
+  const [timeframe, setTimeframe] = useState<Timeframe>('ALL');
   const [isLoading, setIsLoading] = useState(false);
-  const [predictionError, setPredictionError] = useState<string>();
 
-  const handlePredictionSubmit = () => {
-    if (betAmount < 1) {
-      setPredictionError('Debes apostar al menos 1 punto');
-      return;
-    }
-    if (betAmount > 10000) {
-      setPredictionError('El máximo de puntos es 10,000');
-      return;
-    }
-    setPredictionError(undefined);
+  const handlePredictionSubmit = (prediction: number, betAmount: number) => {
     // Handle prediction submission
     alert(`Predicción confirmada: ${prediction}% con ${betAmount} puntos`);
   };
@@ -84,9 +74,6 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
 
   // Format dates
   const endDate = format(new Date(market.endDate), 'dd MMM yyyy', { locale: es });
-
-  // Potential gain calculation (simplified)
-  const potentialGain = ((100 - prediction) / 100) * betAmount;
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +135,7 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
             {/* Probability and Chart */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <div className="text-5xl font-bold text-gray-900">{market.probability}%</div>
                     <div className="text-sm text-gray-500 mt-1">Probabilidad actual</div>
@@ -171,112 +158,21 @@ export default function MarketDetailPage({ params }: { params: Promise<{ id: str
                     </div>
                   )}
                 </div>
+                <TimeframeSelector value={timeframe} onChange={setTimeframe} />
               </CardHeader>
               <CardContent>
-                {/* Chart */}
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={market.history}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(value) => format(new Date(value), 'dd MMM', { locale: es })}
-                      />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip
-                        labelFormatter={(value) =>
-                          format(new Date(value as string), 'dd MMMM yyyy', { locale: es })
-                        }
-                        formatter={(value) => [`${value}%`, 'Probabilidad']}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="probability"
-                        stroke={categoryColor}
-                        strokeWidth={2}
-                        dot={{ fill: categoryColor }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <ProbabilityChart data={market.history} categoryColor={categoryColor} />
               </CardContent>
             </Card>
 
             {/* Prediction Form */}
             {market.status === 'active' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Hacer predicción</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Probability slider */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-sm font-medium">Tu predicción</label>
-                      <span className="text-2xl font-bold text-blue-600">{prediction}%</span>
-                    </div>
-                    <Slider
-                      value={[prediction]}
-                      onValueChange={(value) => {
-                        const newValue = Array.isArray(value) ? value[0] : value;
-                        setPrediction(newValue);
-                      }}
-                      max={100}
-                      step={1}
-                      className="mb-2"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>0%</span>
-                      <span>50%</span>
-                      <span>100%</span>
-                    </div>
-                  </div>
-
-                  {/* Bet amount */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Puntos a apostar</label>
-                    <Input
-                      type="number"
-                      value={betAmount}
-                      onChange={(e) => {
-                        setBetAmount(Number(e.target.value));
-                        setPredictionError(undefined);
-                      }}
-                      min={1}
-                      max={10000}
-                      aria-invalid={!!predictionError}
-                    />
-                    {predictionError && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600 mt-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{predictionError}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Potential gain */}
-                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Ganancia potencial
-                      </span>
-                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        +{potentialGain.toFixed(0)} puntos
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* CTA Button */}
-                  <Button size="lg" className="w-full" onClick={handlePredictionSubmit}>
-                    Confirmar predicción
-                  </Button>
-
-                  <p className="text-xs text-gray-500 text-center">
-                    * Requiere iniciar sesión. Las predicciones no se pueden modificar después de
-                    confirmar.
-                  </p>
-                </CardContent>
-              </Card>
+              <PredictionForm
+                marketId={market.id}
+                currentProbability={market.probability}
+                onSubmit={handlePredictionSubmit}
+                disabled={!isLoggedIn}
+              />
             )}
           </div>
 

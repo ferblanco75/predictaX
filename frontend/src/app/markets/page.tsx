@@ -2,18 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Filter } from 'lucide-react';
-import { MarketCard } from '@/components/markets/MarketCard';
-import { MarketCardSkeletonGrid } from '@/components/markets/MarketCardSkeleton';
+import { MarketList } from '@/components/markets/MarketList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { markets, getMarketsByCategory } from '@/lib/data';
 import { categories } from '@/lib/data/categories';
+import { useAppStore } from '@/lib/stores/app-store';
 import type { MarketCategory, MarketStatus } from '@/lib/types';
 
 export default function MarketsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<MarketCategory | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<MarketStatus | 'all'>('all');
+  const { selectedCategory, selectedStatus, setCategory, setStatus, resetFilters } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
 
   // Simulate initial loading (disabled for build)
@@ -60,7 +59,7 @@ export default function MarketsPage() {
                   <h3 className="font-medium text-sm mb-3 text-gray-700">Categoría</h3>
                   <div className="space-y-2">
                     <button
-                      onClick={() => setSelectedCategory('all')}
+                      onClick={() => setCategory('all')}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                         selectedCategory === 'all'
                           ? 'bg-blue-100 text-blue-700 font-medium'
@@ -72,7 +71,7 @@ export default function MarketsPage() {
                     {categories.map((category) => (
                       <button
                         key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
+                        onClick={() => setCategory(category.id)}
                         className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                           selectedCategory === category.id
                             ? 'bg-blue-100 text-blue-700 font-medium'
@@ -90,7 +89,7 @@ export default function MarketsPage() {
                   <h3 className="font-medium text-sm mb-3 text-gray-700">Estado</h3>
                   <div className="space-y-2">
                     <button
-                      onClick={() => setSelectedStatus('all')}
+                      onClick={() => setStatus('all')}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                         selectedStatus === 'all'
                           ? 'bg-blue-100 text-blue-700 font-medium'
@@ -100,7 +99,7 @@ export default function MarketsPage() {
                       Todos
                     </button>
                     <button
-                      onClick={() => setSelectedStatus('active')}
+                      onClick={() => setStatus('active')}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                         selectedStatus === 'active'
                           ? 'bg-blue-100 text-blue-700 font-medium'
@@ -110,7 +109,7 @@ export default function MarketsPage() {
                       Activos
                     </button>
                     <button
-                      onClick={() => setSelectedStatus('resolved')}
+                      onClick={() => setStatus('resolved')}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                         selectedStatus === 'resolved'
                           ? 'bg-blue-100 text-blue-700 font-medium'
@@ -135,36 +134,11 @@ export default function MarketsPage() {
             </div>
 
             {/* Markets grid */}
-            {isLoading ? (
-              <MarketCardSkeletonGrid count={9} />
-            ) : filteredMarkets.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredMarkets.map((market) => (
-                  <MarketCard key={market.id} market={market} />
-                ))}
-              </div>
-            ) : (
-              // Empty state
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <div className="text-gray-400 mb-4">
-                    <Filter className="h-12 w-12 mx-auto" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No se encontraron mercados</h3>
-                  <p className="text-gray-600 mb-4">
-                    Intenta ajustar tus filtros para ver más resultados
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setSelectedCategory('all');
-                      setSelectedStatus('all');
-                    }}
-                  >
-                    Limpiar filtros
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            <MarketList
+              markets={filteredMarkets}
+              isLoading={isLoading}
+              onClearFilters={resetFilters}
+            />
           </div>
         </div>
       </div>

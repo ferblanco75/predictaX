@@ -6,8 +6,9 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { useState } from 'react';
+import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
+import type { MarketCategory } from '@/lib/types';
 
 const categories = [
   { id: 'economia', name: 'Economía', icon: TrendingUp, color: 'bg-green-500' },
@@ -18,7 +19,7 @@ const categories = [
 ];
 
 export function Navbar() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { selectedCategory, setCategory } = useAppStore();
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -59,10 +60,10 @@ export function Navbar() {
         <div className="flex items-center space-x-1 overflow-x-auto pb-2 scrollbar-hide">
           <Link
             href="/markets"
-            onClick={() => setActiveCategory(null)}
+            onClick={() => setCategory('all')}
             className={cn(
               buttonVariants({
-                variant: activeCategory === null ? 'default' : 'ghost',
+                variant: selectedCategory === 'all' ? 'default' : 'ghost',
                 size: 'sm',
               })
             )}
@@ -75,10 +76,10 @@ export function Navbar() {
               <Link
                 key={category.id}
                 href={`/markets?category=${category.id}`}
-                onClick={() => setActiveCategory(category.id)}
+                onClick={() => setCategory(category.id as MarketCategory)}
                 className={cn(
                   buttonVariants({
-                    variant: activeCategory === category.id ? 'default' : 'ghost',
+                    variant: selectedCategory === category.id ? 'default' : 'ghost',
                     size: 'sm',
                   }),
                   'flex items-center space-x-2'
