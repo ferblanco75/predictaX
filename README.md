@@ -21,12 +21,27 @@ Ver [frontend/README.md](./frontend/README.md) para más detalles.
 
 ## Requisitos
 
+### Opción 1: Local
 - Node.js >= 20.9.0
 - npm >= 10.0.0
 
+### Opción 2: Docker
+- Docker >= 20.10
+- Docker Compose >= 2.0
+
 ## Getting Started
 
-### Frontend
+### Con Docker Compose (recomendado)
+
+```bash
+# Desarrollo (con hot reload)
+docker compose up
+
+# Producción
+docker compose -f docker-compose.prod.yml up --build
+```
+
+### Local (sin Docker)
 
 ```bash
 cd frontend
