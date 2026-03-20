@@ -1,33 +1,33 @@
 # Changelog
 
-Todos los cambios notables de este proyecto serán documentados en este archivo.
+All notable changes to this project will be documented in this file.
 
-El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
 ### Added
-- Docker Compose para despliegue multiplataforma (dev y prod) (#17)
-- Documentación de Docker en README
+- Docker Compose for cross-platform deployment (dev and prod) (#17)
+- Docker documentation in README
 
 ### Changed
-- `next.config.ts` con `output: "standalone"` para builds de producción optimizados
+- `next.config.ts` with `output: "standalone"` for optimized production builds
 
 ## [0.1.0] - 2026-03-19
 
 ### Added
-- Setup inicial del proyecto con Next.js 16, React 19, TypeScript
-- Componentes UI base con shadcn/ui (Button, Card, Badge, Input, Select, etc.)
-- Layout: Navbar con búsqueda y categorías, Footer
-- Página Home con hero, categorías y mercados destacados
-- Página de listado de mercados con filtros (categoría, estado) y paginación
-- Página de detalle de mercado con gráfico de probabilidad (Recharts)
-- Formulario de predicciones con slider y cálculo de ganancia
-- Página de autenticación (login/registro) con validación
-- Dark mode con next-themes
-- Mock data: 28 mercados en 5 categorías (economía, política, deportes, tecnología, crypto)
-- State management con Zustand (auth, filtros, puntos)
-- API abstraction layer preparada para backend real
-- SEO: metadata dinámica, JSON-LD structured data, Open Graph
+- Initial project setup with Next.js 16, React 19, TypeScript
+- Base UI components with shadcn/ui (Button, Card, Badge, Input, Select, etc.)
+- Layout: Navbar with search and categories, Footer
+- Home page with hero, categories, and featured markets
+- Markets listing page with filters (category, status) and pagination
+- Market detail page with probability chart (Recharts)
+- Prediction form with slider and potential gain calculation
+- Authentication page (login/register) with validation
+- Dark mode with next-themes
+- Mock data: 28 markets across 5 categories (economy, politics, sports, technology, crypto)
+- State management with Zustand (auth, filters, points)
+- API abstraction layer ready for real backend
+- SEO: dynamic metadata, JSON-LD structured data, Open Graph
 - Skeleton loaders, error boundaries, empty states
-- Diseño responsive (mobile, tablet, desktop)
+- Responsive design (mobile, tablet, desktop)
