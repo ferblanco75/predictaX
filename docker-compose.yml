@@ -1,5 +1,8 @@
+name: predictax
+
 services:
   frontend:
+    container_name: predictax-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
