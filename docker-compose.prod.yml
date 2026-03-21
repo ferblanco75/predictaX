@@ -1,0 +1,14 @@
+name: predictax
+
+services:
+  frontend:
+    container_name: predictax-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
