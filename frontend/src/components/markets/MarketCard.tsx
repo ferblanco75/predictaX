@@ -6,6 +6,8 @@ import { Market } from '@/lib/types';
 import { getCategoryColor } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Progress } from '@/components/ui/progress';
+import { ProbabilityGauge } from './ProbabilityGauge';
 
 interface MarketCardProps {
   market: Market;
@@ -51,40 +53,71 @@ export function MarketCard({ market }: MarketCardProps) {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Probability - Large and prominent */}
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-4xl font-bold text-gray-900">{market.probability}%</div>
-              <div className="text-sm text-gray-500 mt-1">Probabilidad</div>
-            </div>
+          {/* Render based on market type */}
+          {(!market.type || market.type === 'binary') && (
+            <>
+              {/* Binary: Probability - Gauge visual */}
+              <div className="flex flex-col items-center space-y-3">
+                <ProbabilityGauge probability={market.probability} size="small" showLabel={false} />
 
-            {/* Trend indicator */}
-            {trend !== 0 && (
-              <div
-                className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
-                  isPositiveTrend ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {isPositiveTrend ? (
-                  <TrendingUp className="h-4 w-4" />
-                ) : (
-                  <TrendingDown className="h-4 w-4" />
+                {/* Trend indicator below gauge */}
+                {trend !== 0 && (
+                  <div
+                    className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
+                      isPositiveTrend
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    }`}
+                  >
+                    {isPositiveTrend ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isPositiveTrend ? '+' : ''}
+                      {trend.toFixed(1)}%
+                    </span>
+                  </div>
                 )}
-                <span className="text-sm font-medium">
-                  {isPositiveTrend ? '+' : ''}
-                  {trend.toFixed(1)}%
-                </span>
               </div>
-            )}
-          </div>
+            </>
+          )}
+
+          {market.type === 'multiple_choice' && market.options && (
+            <>
+              {/* Multiple Choice: Top options with bars */}
+              <div className="space-y-3">
+                {market.options
+                  .sort((a, b) => b.probability - a.probability)
+                  .slice(0, 3)
+                  .map((option) => (
+                    <div key={option.id} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate flex-1 mr-2">{option.label}</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          {option.probability}%
+                        </span>
+                      </div>
+                      <Progress value={option.probability} className="h-2" />
+                    </div>
+                  ))}
+                {market.options.length > 3 && (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    +{market.options.length - 3} opciones más
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <Users className="h-4 w-4" />
               <span>{market.participants} predicciones</span>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <TrendingUp className="h-4 w-4" />
               <span>{market.volume} volumen</span>
             </div>

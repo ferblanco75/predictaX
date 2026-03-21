@@ -11,6 +11,7 @@ Este mercado se resolverá como SÍ si en cualquier momento antes del 1 de julio
 
 Factores a considerar: política monetaria del BCRA, acuerdos con el FMI, estacionalidad de la demanda, y el contexto electoral de 2025.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 68,
     volume: '$15.1K',
     participants: 234,
@@ -34,6 +35,7 @@ Este mercado se resolverá según el dato oficial del INDEC para la inflación m
 
 Variables clave: dinámica salarial, estacionalidad educativa, tarifas de servicios públicos, y tipo de cambio.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 34,
     volume: '$8.7K',
     participants: 187,
@@ -56,6 +58,7 @@ Resolución: Este mercado se resolverá como SÍ si al 30 de junio de 2026, las 
 
 Factores: liquidación de agro, acuerdo con FMI, vencimientos de deuda, y política cambiaria.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 52,
     volume: '$12.3K',
     participants: 156,
@@ -78,6 +81,7 @@ Este mercado se resolverá como SÍ si Argentina cumple con todas las metas fisc
 
 Consideraciones: recaudación tributaria, gasto público, subsidios energéticos, y transferencias a provincias.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 71,
     volume: '$9.4K',
     participants: 143,
@@ -100,6 +104,7 @@ Resolución: Se considera SÍ si el índice EMBI+ Argentina (Riesgo País) cierr
 
 Variables relevantes: relación con FMI, acceso a mercados, política económica, y contexto regional.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 46,
     volume: '$7.8K',
     participants: 129,
@@ -122,6 +127,7 @@ Este mercado se resolverá como SÍ si el precio del barril de petróleo Brent s
 
 Factores: geopolítica en Medio Oriente, decisiones de OPEP+, demanda china, y transición energética global.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 29,
     volume: '$11.2K',
     participants: 198,
@@ -144,6 +150,7 @@ Resolución: SÍ si las exportaciones totales de energía (gas, petróleo, deriv
 
 Consideraciones: producción de Vaca Muerta, gasoductos, plantas de GNL, y precios internacionales.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 58,
     volume: '$6.9K',
     participants: 112,
@@ -166,6 +173,7 @@ Este mercado se resolverá como SÍ si el índice de salarios reales del INDEC m
 
 Variables: paritarias, inflación, formalización laboral, y crecimiento económico.`,
     category: 'economia',
+    type: 'binary' as const,
     probability: 41,
     volume: '$5.6K',
     participants: 94,
@@ -189,6 +197,7 @@ Resolución: SÍ si el promedio de encuestas de imagen positiva de Milei se mant
 
 Factores: situación económica, efectividad de políticas, unidad del oficialismo, y contexto electoral 2025.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 48,
     volume: '$13.5K',
     participants: 267,
@@ -211,6 +220,7 @@ Este mercado se resolverá como SÍ si la Ley de Bases (o una versión con más 
 
 Variables: negociación con gobernadores, unidad opositora, presión social, y urgencia económica.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 62,
     volume: '$10.8K',
     participants: 189,
@@ -233,6 +243,7 @@ Resolución: SÍ si Claudia Sheinbaum es oficialmente declarada ganadora de las 
 
 Nota: Este mercado ya se resolvió históricamente - ejemplo de mercado cerrado.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 95,
     volume: '$28.4K',
     participants: 512,
@@ -256,6 +267,7 @@ Este mercado se resolverá como SÍ si la reforma tributaria brasileña (unifica
 
 Consideraciones: negociación con estados, lobby sectorial, plazos de transición, y voluntad política.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 54,
     volume: '$9.1K',
     participants: 147,
@@ -278,6 +290,7 @@ Resolución: SÍ si el promedio de encuestas de aprobación de Boric cae por deb
 
 Factores clave: seguridad, crecimiento económico, crisis migratoria, y resultados electorales municipales.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 67,
     volume: '$7.3K',
     participants: 134,
@@ -300,6 +313,7 @@ Este mercado se resolverá como SÍ si se convocan y realizan elecciones preside
 
 Variables: presión social, estabilidad del Congreso, escándalos de corrupción, y voluntad de reforma.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 38,
     volume: '$6.8K',
     participants: 118,
@@ -322,6 +336,7 @@ Resolución: SÍ si Nicolás Maduro permanece como presidente de Venezuela (reco
 
 Factores: presión internacional, situación económica, migración, apoyo militar, y proceso electoral 2024.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 78,
     volume: '$11.7K',
     participants: 203,
@@ -344,6 +359,7 @@ Este mercado se resolverá como SÍ si la reforma pensional propuesta por el gob
 
 Variables: apoyo en Congreso, movilización social, impacto en AFPs, y negociación política.`,
     category: 'politica',
+    type: 'binary' as const,
     probability: 44,
     volume: '$5.9K',
     participants: 101,
@@ -367,6 +383,7 @@ Resolución: SÍ si Boca Juniors es campeón del Torneo Apertura 2026 de la Liga
 
 Factores: refuerzos, continuidad de DT, lesiones, calendario, y rendimiento de rivales directos.`,
     category: 'deportes',
+    type: 'binary' as const,
     probability: 22,
     volume: '$14.6K',
     participants: 289,
@@ -389,6 +406,7 @@ Este mercado se resolverá como SÍ si River Plate clasifica a la fase de cuarto
 
 Consideraciones: sorteo de grupos, lesiones clave, fixture local, y forma competitiva del equipo.`,
     category: 'deportes',
+    type: 'binary' as const,
     probability: 64,
     volume: '$18.2K',
     participants: 341,
@@ -411,6 +429,7 @@ Resolución: SÍ si la Selección Argentina gana la final de la Copa América 20
 
 Nota: Mercado histórico resuelto - ejemplo de evento pasado con alta probabilidad final.`,
     category: 'deportes',
+    type: 'binary' as const,
     probability: 92,
     volume: '$45.7K',
     participants: 687,
@@ -434,6 +453,7 @@ Resolución: SÍ si Argentina termina en las primeras 3 posiciones de la tabla d
 
 Factores: rendimiento de Scaloni, lesiones, calendario, altura de La Paz, y forma de Brasil.`,
     category: 'deportes',
+    type: 'binary' as const,
     probability: 85,
     volume: '$22.4K',
     participants: 398,
@@ -456,6 +476,7 @@ Este mercado se resolverá como SÍ si un jugador de nacionalidad brasileña gan
 
 Candidatos principales: Vinicius Jr, Rodrygo, y emergentes. Factores: Champions League, Mundial clubes, estadísticas individuales.`,
     category: 'deportes',
+    type: 'binary' as const,
     probability: 31,
     volume: '$16.8K',
     participants: 245,
@@ -480,6 +501,7 @@ Resolución: SÍ si la capitalización de mercado de Mercado Libre (MELI) alcanz
 
 Factores: expansión regional, fintech (Mercado Pago), logística, competencia, y condiciones macro de LatAm.`,
     category: 'tecnologia',
+    type: 'binary' as const,
     probability: 56,
     volume: '$19.3K',
     participants: 276,
@@ -502,6 +524,7 @@ Este mercado se resolverá como SÍ si al menos un unicornio tech latinoamerican
 
 Candidatos: Kavak, Nubank (si hace segunda oferta), Rappi, Ualá, otros. Factores: condiciones de mercado y valuaciones.`,
     category: 'tecnologia',
+    type: 'binary' as const,
     probability: 38,
     volume: '$8.7K',
     participants: 162,
@@ -524,6 +547,7 @@ Resolución: SÍ si Argentina (CONAE, INVAP u organismo estatal) lanza exitosame
 
 Proyectos en desarrollo: SAOCOM 2, satélites de comunicación, y proyectos de nanosatélites.`,
     category: 'tecnologia',
+    type: 'binary' as const,
     probability: 42,
     volume: '$5.4K',
     participants: 98,
@@ -546,6 +570,7 @@ Resolución: SÍ si según encuestas de consultoras reconocidas (McKinsey, Gartn
 
 Factores: costos, conectividad, capacitación, regulación, y casos de uso efectivos.`,
     category: 'tecnologia',
+    type: 'binary' as const,
     probability: 61,
     volume: '$12.8K',
     participants: 217,
@@ -570,6 +595,7 @@ Resolución: SÍ si el precio de Bitcoin (BTC/USD) alcanza o supera los U$S 100,
 
 Factores: halving 2024, adopción institucional, ETFs, regulación, macroeconomía global, y halving cycles.`,
     category: 'crypto',
+    type: 'binary' as const,
     probability: 47,
     volume: '$31.5K',
     participants: 489,
@@ -593,6 +619,7 @@ Este mercado se resolverá como SÍ si Argentina aprueba y promulga una ley espe
 
 Variables: presión de organismos internacionales (GAFI), prevención de lavado, recaudación fiscal, y lobby sectorial.`,
     category: 'crypto',
+    type: 'binary' as const,
     probability: 53,
     volume: '$9.6K',
     participants: 178,
@@ -615,6 +642,7 @@ Resolución: SÍ si Ethereum implementa exitosamente la siguiente fase mayor de 
 
 Factores técnicos: desarrollo de EIPs, testing en testnets, consenso de comunidad, y complejidad de implementación.`,
     category: 'crypto',
+    type: 'binary' as const,
     probability: 34,
     volume: '$14.2K',
     participants: 234,
@@ -627,6 +655,222 @@ Factores técnicos: desarrollo de EIPs, testing en testnets, consenso de comunid
       { date: '2026-03-18', probability: 34 },
     ],
     relatedMarkets: ['26'],
+  },
+
+  // MULTIPLE CHOICE MARKETS
+  {
+    id: '29',
+    title: '¿Quién ganará las elecciones presidenciales de México 2026?',
+    description: `Las elecciones presidenciales de México 2026 prometen ser altamente competitivas con múltiples candidatos fuertes. Este mercado evalúa las probabilidades de cada candidato principal.
+
+Los candidatos incluyen representantes de MORENA, PAN, PRI, y movimientos ciudadanos emergentes. Factores clave incluyen la economía, seguridad, relación con EE.UU., y políticas sociales.
+
+Resolución: Este mercado se resolverá según el ganador oficial declarado por el INE (Instituto Nacional Electoral) tras el conteo final de votos.`,
+    category: 'politica',
+    type: 'multiple_choice',
+    probability: 0, // Not used for multiple choice
+    volume: '$24.5K',
+    participants: 412,
+    endDate: '2026-07-05',
+    status: 'active',
+    history: [],
+    relatedMarkets: ['9', '10'],
+    options: [
+      {
+        id: 'candidato-a',
+        label: 'Claudia Sheinbaum (MORENA)',
+        probability: 45,
+        history: [
+          { date: '2026-01-15', probability: 42 },
+          { date: '2026-02-10', probability: 44 },
+          { date: '2026-03-10', probability: 45 },
+        ],
+      },
+      {
+        id: 'candidato-b',
+        label: 'Santiago Creel (PAN)',
+        probability: 28,
+        history: [
+          { date: '2026-01-15', probability: 25 },
+          { date: '2026-02-10', probability: 27 },
+          { date: '2026-03-10', probability: 28 },
+        ],
+      },
+      {
+        id: 'candidato-c',
+        label: 'Alejandro Moreno (PRI)',
+        probability: 18,
+        history: [
+          { date: '2026-01-15', probability: 20 },
+          { date: '2026-02-10', probability: 19 },
+          { date: '2026-03-10', probability: 18 },
+        ],
+      },
+      {
+        id: 'candidato-d',
+        label: 'Movimiento Ciudadano',
+        probability: 6,
+        history: [
+          { date: '2026-01-15', probability: 8 },
+          { date: '2026-02-10', probability: 7 },
+          { date: '2026-03-10', probability: 6 },
+        ],
+      },
+      {
+        id: 'candidato-e',
+        label: 'Otro candidato',
+        probability: 3,
+        history: [
+          { date: '2026-01-15', probability: 5 },
+          { date: '2026-02-10', probability: 3 },
+          { date: '2026-03-10', probability: 3 },
+        ],
+      },
+    ],
+  },
+  {
+    id: '30',
+    title: '¿Qué equipo ganará la Copa Libertadores 2026?',
+    description: `La Copa Libertadores es el torneo de clubes más prestigioso de Sudamérica. Este mercado evalúa las probabilidades de los equipos favoritos para alzar el trofeo en 2026.
+
+Se consideran los equipos con mejor desempeño histórico reciente, inversión en planteles, y rendimiento en torneos locales. Factores como lesiones de jugadores clave y sorteos de llaves pueden impactar significativamente las probabilidades.
+
+Resolución: Se resolverá según el ganador oficial de la final de la Copa Libertadores 2026 organizada por CONMEBOL.`,
+    category: 'deportes',
+    type: 'multiple_choice',
+    probability: 0,
+    volume: '$18.9K',
+    participants: 567,
+    endDate: '2026-11-30',
+    status: 'active',
+    history: [],
+    relatedMarkets: ['19', '20'],
+    options: [
+      {
+        id: 'flamengo',
+        label: 'Flamengo (Brasil)',
+        probability: 22,
+        history: [
+          { date: '2026-02-01', probability: 20 },
+          { date: '2026-03-01', probability: 22 },
+        ],
+      },
+      {
+        id: 'palmeiras',
+        label: 'Palmeiras (Brasil)',
+        probability: 19,
+        history: [
+          { date: '2026-02-01', probability: 21 },
+          { date: '2026-03-01', probability: 19 },
+        ],
+      },
+      {
+        id: 'river',
+        label: 'River Plate (Argentina)',
+        probability: 18,
+        history: [
+          { date: '2026-02-01', probability: 17 },
+          { date: '2026-03-01', probability: 18 },
+        ],
+      },
+      {
+        id: 'boca',
+        label: 'Boca Juniors (Argentina)',
+        probability: 15,
+        history: [
+          { date: '2026-02-01', probability: 16 },
+          { date: '2026-03-01', probability: 15 },
+        ],
+      },
+      {
+        id: 'nacional',
+        label: 'Atlético Nacional (Colombia)',
+        probability: 8,
+        history: [
+          { date: '2026-02-01', probability: 8 },
+          { date: '2026-03-01', probability: 8 },
+        ],
+      },
+      {
+        id: 'otro-equipo',
+        label: 'Otro equipo',
+        probability: 18,
+        history: [
+          { date: '2026-02-01', probability: 18 },
+          { date: '2026-03-01', probability: 18 },
+        ],
+      },
+    ],
+  },
+  {
+    id: '31',
+    title: '¿Qué plataforma de IA será la más usada en Latinoamérica en 2027?',
+    description: `La adopción de inteligencia artificial en Latinoamérica está creciendo rápidamente. Este mercado evalúa qué plataforma de IA generativa dominará el mercado regional para finales de 2026.
+
+Se consideran métricas como número de usuarios activos, penetración en empresas, y presencia en educación. La resolución se basará en estudios de mercado de firmas reconocidas.
+
+Resolución: Según el reporte de adopción de IA en Latinoamérica de Gartner o firma equivalente publicado en Q1 2027, midiendo usuarios activos mensuales.`,
+    category: 'tecnologia',
+    type: 'multiple_choice',
+    probability: 0,
+    volume: '$13.2K',
+    participants: 289,
+    endDate: '2027-03-31',
+    status: 'active',
+    history: [],
+    relatedMarkets: ['24', '25'],
+    options: [
+      {
+        id: 'chatgpt',
+        label: 'ChatGPT (OpenAI)',
+        probability: 52,
+        history: [
+          { date: '2026-01-20', probability: 55 },
+          { date: '2026-02-15', probability: 53 },
+          { date: '2026-03-15', probability: 52 },
+        ],
+      },
+      {
+        id: 'gemini',
+        label: 'Gemini (Google)',
+        probability: 25,
+        history: [
+          { date: '2026-01-20', probability: 22 },
+          { date: '2026-02-15', probability: 24 },
+          { date: '2026-03-15', probability: 25 },
+        ],
+      },
+      {
+        id: 'claude',
+        label: 'Claude (Anthropic)',
+        probability: 12,
+        history: [
+          { date: '2026-01-20', probability: 10 },
+          { date: '2026-02-15', probability: 11 },
+          { date: '2026-03-15', probability: 12 },
+        ],
+      },
+      {
+        id: 'copilot',
+        label: 'Copilot (Microsoft)',
+        probability: 8,
+        history: [
+          { date: '2026-01-20', probability: 9 },
+          { date: '2026-02-15', probability: 8 },
+          { date: '2026-03-15', probability: 8 },
+        ],
+      },
+      {
+        id: 'otra-ia',
+        label: 'Otra plataforma',
+        probability: 3,
+        history: [
+          { date: '2026-01-20', probability: 4 },
+          { date: '2026-02-15', probability: 4 },
+          { date: '2026-03-15', probability: 3 },
+        ],
+      },
+    ],
   },
 ];
 
