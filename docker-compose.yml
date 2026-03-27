@@ -1,6 +1,52 @@
 name: predictax
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: predictax-postgres
+    environment:
+      POSTGRES_USER: predictax
+      POSTGRES_PASSWORD: predictax_dev
+      POSTGRES_DB: predictax
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: predictax-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: predictax-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://predictax:predictax_dev@postgres:5432/predictax
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev_secret_key_change_in_production
+      - DEBUG=true
+      - CORS_ORIGINS=http://localhost:3000
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Frontend
   frontend:
     container_name: predictax-frontend
     build:
@@ -15,4 +61,11 @@ services:
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
     restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
