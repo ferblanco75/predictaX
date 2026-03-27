@@ -34,11 +34,17 @@ Ver [frontend/README.md](./frontend/README.md) para más detalles.
 ### Con Docker Compose (recomendado)
 
 ```bash
+# Copiar variables de entorno
+cp .env.example .env
+
 # Desarrollo (con hot reload)
 docker compose up
 
 # Producción
 docker compose -f docker-compose.prod.yml up --build
+
+# Usar un puerto distinto (ej: 3001)
+APP_PORT=3001 docker compose up
 ```
 
 ### Local (sin Docker)
@@ -90,6 +96,7 @@ docker compose down --rmi all --volumes
 
 ### Notas
 
+- El puerto es configurable vía `APP_PORT` (default: 3000). Se puede definir en `.env` o inline: `APP_PORT=3001 docker compose up`
 - Los contenedores usan el prefijo `predictax-` (ej: `predictax-frontend`)
 - `WATCHPACK_POLLING=true` está habilitado para compatibilidad con Windows/WSL
 - En desarrollo, `src/` y `public/` se montan como volúmenes para hot reload
