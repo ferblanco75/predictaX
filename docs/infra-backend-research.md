@@ -277,12 +277,211 @@ There is no single free platform that covers everything (backend + DB + auth + r
 
 ---
 
+---
+
+# AI / LLM API — Free Tier Research
+
+> Related to issue #12 (Claude API Integration) and #26 (AI Scope Definition)
+
+## Platform Comparison
+
+### Google Gemini API (Google AI Studio) — Best Free Option
+
+| Model | RPM | RPD | TPM | Context Window |
+|-------|-----|-----|-----|----------------|
+| Gemini 2.5 Pro | 5 | 100 | 250,000 | 1M tokens |
+| Gemini 2.5 Flash | 10 | 250 | 250,000 | 1M tokens |
+| Gemini 2.5 Flash-Lite | 15 | 1,000 | 250,000 | 1M tokens |
+
+- **Structured output:** Full JSON Schema support
+- **Function calling / Tool use:** Full support including MCP protocol
+- **Latency:** Flash generates at ~212 tokens/sec
+- **Quality:** Flash outperforms GPT-4o-mini on most benchmarks
+- **Gotchas:** Free tier data used to improve Google products. Rate limits were cut 50-80% in Dec 2025. Lower priority during peak hours.
+
+**Verdict:** Best overall free option. 1M context window is unmatched for feeding market data/news. Flash-Lite at 1,000 RPD is enough for MVP.
+
+---
+
+### Groq — Fastest Inference, Generous Free Tier
+
+| Model | RPM | RPD | TPM | TPD |
+|-------|-----|-----|-----|-----|
+| Llama 3.1 8B Instant | 30 | 14,400 | 6,000 | 500,000 |
+| Llama 3.3 70B Versatile | 30 | 1,000 | 12,000 | 100,000 |
+| Llama 4 Scout 17B | 30 | 1,000 | 30,000 | 500,000 |
+
+- **Speed:** 700+ tokens/second on Llama 3.3 70B (fastest anywhere)
+- **Structured output:** Full JSON Schema with `strict: true`
+- **Function calling:** Full support
+- **No credit card required**
+- **Gotchas:** Low TPM limits (can't send huge context). Streaming + structured outputs incompatible simultaneously.
+
+**Verdict:** Excellent for fast, short prediction queries. 14,400 RPD on 8B model is very generous. Feels instant for users.
+
+---
+
+### Mistral AI — Most Generous Token Allowance
+
+- **Free "Experiment" tier:** Access to ALL models including Mistral Large
+- **Rate limits:** ~1 RPS, 500K TPM, up to 1 billion tokens/month
+- **No credit card required**
+- **Structured output / Function calling:** Full support
+- **Startup credits:** Up to $30K available
+- **Gotchas:** 1 RPS rate limit means no bursting.
+
+**Verdict:** 1 billion tokens/month free is massive. Access to Mistral Large (frontier-class) for free is exceptional. Strong for an MVP with moderate traffic.
+
+---
+
+### OpenRouter — 27+ Free Models
+
+Notable free models ($0/MTok):
+- Llama 3.3 70B (65K context)
+- DeepSeek R1 (reasoning model)
+- Mistral Small 3.1 24B (128K context, vision)
+- OpenAI gpt-oss-120b (131K context)
+- NVIDIA Nemotron 3 Super 120B (262K context)
+- Qwen3 Coder 480B (262K context)
+
+- **Rate limits:** 20 RPM, 200 RPD (1,000 RPD with purchase history)
+- **No credit card required for free models**
+- **Gotchas:** Free requests queued behind paid during peak. Models can be removed without notice.
+
+**Verdict:** Excellent as fallback/routing layer. Access to 120B+ models for free is remarkable.
+
+---
+
+### Anthropic Claude API
+
+- **Free credits:** $5 for new accounts (~100K-200K tokens)
+- **No ongoing free tier**
+- **Cheapest model:** Claude Haiku 4.5 at $1/$5 per MTok
+- **Quality:** Best reasoning of any model family
+- **Student program:** Up to $300 in credits
+
+**Verdict:** Not viable as free option. Best quality but requires budget. Haiku is cost-effective if willing to pay.
+
+---
+
+### OpenAI API
+
+- **Free credits:** $5 for new accounts (expires 3 months)
+- **No ongoing free tier**
+- **GPT-4o-mini:** $0.15/$0.60 per MTok (extremely cheap)
+- **gpt-oss-20b:** New open-weight model, free on OpenRouter
+
+**Verdict:** Similar to Claude — $5 starter credit only. GPT-4o-mini is cheapest proprietary if going paid.
+
+---
+
+### Cloudflare Workers AI
+
+- **Free tier:** 10,000 neurons/day (~100-200 LLM responses)
+- **Models:** Llama 3.3 70B, Mistral 7B, Gemma 3
+- **Best for:** Embeddings and news classification at the edge
+
+**Verdict:** Too few LLM responses for primary use. Good for supplementary tasks (embeddings, classification).
+
+---
+
+### Cohere
+
+- **Free trial:** 1,000 API calls/month, 20 calls/min
+- **Models:** Command R+, Rerank 3.5, Embed 4
+- **Restriction:** Trial keys CANNOT be used commercially
+
+**Verdict:** Too limited and no commercial use. Only useful for prototyping.
+
+---
+
+### Hugging Face Inference API
+
+- **Free:** 100K monthly inference credits
+- **Models:** Thousands of open-source models
+- **Gotchas:** Opaque credit system, cold-start latency
+
+**Verdict:** Best for specialized NLP tasks (sentiment analysis). Not ideal as primary LLM.
+
+---
+
+### Together AI
+
+- **Signup credits:** Up to $100 free
+- **200+ open-source models** including Llama 4, DeepSeek V3.1
+- **Startup program:** $15K-$50K in credits
+
+**Verdict:** Good $100 initial credit for prototyping. Not a sustained free option.
+
+---
+
+### Self-Hosted Open Source (VPS $6-12/month)
+
+| Model | Size (Q4) | Min RAM | Speed (CPU) | Quality |
+|-------|-----------|---------|-------------|---------|
+| Phi-4 | ~5GB | 8GB | ~15 tok/s | Excellent math/reasoning |
+| Llama 3.1 8B | ~5-6GB | 8GB | ~10-15 tok/s | Good general purpose |
+| Mistral Small 3.1 24B | ~14GB | 16GB | ~5-8 tok/s | Very strong, vision |
+| Qwen 3 4B | ~3GB | 4GB | ~20+ tok/s | Surprisingly capable |
+
+- Deploy with Ollama (single command install)
+- VPS: Contabo 8GB ~$6/month, Hetzner 16GB competitive
+- Licensing: Qwen 3 (Apache 2.0), DeepSeek (MIT), Mistral Small (Apache 2.0) — all commercially free
+
+---
+
+## Recommended AI Strategy for predictaX
+
+### Primary Stack (free, high quality)
+
+```
+┌──────────────────────────────────────────────────────┐
+│                   AI Fallback Chain                   │
+│                                                      │
+│  Request ──▶ Groq (Llama 3.3 70B)                   │
+│              │ 700+ tok/s, 1K RPD                    │
+│              │                                       │
+│              ├──▶ 429? ──▶ Gemini Flash              │
+│              │            250 RPD, 1M context        │
+│              │                                       │
+│              ├──▶ 429? ──▶ Mistral Large             │
+│              │            1B tokens/month            │
+│              │                                       │
+│              └──▶ 429? ──▶ OpenRouter (free models)  │
+│                           DeepSeek R1, Llama, etc.   │
+└──────────────────────────────────────────────────────┘
+```
+
+All four support structured JSON output — response format stays consistent across providers.
+
+### Use Case Mapping
+
+| Use Case | Recommended Model | Why |
+|----------|-------------------|-----|
+| Fast probability predictions | Groq (Llama 3.3 70B) | 700+ tok/s, structured output |
+| Market analysis with context | Gemini 2.5 Flash | 1M context window for news/data |
+| Content generation | Mistral Large | 1B tokens/month free |
+| Deep reasoning tasks | OpenRouter (DeepSeek R1) | Free reasoning model |
+| News classification | Cloudflare Workers AI | Free embeddings at edge |
+
+### Future Scaling
+
+| Stage | Strategy | Cost |
+|-------|----------|------|
+| **MVP** | Groq + Gemini + Mistral + OpenRouter | $0/month |
+| **Growth** | Gemini Flash paid ($0.15/$0.60 MTok) | ~$5-20/month |
+| **Scale** | Self-hosted Phi-4 on VPS + paid API for peaks | $6/month + usage |
+
+---
+
 ## Decision Required
 
-The team needs to choose between Options A, B, or C. Key factors:
+The team needs to choose between Options A, B, or C for backend infrastructure. Key factors:
 
 1. **Speed to MVP** → Option A (Supabase direct, no backend)
 2. **Full control + Python** → Option B (free) or C ($5/month)
 3. **Developer experience** → Option C (Railway, no cold starts)
 
-The decision also affects issues #9, #10, #11, and #12 — the backend architecture depends on this choice.
+For AI models, the recommended strategy is the fallback chain: **Groq → Gemini → Mistral → OpenRouter** (all free).
+
+These decisions affect issues #9, #10, #11, #12, and #26.
