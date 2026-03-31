@@ -1,7 +1,8 @@
 # Infra Backend PredictaX — Free Tier Research
 
 > Research date: 2026-03-29
-> Status: Pending team decision
+> Updated: 2026-03-31
+> Status: **DECIDED** — Vercel (frontend) + Render (backend), both free tier
 
 ## Executive Summary
 
@@ -474,14 +475,54 @@ All four support structured JSON output — response format stays consistent acr
 
 ---
 
-## Decision Required
+## Team Decision (2026-03-31)
 
-The team needs to choose between Options A, B, or C for backend infrastructure. Key factors:
+### Infrastructure: Option B selected — Vercel + Render (free tiers)
 
-1. **Speed to MVP** → Option A (Supabase direct, no backend)
-2. **Full control + Python** → Option B (free) or C ($5/month)
-3. **Developer experience** → Option C (Railway, no cold starts)
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Vercel    │────▶│   Render     │────▶│   Database      │
+│  (Frontend) │     │  (Backend)   │     │   (TBD)         │
+│  Next.js    │     │  FastAPI     │     │   PostgreSQL    │
+│  Free tier  │     │  Free tier   │     │   Free tier     │
+└─────────────┘     └──────────────┘     └─────────────────┘
+```
 
-For AI models, the recommended strategy is the fallback chain: **Groq → Gemini → Mistral → OpenRouter** (all free).
+**Confirmed by:** Developer
+**Date:** 2026-03-31
+
+### What this means
+
+- **Frontend:** Vercel free tier (already configured)
+- **Backend:** Render free tier — FastAPI, 750 hrs/month, 512 MB RAM
+- **Cost:** $0/month
+
+### Known Limitations to Address
+
+| Limitation | Impact | Mitigation |
+|-----------|--------|------------|
+| Render cold starts (30s-2min after 15min idle) | First request after idle is slow | Cron ping every 14 min to keep alive |
+| Render PostgreSQL expires after 30 days | Data loss after 30 days | **Use external DB: Neon or Supabase (always free)** |
+| Render free RAM: 512 MB | May limit FastAPI + dependencies | Monitor memory usage, optimize imports |
+| Render 100 GB/month bandwidth | May limit high-traffic scenarios | Sufficient for MVP |
+
+### Pending Decision: External Database
+
+Render's free PostgreSQL is NOT viable for persistent data (30-day expiry). The team needs to choose an external database:
+
+| Option | Storage | Always Free | Auth Included | Realtime |
+|--------|---------|-------------|---------------|----------|
+| **Neon** | 0.5 GB | Yes | Yes (60K MAUs) | No |
+| **Supabase** | 500 MB | Yes (pauses after 7 days) | Yes (50K MAUs) | Yes |
+
+**Recommendation:** Neon — always free without pausing, includes auth (60K MAUs), and is a pure PostgreSQL service with no vendor lock-in.
+
+### AI Models
+
+The recommended strategy is the fallback chain: **Groq → Gemini → Mistral → OpenRouter** (all free). See AI section above for details.
+
+---
+
+> **Note:** The research and alternative options (A, B, C) above are preserved for reference. If the team needs to change direction, all comparisons remain available in this document.
 
 These decisions affect issues #9, #10, #11, #12, and #26.
