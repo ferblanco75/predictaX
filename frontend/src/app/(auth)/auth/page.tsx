@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, AlertCircle } from 'lucide-react';
+import { useAppStore } from '@/lib/stores/app-store';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 interface FormErrors {
   email?: string;
@@ -20,6 +24,9 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginErrors, setLoginErrors] = useState<FormErrors>({});
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
+  const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter();
+  const { login } = useAppStore();
 
   const validateEmail = (email: string): string | undefined => {
     if (!email) return 'El email es requerido';
@@ -59,9 +66,44 @@ export default function AuthPage() {
     }
 
     setLoginErrors({});
+    setServerError(null);
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => setIsLoading(false), 1000);
+
+    try {
+      const tokenRes = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!tokenRes.ok) {
+        const data = await tokenRes.json().catch(() => ({}));
+        setServerError(data.detail || 'Credenciales inválidas');
+        return;
+      }
+
+      const { access_token } = await tokenRes.json();
+      localStorage.setItem('token', access_token);
+
+      const meRes = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+      const userData = await meRes.json();
+
+      login({
+        id: String(userData.id),
+        username: userData.username,
+        email: userData.email,
+        points: userData.points,
+      });
+
+      router.push('/markets');
+    } catch (err) {
+      console.error('Auth error:', err);
+      setServerError('Error de conexión. Intentá de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -186,6 +228,12 @@ export default function AuthPage() {
                     </label>
                   </div>
 
+                  {serverError && (
+                    <div className="flex items-center space-x-1 text-sm text-red-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{serverError}</span>
+                    </div>
+                  )}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                   </Button>

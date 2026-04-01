@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: predictax_dev
       POSTGRES_DB: predictax
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -38,7 +38,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=dev_secret_key_change_in_production
       - DEBUG=true
-      - CORS_ORIGINS=http://localhost:3000
+      - CORS_ORIGINS=["http://localhost:3000"]
     volumes:
       - ./backend/app:/app/app
     depends_on:
@@ -61,7 +61,8 @@ services:
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - INTERNAL_API_URL=http://backend:8000/api
     depends_on:
       - backend
     restart: unless-stopped

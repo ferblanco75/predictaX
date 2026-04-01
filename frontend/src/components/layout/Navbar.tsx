@@ -19,7 +19,7 @@ const categories = [
 ];
 
 export function Navbar() {
-  const { selectedCategory, setCategory, searchQuery, setSearchQuery } = useAppStore();
+  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } = useAppStore();
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -49,15 +49,28 @@ export function Navbar() {
           {/* Auth buttons */}
           <div className="flex items-center space-x-3">
             <ThemeToggle />
-            <Link href="/waitlist" className={cn(buttonVariants({ variant: 'outline' }), 'hidden sm:flex')}>
-              Lista de espera
-            </Link>
-            <Link href="/auth" className={cn(buttonVariants({ variant: 'ghost' }))}>
-              Iniciar sesión
-            </Link>
-            <Link href="/auth" className={cn(buttonVariants())}>
-              Registrarse
-            </Link>
+            {isLoggedIn && user ? (
+              <>
+                <span className="hidden sm:block text-sm font-medium text-muted-foreground">
+                  Bienvenido, <span className="text-foreground font-semibold">{user.username}</span>
+                </span>
+                <Button variant="outline" size="sm" onClick={() => { logout(); localStorage.removeItem('token'); }}>
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/waitlist" className={cn(buttonVariants({ variant: 'outline' }), 'hidden sm:flex')}>
+                  Lista de espera
+                </Link>
+                <Link href="/auth" className={cn(buttonVariants({ variant: 'ghost' }))}>
+                  Iniciar sesión
+                </Link>
+                <Link href="/auth" className={cn(buttonVariants())}>
+                  Registrarse
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
