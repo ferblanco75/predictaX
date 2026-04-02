@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator
-from typing import List
+from typing import List, Union
 
 
 class Settings(BaseSettings):
@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    # CORS - stored as str to avoid pydantic_settings auto JSON parsing
+    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000"]
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return ["http://localhost:3000"]
             import json
             try:
                 return json.loads(v)
