@@ -95,6 +95,88 @@ docker compose down --rmi all --volumes
 - En desarrollo, `src/` y `public/` se montan como volúmenes para hot reload
 - Para producción, `next.config.ts` usa `output: "standalone"` para generar una imagen optimizada
 
+## Deployment
+
+### Deployment en Vercel (Recomendado)
+
+Para hacer deploy de PredictaX en producción con Vercel, consulta nuestra [guía completa de deployment](./DEPLOYMENT.md).
+
+#### Quick Start
+
+1. **Conecta el repositorio a Vercel**
+   - Ve a [vercel.com/new](https://vercel.com/new)
+   - Selecciona este repositorio
+   - Root directory: `./frontend`
+
+2. **Configura variables de entorno**
+   - Copia las variables de `frontend/.env.example`
+   - Agrégalas en Vercel Dashboard → Settings → Environment Variables
+   - Variables críticas: `NEXT_PUBLIC_BASE_URL`, `RESEND_API_KEY`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+
+3. **Configura el dominio custom**
+   - En Vercel Dashboard → Settings → Domains
+   - Agrega `neuropredict.app`
+   - Configura DNS records (A y CNAME)
+
+4. **Deploy**
+   - Push a `main` branch
+   - Vercel deploya automáticamente
+   - Monitor: [vercel.com/dashboard](https://vercel.com/dashboard)
+
+#### Recursos
+
+- 📖 [Guía completa de deployment](./DEPLOYMENT.md)
+- ✅ [Checklist de deployment](./DEPLOYMENT_CHECKLIST.md)
+- 🔧 [Troubleshooting](./DEPLOYMENT.md#troubleshooting)
+
+### Deployment Alternativo (VPS con Docker)
+
+Si prefieres hacer deploy en tu propio servidor VPS:
+
+```bash
+# 1. Clonar repositorio en VPS
+git clone https://github.com/tu-usuario/predictaX.git
+cd predictaX
+
+# 2. Configurar variables de entorno
+cd frontend
+cp .env.example .env
+nano .env  # Edita con valores de producción
+
+# 3. Build y deploy con Docker Compose
+cd ..
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 4. Configurar Nginx y SSL (ver DEPLOYMENT.md)
+```
+
+Ver [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones completas de deployment con VPS.
+
+## Environment Variables
+
+El proyecto requiere las siguientes variables de entorno:
+
+```bash
+# App Configuration
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NODE_ENV=development
+
+# Google Analytics
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+
+# Sentry Error Tracking
+NEXT_PUBLIC_SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx
+SENTRY_ORG=your-org
+SENTRY_PROJECT=predictax-frontend
+SENTRY_AUTH_TOKEN=your-auth-token
+
+# Waitlist Email (Resend)
+RESEND_API_KEY=re_xxxxx
+WAITLIST_EMAIL_TO=admin@predictax.com
+```
+
+Ver `frontend/.env.example` para la lista completa con descripciones.
+
 ## Licencia
 
 Proyecto privado.
