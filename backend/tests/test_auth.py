@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
+LOGOUT_URL = "/api/auth/logout"
 ME_URL = "/api/auth/me"
 
 USER_DATA = {
@@ -103,3 +104,21 @@ def test_protected_route_no_token(client: TestClient):
 def test_protected_route_invalid_token(client: TestClient):
     response = client.get(ME_URL, headers={"Authorization": "Bearer invalid.token.here"})
     assert response.status_code == 401
+
+
+def test_logout(client: TestClient):
+    client.post(REGISTER_URL, json=USER_DATA)
+    login_resp = client.post(
+        LOGIN_URL,
+        json={"email": USER_DATA["email"], "password": USER_DATA["password"]},
+    )
+    token = login_resp.json()["access_token"]
+
+    response = client.post(LOGOUT_URL, headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["message"] == "Successfully logged out"
+
+
+def test_logout_no_token(client: TestClient):
+    response = client.post(LOGOUT_URL)
+    assert response.status_code == 403
