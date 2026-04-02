@@ -45,6 +45,11 @@ def upgrade() -> None:
     op.execute('DROP TYPE IF EXISTS marketstatus')
     op.execute('DROP TYPE IF EXISTS markettype')
 
+    # Recreate enum types explicitly before tables that depend on them
+    op.execute("CREATE TYPE marketcategory AS ENUM ('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO')")
+    op.execute("CREATE TYPE markettype AS ENUM ('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC')")
+    op.execute("CREATE TYPE marketstatus AS ENUM ('ACTIVE', 'RESOLVED', 'CANCELLED')")
+
     # Recreate users with UUID PK + new fields
     op.create_table(
         'users',
@@ -69,13 +74,13 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('title', sa.String(length=500), nullable=False),
         sa.Column('description', sa.Text(), nullable=False),
-        sa.Column('category', sa.Enum('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO', name='marketcategory'), nullable=False),
-        sa.Column('type', sa.Enum('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC', name='markettype'), nullable=True),
+        sa.Column('category', sa.Enum('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO', name='marketcategory', create_type=False), nullable=False),
+        sa.Column('type', sa.Enum('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC', name='markettype', create_type=False), nullable=True),
         sa.Column('probability_market', sa.Numeric(precision=5, scale=2), nullable=True),
         sa.Column('volume', sa.Float(), nullable=True),
         sa.Column('participants_count', sa.Integer(), nullable=True),
         sa.Column('end_date', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('status', sa.Enum('ACTIVE', 'RESOLVED', 'CANCELLED', name='marketstatus'), nullable=True),
+        sa.Column('status', sa.Enum('ACTIVE', 'RESOLVED', 'CANCELLED', name='marketstatus', create_type=False), nullable=True),
         sa.Column('resolved_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('resolution_value', sa.Boolean(), nullable=True),
         sa.Column('created_by', postgresql.UUID(as_uuid=True), nullable=True),
@@ -145,6 +150,11 @@ def downgrade() -> None:
     op.execute('DROP TYPE IF EXISTS marketstatus')
     op.execute('DROP TYPE IF EXISTS markettype')
 
+    # Recreate enum types explicitly before tables that depend on them
+    op.execute("CREATE TYPE marketcategory AS ENUM ('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO')")
+    op.execute("CREATE TYPE markettype AS ENUM ('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC')")
+    op.execute("CREATE TYPE marketstatus AS ENUM ('ACTIVE', 'RESOLVED', 'CANCELLED')")
+
     # Recreate original integer-based schema
     op.create_table(
         'users',
@@ -166,13 +176,13 @@ def downgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('title', sa.String(length=500), nullable=False),
         sa.Column('description', sa.Text(), nullable=False),
-        sa.Column('category', sa.Enum('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO', name='marketcategory'), nullable=False),
-        sa.Column('type', sa.Enum('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC', name='markettype'), nullable=True),
+        sa.Column('category', sa.Enum('ECONOMIA', 'POLITICA', 'DEPORTES', 'TECNOLOGIA', 'CRYPTO', name='marketcategory', create_type=False), nullable=False),
+        sa.Column('type', sa.Enum('BINARY', 'MULTIPLE_CHOICE', 'NUMERIC', name='markettype', create_type=False), nullable=True),
         sa.Column('probability_market', sa.Float(), nullable=True),
         sa.Column('volume', sa.Float(), nullable=True),
         sa.Column('participants_count', sa.Integer(), nullable=True),
         sa.Column('end_date', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('status', sa.Enum('ACTIVE', 'RESOLVED', 'CANCELLED', name='marketstatus'), nullable=True),
+        sa.Column('status', sa.Enum('ACTIVE', 'RESOLVED', 'CANCELLED', name='marketstatus', create_type=False), nullable=True),
         sa.Column('resolution_value', sa.Boolean(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
