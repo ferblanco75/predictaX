@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Float, DateTime, ForeignKey, String, Index
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+import uuid
 from app.core.database import Base
 
 
@@ -9,15 +11,17 @@ class Prediction(Base):
 
     __tablename__ = "predictions"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     market_id = Column(
-        Integer, ForeignKey("markets.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("markets.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    probability = Column(Float, nullable=False)  # User's predicted probability (0-100)
-    points_wagered = Column(Float, nullable=False)  # Points bet on this prediction
+    probability = Column(Float, nullable=False)
+    points_wagered = Column(Float, nullable=False)
+    potential_gain = Column(Float, nullable=True)
+    status = Column(String, default="pending", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships

@@ -1,8 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Enum, Boolean
+from sqlalchemy import Column, String, Text, DateTime, Float, Enum, Boolean, Integer, ForeignKey, Numeric
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.core.database import Base
+import uuid
 import enum
+from app.core.database import Base
 
 
 class MarketCategory(str, enum.Enum):
@@ -36,21 +38,24 @@ class Market(Base):
 
     __tablename__ = "markets"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=False)
     category = Column(Enum(MarketCategory), nullable=False, index=True)
     type = Column(Enum(MarketType), default=MarketType.BINARY)
-    probability_market = Column(Float, default=50.0)  # Current market probability
-    volume = Column(Float, default=0.0)  # Total volume in points
-    participants_count = Column(Integer, default=0)  # Number of unique participants
+    probability_market = Column(Numeric(5, 2), default=50.00)
+    volume = Column(Float, default=0.0)
+    participants_count = Column(Integer, default=0)
     end_date = Column(DateTime(timezone=True), nullable=False)
     status = Column(Enum(MarketStatus), default=MarketStatus.ACTIVE, index=True)
-    resolution_value = Column(Boolean, nullable=True)  # True/False for binary, null if unresolved
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolution_value = Column(Boolean, nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
+    creator = relationship("User", back_populates="created_markets")
     predictions = relationship(
         "Prediction", back_populates="market", cascade="all, delete-orphan"
     )
