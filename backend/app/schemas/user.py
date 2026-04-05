@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+from uuid import UUID
 
 
 class UserCreate(BaseModel):
@@ -20,10 +21,11 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     """Schema for user response"""
 
-    id: int
+    id: UUID
     email: str
     username: str
     points: float
+    role: str = "user"
     created_at: datetime
 
     class Config:
@@ -40,4 +42,4 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Schema for decoded token data"""
 
-    user_id: int
+    user_id: str

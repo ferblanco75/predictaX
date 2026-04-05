@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import auth, markets, predictions, users
+from app.routers import auth, markets, predictions, users, admin
 from app.schemas.common import HealthResponse
 import logging
 
@@ -32,6 +32,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(markets.router, prefix="/api/markets", tags=["Markets"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
+app.include_router(admin.router)  # prefix defined in router
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["Health"])

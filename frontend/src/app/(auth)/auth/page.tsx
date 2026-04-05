@@ -95,9 +95,15 @@ export default function AuthPage() {
         username: userData.username,
         email: userData.email,
         points: userData.points,
+        role: userData.role || 'user',
+        token: access_token,
       });
 
-      router.push('/markets');
+      if (userData.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/markets');
+      }
     } catch (err) {
       console.error('Auth error:', err);
       setServerError('Error de conexión. Intentá de nuevo.');

@@ -56,7 +56,7 @@ def get_current_user(
 
     # Get user from database
     try:
-        user = auth_service.get_user_by_id(db, int(user_id))
+        user = auth_service.get_user_by_id(db, user_id)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,3 +65,25 @@ def get_current_user(
         )
 
     return user
+
+
+def get_current_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Dependency to verify the current user has admin role.
+
+    Usage in routers:
+        @router.get("/admin-only")
+        def admin_route(admin: User = Depends(get_current_admin)):
+            return {"admin": admin.username}
+
+    Raises:
+        HTTPException 403: If user is not an admin
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
