@@ -1,17 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TrendingUp, Users, Trophy, Smartphone, Bitcoin, ArrowRight } from 'lucide-react';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { buttonVariants } from '@/components/ui/button';
+import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { MarketCardSkeleton } from '@/components/markets/MarketCardSkeleton';
 import { CategoryCardSkeletonGrid } from '@/components/ui/CategoryCardSkeleton';
 import { getTrendingMarkets } from '@/lib/api/markets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' as const, delay: i * 0.1 },
+  }),
+};
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +49,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-3xl">
+          <motion.div className="max-w-3xl" variants={fadeInUp} initial="hidden" animate="visible">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Predice el futuro de América Latina
             </h1>
@@ -62,12 +71,19 @@ export default function Home() {
                 Comenzar ahora
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Categories Grid */}
-      <section className="container mx-auto px-4 py-12">
+      <motion.section
+        className="container mx-auto px-4 py-12"
+        variants={fadeInUp}
+        custom={1}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <h2 className="text-3xl font-bold mb-8">Explora por categoría</h2>
         {isLoading ? (
           <CategoryCardSkeletonGrid />
@@ -96,10 +112,17 @@ export default function Home() {
             })}
           </div>
         )}
-      </section>
+      </motion.section>
 
       {/* Featured/Trending Markets */}
-      <section className="container mx-auto px-4 py-12">
+      <motion.section
+        className="container mx-auto px-4 py-12"
+        variants={fadeInUp}
+        custom={2}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+      >
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold">Mercados destacados</h2>
           <Link
@@ -124,10 +147,17 @@ export default function Home() {
             ))}
           </div>
         )}
-      </section>
+      </motion.section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-br from-purple-600 to-blue-600 text-white">
+      <motion.section
+        className="bg-gradient-to-br from-purple-600 to-blue-600 text-white"
+        variants={fadeInUp}
+        custom={3}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <div className="container mx-auto px-4 py-16 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             ¿Listo para comenzar a predecir?
@@ -139,7 +169,7 @@ export default function Home() {
             Crear cuenta gratis
           </Link>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 }

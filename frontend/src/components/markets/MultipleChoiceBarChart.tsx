@@ -77,7 +77,7 @@ export function MultipleChoiceBarChart({ options, categoryColor = '#3b82f6' }: M
             tick={{ fill: 'currentColor', fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
-          <Bar dataKey="probability" radius={[0, 8, 8, 0]} isAnimationActive={false}>
+          <Bar dataKey="probability" radius={[0, 8, 8, 0]} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
             {sortedOptions.map((option) => (
               <Cell key={`cell-${option.id}`} fill={getBarColor(option.id)} />
             ))}

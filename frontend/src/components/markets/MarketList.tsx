@@ -4,6 +4,22 @@ import { MarketCardSkeletonGrid } from './MarketCardSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Market } from '@/lib/types';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.07,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
+};
 
 interface MarketListProps {
   markets: Market[];
@@ -20,11 +36,18 @@ export function MarketList({ markets, isLoading = false, onClearFilters }: Marke
   // Show market grid
   if (markets.length > 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {markets.map((market) => (
-          <MarketCard key={market.id} market={market} />
+          <motion.div key={market.id} variants={itemVariants}>
+            <MarketCard market={market} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     );
   }
 
