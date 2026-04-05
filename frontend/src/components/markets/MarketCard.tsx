@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Users, Calendar, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
