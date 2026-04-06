@@ -42,6 +42,7 @@ services:
       - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:${FRONTEND_PORT:-3000}
     volumes:
       - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
       - ./backend/alembic:/app/alembic
       - ./backend/scripts:/app/scripts
       - ./backend/.env:/app/.env
