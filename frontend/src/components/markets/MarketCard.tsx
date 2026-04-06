@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Users, Calendar, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -8,6 +10,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 import { ProbabilityGauge } from './ProbabilityGauge';
+import { motion } from 'framer-motion';
 
 interface MarketCardProps {
   market: Market;
@@ -27,8 +30,12 @@ export function MarketCard({ market }: MarketCardProps) {
   const endDate = format(new Date(market.endDate), 'dd MMM yyyy', { locale: es });
 
   return (
-    <Link href={`/markets/${market.id}`}>
-      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+    <motion.div
+      whileHover={{ scale: 1.02, y: -2 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      <Link href={`/markets/${market.id}`} aria-label={`Ver detalles: ${market.title}`}>
+      <Card className="h-full shadow-sm hover:shadow-xl transition-shadow cursor-pointer group">
         <CardHeader className="space-y-2">
           {/* Category badge */}
           <div className="flex items-center justify-between">
@@ -136,5 +143,6 @@ export function MarketCard({ market }: MarketCardProps) {
         </CardFooter>
       </Card>
     </Link>
+    </motion.div>
   );
 }
