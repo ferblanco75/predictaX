@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
-import { getOverview } from '@/lib/api/admin';
-import { Users, TrendingUp, BarChart3, Bot, Activity, Zap } from 'lucide-react';
+import { getOverview, getTopActiveUsers, getRecentActivity, getCategoryInterest } from '@/lib/api/admin';
+import {
+  Users, TrendingUp, BarChart3, Bot, Activity, Zap,
+  Trophy, Clock, ArrowUpRight, ArrowDownRight, Minus,
+} from 'lucide-react';
 
 interface Overview {
   users: { total: number; new_today: number; new_this_week: number; new_this_month: number };
@@ -15,13 +18,27 @@ interface Overview {
   };
 }
 
+interface TopUser {
+  id: string; username: string; email: string;
+  predictions_count: number; total_wagered: number; points: number;
+}
+
+interface ActivityItem {
+  type: string; user: string; action: string;
+  target: string; points: number; timestamp: string;
+}
+
+interface CategoryData {
+  category: string; predictions_count: number; volume: number; unique_users: number;
+}
+
 function KPICard({
   title, value, subtitle, icon: Icon, color,
 }: {
   title: string; value: string | number; subtitle?: string; icon: React.ElementType; color: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-500">{title}</span>
         <div className={`p-2 rounded-lg ${color}`}>
@@ -61,34 +78,73 @@ function CategoryBreakdown({ data }: { data: Record<string, number> }) {
   const total = Object.values(data).reduce((a, b) => a + b, 0);
   return (
     <div className="space-y-2">
-      {Object.entries(data).map(([cat, count]) => (
-        <div key={cat} className="flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full ${colors[cat] || 'bg-gray-400'}`} />
-          <span className="text-sm capitalize flex-1">{cat}</span>
-          <span className="text-sm font-medium">{count}</span>
-          <span className="text-xs text-gray-400">{total > 0 ? Math.round((count / total) * 100) : 0}%</span>
-        </div>
-      ))}
+      {Object.entries(data).map(([cat, count]) => {
+        const pct = total > 0 ? (count / total) * 100 : 0;
+        return (
+          <div key={cat}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${colors[cat] || 'bg-gray-400'}`} />
+                <span className="text-sm capitalize">{cat}</span>
+              </div>
+              <span className="text-sm font-medium">{count}</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${colors[cat] || 'bg-gray-400'}`} style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
+}
+
+function timeAgo(timestamp: string): string {
+  const diff = Date.now() - new Date(timestamp).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `hace ${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days}d`;
 }
 
 export default function AdminDashboard() {
   const { user } = useAppStore();
   const [data, setData] = useState<Overview | null>(null);
+  const [topUsers, setTopUsers] = useState<TopUser[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user?.token) return;
-    getOverview(user.token)
-      .then(setData)
+    Promise.all([
+      getOverview(user.token),
+      getTopActiveUsers(user.token, 30, 5),
+      getRecentActivity(user.token, 10),
+      getCategoryInterest(user.token, 30),
+    ])
+      .then(([overview, users, feed, cats]) => {
+        setData(overview);
+        setTopUsers(users);
+        setActivity(feed);
+        setCategories(cats);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
-    // Refresh every 30s
     const interval = setInterval(() => {
-      if (user?.token) getOverview(user.token).then(setData).catch(() => {});
+      if (!user?.token) return;
+      Promise.all([
+        getOverview(user.token),
+        getRecentActivity(user.token, 10),
+      ]).then(([overview, feed]) => {
+        setData(overview);
+        setActivity(feed);
+      }).catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
   }, [user?.token]);
@@ -120,9 +176,15 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-gray-500 text-sm">Overview de la plataforma en tiempo real</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-gray-500 text-sm">Overview de la plataforma en tiempo real</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          Auto-refresh 30s
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -157,7 +219,7 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* Second Row */}
+      {/* Second Row: 3 columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* AI Quota */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
@@ -212,6 +274,101 @@ export default function AdminDashboard() {
               <span className="font-medium">{data.markets.resolved}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Third Row: Top Users + Activity Feed + Category Interest */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Top Active Users */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-500" />
+            Top Usuarios (30 días)
+          </h3>
+          {topUsers.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-4">Sin actividad aún</p>
+          ) : (
+            <div className="space-y-3">
+              {topUsers.map((u, i) => (
+                <div key={u.id} className="flex items-center gap-3">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    i === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' :
+                    i === 1 ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' :
+                    i === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400' :
+                    'bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500'
+                  }`}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{u.username}</div>
+                    <div className="text-xs text-gray-400">{u.predictions_count} predicciones</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">${u.total_wagered.toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">apostado</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Activity Feed */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-blue-500" />
+            Actividad Reciente
+          </h3>
+          {activity.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-4">Sin actividad reciente</p>
+          ) : (
+            <div className="space-y-3">
+              {activity.map((a, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm">
+                      <span className="font-medium">{a.user}</span>{' '}
+                      <span className="text-gray-500">{a.action}</span>{' '}
+                      <span className="font-medium truncate">{a.target.length > 40 ? a.target.slice(0, 40) + '...' : a.target}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                      <span>{a.points} pts</span>
+                      <span>{timeAgo(a.timestamp)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Category Interest */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-purple-500" />
+            Interés por Categoría (30d)
+          </h3>
+          {categories.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-4">Sin datos aún</p>
+          ) : (
+            <div className="space-y-3">
+              {categories.map((c) => (
+                <div key={c.category} className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium capitalize">{c.category}</div>
+                    <div className="text-xs text-gray-400">
+                      {c.predictions_count} predicciones / {c.unique_users} usuarios
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">${c.volume.toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">volumen</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
