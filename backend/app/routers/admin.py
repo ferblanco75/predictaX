@@ -5,7 +5,7 @@ All endpoints require admin role.
 
 from datetime import date, datetime, timedelta
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, case, and_
+from sqlalchemy import func, case, and_, distinct
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.dependencies import get_current_admin
@@ -13,6 +13,7 @@ from app.models.user import User
 from app.models.market import Market, MarketStatus, MarketCategory
 from app.models.prediction import Prediction
 from app.models.ai_usage_log import AIUsageLog
+from app.models.activity_log import ActivityLog
 from app.services import ai_service
 
 router = APIRouter(
@@ -393,3 +394,296 @@ def get_ai_usage_history(
         }
         for row in daily
     ]
+
+
+# --------------- User Engagement ---------------
+
+@router.get("/metrics/users/top-active")
+def get_top_active_users(
+    days: int = Query(30, ge=1, le=90),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    """Top most active users by prediction count in the given period."""
+    start_date = date.today() - timedelta(days=days)
+
+    top = (
+        db.query(
+            Prediction.user_id,
+            func.count(Prediction.id).label("predictions_count"),
+            func.coalesce(func.sum(Prediction.points_wagered), 0).label("total_wagered"),
+        )
+        .filter(func.date(Prediction.created_at) >= start_date)
+        .group_by(Prediction.user_id)
+        .order_by(func.count(Prediction.id).desc())
+        .limit(limit)
+        .all()
+    )
+
+    result = []
+    for row in top:
+        user = db.query(User).filter(User.id == row.user_id).first()
+        if user:
+            result.append({
+                "id": str(user.id),
+                "username": user.username,
+                "email": user.email,
+                "predictions_count": row.predictions_count,
+                "total_wagered": float(row.total_wagered),
+                "points": user.points,
+            })
+    return result
+
+
+@router.get("/metrics/users/inactive")
+def get_inactive_users(
+    days: int = Query(30, description="Users with no predictions in X days"),
+    db: Session = Depends(get_db),
+):
+    """Users who registered but have no predictions in the given period."""
+    cutoff = date.today() - timedelta(days=days)
+
+    active_user_ids = (
+        db.query(distinct(Prediction.user_id))
+        .filter(func.date(Prediction.created_at) >= cutoff)
+        .subquery()
+    )
+
+    inactive = (
+        db.query(User)
+        .filter(User.id.notin_(active_user_ids))
+        .filter(User.role != "admin")
+        .order_by(User.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": str(u.id),
+            "username": u.username,
+            "email": u.email,
+            "points": u.points,
+            "total_predictions": len(u.predictions),
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+        for u in inactive
+    ]
+
+
+@router.get("/metrics/users/engagement")
+def get_user_engagement(
+    days: int = Query(30, ge=7, le=90),
+    db: Session = Depends(get_db),
+):
+    """Engagement metrics: activity by hour and day of week."""
+    start_date = date.today() - timedelta(days=days)
+
+    by_hour = (
+        db.query(
+            func.extract("hour", ActivityLog.created_at).label("hour"),
+            func.count(ActivityLog.id).label("count"),
+        )
+        .filter(func.date(ActivityLog.created_at) >= start_date)
+        .group_by(func.extract("hour", ActivityLog.created_at))
+        .order_by(func.extract("hour", ActivityLog.created_at))
+        .all()
+    )
+
+    by_dow = (
+        db.query(
+            func.extract("dow", ActivityLog.created_at).label("dow"),
+            func.count(ActivityLog.id).label("count"),
+        )
+        .filter(func.date(ActivityLog.created_at) >= start_date)
+        .group_by(func.extract("dow", ActivityLog.created_at))
+        .order_by(func.extract("dow", ActivityLog.created_at))
+        .all()
+    )
+
+    dow_names = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"]
+
+    return {
+        "by_hour": [{"hour": int(r.hour), "count": r.count} for r in by_hour],
+        "by_day_of_week": [
+            {"day": dow_names[int(r.dow)], "count": r.count} for r in by_dow
+        ],
+    }
+
+
+# --------------- Category Interest ---------------
+
+@router.get("/metrics/categories/interest")
+def get_category_interest(
+    days: int = Query(30, ge=1, le=90),
+    db: Session = Depends(get_db),
+):
+    """Category engagement: predictions and volume by category."""
+    start_date = date.today() - timedelta(days=days)
+
+    results = (
+        db.query(
+            Market.category,
+            func.count(Prediction.id).label("predictions_count"),
+            func.coalesce(func.sum(Prediction.points_wagered), 0).label("volume"),
+            func.count(distinct(Prediction.user_id)).label("unique_users"),
+        )
+        .join(Prediction, Prediction.market_id == Market.id)
+        .filter(func.date(Prediction.created_at) >= start_date)
+        .group_by(Market.category)
+        .order_by(func.count(Prediction.id).desc())
+        .all()
+    )
+
+    return [
+        {
+            "category": row.category.value,
+            "predictions_count": row.predictions_count,
+            "volume": float(row.volume),
+            "unique_users": row.unique_users,
+        }
+        for row in results
+    ]
+
+
+# --------------- Site Performance ---------------
+
+@router.get("/metrics/performance")
+def get_site_performance(
+    days: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db),
+):
+    """API performance metrics: response times, error rates, top endpoints."""
+    start_date = date.today() - timedelta(days=days)
+
+    base_q = db.query(ActivityLog).filter(
+        func.date(ActivityLog.created_at) >= start_date,
+        ActivityLog.action == "api_request",
+    )
+
+    total_requests = base_q.count()
+    errors_4xx = base_q.filter(
+        ActivityLog.status_code >= 400, ActivityLog.status_code < 500
+    ).count()
+    errors_5xx = base_q.filter(ActivityLog.status_code >= 500).count()
+
+    response_times = (
+        db.query(ActivityLog.response_time_ms)
+        .filter(
+            func.date(ActivityLog.created_at) >= start_date,
+            ActivityLog.action == "api_request",
+            ActivityLog.response_time_ms.isnot(None),
+        )
+        .order_by(ActivityLog.response_time_ms)
+        .all()
+    )
+    times = [r.response_time_ms for r in response_times]
+
+    p50 = times[len(times) // 2] if times else 0
+    p95 = times[int(len(times) * 0.95)] if times else 0
+    p99 = times[int(len(times) * 0.99)] if times else 0
+    avg_time = sum(times) / len(times) if times else 0
+
+    slowest = (
+        db.query(
+            ActivityLog.endpoint,
+            func.avg(ActivityLog.response_time_ms).label("avg_ms"),
+            func.count(ActivityLog.id).label("count"),
+        )
+        .filter(
+            func.date(ActivityLog.created_at) >= start_date,
+            ActivityLog.action == "api_request",
+            ActivityLog.response_time_ms.isnot(None),
+        )
+        .group_by(ActivityLog.endpoint)
+        .order_by(func.avg(ActivityLog.response_time_ms).desc())
+        .limit(10)
+        .all()
+    )
+
+    most_hit = (
+        db.query(
+            ActivityLog.endpoint,
+            func.count(ActivityLog.id).label("count"),
+            func.avg(ActivityLog.response_time_ms).label("avg_ms"),
+        )
+        .filter(
+            func.date(ActivityLog.created_at) >= start_date,
+            ActivityLog.action == "api_request",
+        )
+        .group_by(ActivityLog.endpoint)
+        .order_by(func.count(ActivityLog.id).desc())
+        .limit(10)
+        .all()
+    )
+
+    daily_perf = (
+        db.query(
+            func.date(ActivityLog.created_at).label("day"),
+            func.count(ActivityLog.id).label("total"),
+            func.count(case((ActivityLog.status_code >= 400, 1))).label("errors"),
+        )
+        .filter(
+            func.date(ActivityLog.created_at) >= start_date,
+            ActivityLog.action == "api_request",
+        )
+        .group_by(func.date(ActivityLog.created_at))
+        .order_by(func.date(ActivityLog.created_at))
+        .all()
+    )
+
+    return {
+        "summary": {
+            "total_requests": total_requests,
+            "errors_4xx": errors_4xx,
+            "errors_5xx": errors_5xx,
+            "error_rate": round((errors_4xx + errors_5xx) / total_requests * 100, 2) if total_requests > 0 else 0,
+            "avg_response_ms": int(avg_time),
+            "p50_ms": p50,
+            "p95_ms": p95,
+            "p99_ms": p99,
+        },
+        "slowest_endpoints": [
+            {"endpoint": r.endpoint, "avg_ms": int(r.avg_ms), "count": r.count}
+            for r in slowest
+        ],
+        "most_hit_endpoints": [
+            {"endpoint": r.endpoint, "count": r.count, "avg_ms": int(r.avg_ms) if r.avg_ms else 0}
+            for r in most_hit
+        ],
+        "daily": [
+            {"date": str(r.day), "total": r.total, "errors": r.errors}
+            for r in daily_perf
+        ],
+    }
+
+
+# --------------- Activity Feed ---------------
+
+@router.get("/activity/recent")
+def get_recent_activity(
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """Recent activity feed — latest actions across the platform."""
+    recent_predictions = (
+        db.query(Prediction)
+        .order_by(Prediction.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    feed = []
+    for p in recent_predictions:
+        user = db.query(User).filter(User.id == p.user_id).first()
+        market = db.query(Market).filter(Market.id == p.market_id).first()
+        feed.append({
+            "type": "prediction",
+            "user": user.username if user else "unknown",
+            "action": f"predijo {p.probability}% en",
+            "target": market.title if market else "mercado desconocido",
+            "points": p.points_wagered,
+            "timestamp": p.created_at.isoformat() if p.created_at else None,
+        })
+
+    feed.sort(key=lambda x: x["timestamp"] or "", reverse=True)
+    return feed[:limit]

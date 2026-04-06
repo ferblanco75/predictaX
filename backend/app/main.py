@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.config import settings
 from app.routers import auth, markets, predictions, users, admin
 from app.schemas.common import HealthResponse
+from app.core.tracking import log_activity
 import logging
 
 # Configure logging
@@ -26,6 +29,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request tracking middleware
+class TrackingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start = time.time()
+        response = await call_next(request)
+        elapsed_ms = int((time.time() - start) * 1000)
+
+        # Only track API calls, skip health checks and static files
+        path = request.url.path
+        if path.startswith("/api/") and path != "/api/health" and not path.startswith("/api/docs"):
+            log_activity(
+                action="api_request",
+                endpoint=f"{request.method} {path}",
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent", "")[:500],
+                response_time_ms=elapsed_ms,
+                status_code=response.status_code,
+            )
+        return response
+
+app.add_middleware(TrackingMiddleware)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])

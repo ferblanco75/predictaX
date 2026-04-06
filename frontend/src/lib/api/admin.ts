@@ -38,3 +38,27 @@ export async function getAIUsageSummary(token: string) {
 export async function getAIUsageHistory(token: string, days = 30) {
   return adminFetch(`/ai/usage/history?days=${days}`, token);
 }
+
+export async function getTopActiveUsers(token: string, days = 30, limit = 10) {
+  return adminFetch(`/metrics/users/top-active?days=${days}&limit=${limit}`, token);
+}
+
+export async function getInactiveUsers(token: string, days = 30) {
+  return adminFetch(`/metrics/users/inactive?days=${days}`, token);
+}
+
+export async function getUserEngagement(token: string, days = 30) {
+  return adminFetch(`/metrics/users/engagement?days=${days}`, token);
+}
+
+export async function getCategoryInterest(token: string, days = 30) {
+  return adminFetch(`/metrics/categories/interest?days=${days}`, token);
+}
+
+export async function getSitePerformance(token: string, days = 7) {
+  return adminFetch(`/metrics/performance?days=${days}`, token);
+}
+
+export async function getRecentActivity(token: string, limit = 20) {
+  return adminFetch(`/activity/recent?limit=${limit}`, token);
+}
