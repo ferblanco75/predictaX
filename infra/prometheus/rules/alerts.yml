@@ -1,0 +1,79 @@
+groups:
+  - name: predictax_alerts
+    interval: 30s
+    rules:
+      # Backend Health
+      - alert: BackendDown
+        expr: up{job="predictax-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PredictaX backend is down"
+          description: "Backend has been unreachable for more than 1 minute"
+
+      # High Error Rate (5xx)
+      - alert: HighErrorRate5xx
+        expr: |
+          (sum(rate(http_requests_total{job="predictax-backend",status=~"5.."}[5m]))
+          / sum(rate(http_requests_total{job="predictax-backend"}[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "High 5xx error rate on backend"
+          description: "More than 5% of requests are returning 5xx errors in the last 5 minutes"
+
+      # High Latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="predictax-backend"}[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: high
+        annotations:
+          summary: "High p95 latency on backend"
+          description: "p95 latency is above 2 seconds"
+
+      # PostgreSQL Down
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+
+      # Redis Down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: high
+        annotations:
+          summary: "Redis is down"
+
+      # High Memory Usage (host)
+      - alert: HighMemoryUsage
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+          / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on host"
+          description: "Host memory usage is above 85%"
+
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space is low"
+          description: "Less than 10% disk space available"

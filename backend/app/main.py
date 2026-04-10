@@ -8,6 +8,12 @@ from app.schemas.common import HealthResponse
 from app.core.tracking import log_activity
 import logging
 
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    PROMETHEUS_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,6 +57,12 @@ class TrackingMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(TrackingMiddleware)
+
+# Prometheus metrics at /api/metrics
+if PROMETHEUS_AVAILABLE:
+    Instrumentator(
+        excluded_handlers=["/api/metrics", "/api/docs", "/api/redoc"],
+    ).instrument(app).expose(app, endpoint="/api/metrics", include_in_schema=False)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])

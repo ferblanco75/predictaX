@@ -75,6 +75,104 @@ services:
       - backend
     restart: unless-stopped
 
+  # ==================== OBSERVABILITY STACK ====================
+
+  # Prometheus — metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: predictax-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/rules:/etc/prometheus/rules
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  # Grafana — dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: predictax-grafana
+    ports:
+      - "${GRAFANA_PORT:-3002}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Alertmanager — alert routing
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: predictax-alertmanager
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+
+  # Node Exporter — host metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: predictax-node-exporter
+    ports:
+      - "${NODE_EXPORTER_PORT:-9100}:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+
+  # PostgreSQL Exporter — DB metrics
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: predictax-postgres-exporter
+    ports:
+      - "${POSTGRES_EXPORTER_PORT:-9187}:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://predictax:predictax_dev@postgres:5432/predictax?sslmode=disable"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Redis Exporter — Redis metrics
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: predictax-redis-exporter
+    ports:
+      - "${REDIS_EXPORTER_PORT:-9121}:9121"
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
