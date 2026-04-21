@@ -34,6 +34,7 @@ def seed_users(db: Session) -> list[User]:
             hashed_password=get_password_hash("admin1234"),
             points=5000.0,
             is_active=True,
+            role="admin",
         ),
         User(
             email="demo@predictax.com",
