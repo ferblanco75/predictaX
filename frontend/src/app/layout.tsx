@@ -4,6 +4,7 @@ import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
@@ -81,6 +82,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <QueryProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -102,6 +104,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
         </ThemeProvider>
+        </QueryProvider>
         <GoogleAnalytics />
         <Analytics />
       </body>
