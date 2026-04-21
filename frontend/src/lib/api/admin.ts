@@ -10,6 +10,27 @@ async function adminFetch(endpoint: string, token: string) {
   return res.json();
 }
 
+async function adminMutate(
+  endpoint: string,
+  token: string,
+  method: 'POST' | 'PATCH' | 'DELETE' = 'POST',
+  body?: unknown,
+) {
+  const res = await fetch(`${API_URL}/admin${endpoint}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: `Error ${res.status}` }));
+    throw new Error(error.detail || `Admin API error: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function getOverview(token: string) {
   return adminFetch('/metrics/overview', token);
 }
@@ -61,4 +82,36 @@ export async function getSitePerformance(token: string, days = 7) {
 
 export async function getRecentActivity(token: string, limit = 20) {
   return adminFetch(`/activity/recent?limit=${limit}`, token);
+}
+
+// --------------- User Actions ---------------
+
+export async function toggleUserActive(token: string, userId: string) {
+  return adminMutate(`/users/${userId}/toggle-active`, token, 'PATCH');
+}
+
+export async function updateUserRole(token: string, userId: string, role: 'user' | 'admin') {
+  return adminMutate(`/users/${userId}/role`, token, 'PATCH', { role });
+}
+
+export async function updateUserPoints(token: string, userId: string, points: number) {
+  return adminMutate(`/users/${userId}/points`, token, 'PATCH', { points });
+}
+
+// --------------- Market Actions ---------------
+
+export async function resolveMarket(token: string, marketId: string, resolutionValue: boolean) {
+  return adminMutate(`/markets/${marketId}/resolve`, token, 'POST', { resolution_value: resolutionValue });
+}
+
+export async function cancelMarket(token: string, marketId: string) {
+  return adminMutate(`/markets/${marketId}/cancel`, token, 'POST');
+}
+
+export async function editMarket(
+  token: string,
+  marketId: string,
+  data: { title?: string; description?: string; end_date?: string },
+) {
+  return adminMutate(`/markets/${marketId}`, token, 'PATCH', data);
 }

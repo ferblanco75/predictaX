@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
-import { getUsers, getTopActiveUsers, getInactiveUsers, getUserEngagement } from '@/lib/api/admin';
-import { Search, Shield, User as UserIcon, Trophy, UserX, Clock } from 'lucide-react';
+import {
+  getUsers, getTopActiveUsers, getInactiveUsers, getUserEngagement,
+  toggleUserActive, updateUserRole, updateUserPoints,
+} from '@/lib/api/admin';
+import { Search, Shield, User as UserIcon, Trophy, UserX, Clock, MoreVertical, Ban, CheckCircle, ChevronUp, ChevronDown, Coins } from 'lucide-react';
 
 interface UserData {
   id: string; email: string; username: string; role: string;
@@ -27,6 +30,8 @@ interface Engagement {
 
 type Tab = 'all' | 'top' | 'inactive' | 'engagement';
 
+interface PointsModalState { open: boolean; userId: string; username: string; currentPoints: number }
+
 export default function AdminUsersPage() {
   const { user } = useAppStore();
   const [tab, setTab] = useState<Tab>('all');
@@ -37,6 +42,10 @@ export default function AdminUsersPage() {
   const [engagement, setEngagement] = useState<Engagement | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [pointsModal, setPointsModal] = useState<PointsModalState>({ open: false, userId: '', username: '', currentPoints: 0 });
+  const [pointsInput, setPointsInput] = useState('');
 
   useEffect(() => {
     if (!user?.token) return;
@@ -64,6 +73,48 @@ export default function AdminUsersPage() {
       .catch(() => {});
   };
 
+  const handleToggleActive = async (userId: string) => {
+    if (!user?.token) return;
+    setActionLoading(userId);
+    setOpenMenu(null);
+    try {
+      const updated = await toggleUserActive(user.token, userId);
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_active: updated.is_active } : u));
+    } catch { /* silent */ }
+    finally { setActionLoading(null); }
+  };
+
+  const handleToggleRole = async (userId: string, currentRole: string) => {
+    if (!user?.token) return;
+    setActionLoading(userId);
+    setOpenMenu(null);
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    try {
+      const updated = await updateUserRole(user.token, userId, newRole);
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: updated.role } : u));
+    } catch { /* silent */ }
+    finally { setActionLoading(null); }
+  };
+
+  const openPointsModal = (u: UserData) => {
+    setPointsInput(String(u.points));
+    setPointsModal({ open: true, userId: u.id, username: u.username, currentPoints: u.points });
+    setOpenMenu(null);
+  };
+
+  const handleSavePoints = async () => {
+    if (!user?.token) return;
+    const newPoints = parseFloat(pointsInput);
+    if (isNaN(newPoints) || newPoints < 0) return;
+    setActionLoading(pointsModal.userId);
+    try {
+      const updated = await updateUserPoints(user.token, pointsModal.userId, newPoints);
+      setUsers((prev) => prev.map((u) => u.id === pointsModal.userId ? { ...u, points: updated.points } : u));
+      setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
+    } catch { /* silent */ }
+    finally { setActionLoading(null); }
+  };
+
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'all', label: 'Todos', icon: UserIcon },
     { id: 'top', label: 'Top Activos', icon: Trophy },
@@ -72,7 +123,7 @@ export default function AdminUsersPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" onClick={() => setOpenMenu(null)}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Usuarios</h1>
@@ -120,23 +171,27 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Rol</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Registro</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {loading ? Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 6 }).map((_, j) => (
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" /></td>
                     ))}
                   </tr>
                 )) : users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
-                    <td className="px-4 py-3 font-medium flex items-center gap-2">
-                      {u.role === 'admin' ? <Shield className="h-4 w-4 text-amber-500" /> : <UserIcon className="h-4 w-4 text-gray-400" />}
-                      {u.username}
+                  <tr key={u.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!u.is_active ? 'opacity-50' : ''}`}>
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex items-center gap-2">
+                        {u.role === 'admin' ? <Shield className="h-4 w-4 text-amber-500" /> : <UserIcon className="h-4 w-4 text-gray-400" />}
+                        {u.username}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{u.email}</td>
                     <td className="px-4 py-3">
@@ -146,9 +201,57 @@ export default function AdminUsersPage() {
                           : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                       }`}>{u.role}</span>
                     </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.is_active
+                          ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+                      }`}>{u.is_active ? 'Activo' : 'Baneado'}</span>
+                    </td>
                     <td className="px-4 py-3 text-right font-medium">{u.points.toLocaleString()}</td>
                     <td className="px-4 py-3 text-right">{u.predictions_count}</td>
                     <td className="px-4 py-3 text-gray-500">{new Date(u.created_at).toLocaleDateString('es-AR')}</td>
+                    <td className="px-4 py-3 relative">
+                      <button
+                        disabled={actionLoading === u.id}
+                        onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === u.id ? null : u.id); }}
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                      >
+                        {actionLoading === u.id
+                          ? <span className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
+                          : <MoreVertical className="h-4 w-4 text-gray-400" />}
+                      </button>
+                      {openMenu === u.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
+                        >
+                          <button
+                            onClick={() => handleToggleActive(u.id)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            {u.is_active
+                              ? <><Ban className="h-4 w-4 text-red-500" /><span className="text-red-600">Banear usuario</span></>
+                              : <><CheckCircle className="h-4 w-4 text-green-500" /><span className="text-green-600">Desbanear usuario</span></>}
+                          </button>
+                          <button
+                            onClick={() => handleToggleRole(u.id, u.role)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            {u.role === 'admin'
+                              ? <><ChevronDown className="h-4 w-4 text-gray-500" /><span>Quitar rol admin</span></>
+                              : <><ChevronUp className="h-4 w-4 text-amber-500" /><span>Hacer admin</span></>}
+                          </button>
+                          <button
+                            onClick={() => openPointsModal(u)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <Coins className="h-4 w-4 text-blue-500" />
+                            <span>Ajustar puntos</span>
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -233,7 +336,6 @@ export default function AdminUsersPage() {
       {/* Engagement Tab */}
       {tab === 'engagement' && engagement && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* By Hour */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <h3 className="text-sm font-medium mb-4">Actividad por Hora del Día</h3>
             <div className="flex items-end gap-0.5 h-40">
@@ -244,13 +346,8 @@ export default function AdminUsersPage() {
                 const height = (count / maxCount) * 100;
                 return (
                   <div key={h} className="flex-1 flex flex-col items-center gap-1 group relative">
-                    <div
-                      className="w-full bg-blue-500 rounded-t hover:bg-blue-400 transition-colors min-h-[1px]"
-                      style={{ height: `${height}%` }}
-                    />
-                    {h % 3 === 0 && (
-                      <span className="text-[9px] text-gray-400">{h}h</span>
-                    )}
+                    <div className="w-full bg-blue-500 rounded-t hover:bg-blue-400 transition-colors min-h-[1px]" style={{ height: `${height}%` }} />
+                    {h % 3 === 0 && <span className="text-[9px] text-gray-400">{h}h</span>}
                     <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                       {h}:00 — {count} acciones
                     </div>
@@ -259,8 +356,6 @@ export default function AdminUsersPage() {
               })}
             </div>
           </div>
-
-          {/* By Day of Week */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <h3 className="text-sm font-medium mb-4">Actividad por Día de la Semana</h3>
             <div className="space-y-3">
@@ -280,6 +375,39 @@ export default function AdminUsersPage() {
                 );
               })}
               {engagement.by_day_of_week.length === 0 && <p className="text-gray-400 text-sm text-center py-4">Sin datos de engagement aún</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Points Modal */}
+      {pointsModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })}>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-80 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold mb-1">Ajustar puntos</h3>
+            <p className="text-sm text-gray-500 mb-4">{pointsModal.username} — actual: {pointsModal.currentPoints.toLocaleString()}</p>
+            <input
+              type="number"
+              min={0}
+              value={pointsInput}
+              onChange={(e) => setPointsInput(e.target.value)}
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSavePoints}
+                disabled={actionLoading === pointsModal.userId}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {actionLoading === pointsModal.userId ? 'Guardando...' : 'Guardar'}
+              </button>
             </div>
           </div>
         </div>

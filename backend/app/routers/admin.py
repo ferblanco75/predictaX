@@ -4,7 +4,9 @@ All endpoints require admin role.
 """
 
 from datetime import date, datetime, timedelta
-from fastapi import APIRouter, Depends, Query
+from typing import Optional
+from fastapi import APIRouter, Depends, Query, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import func, case, and_, distinct
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -15,6 +17,24 @@ from app.models.prediction import Prediction
 from app.models.ai_usage_log import AIUsageLog
 from app.models.activity_log import ActivityLog
 from app.services import ai_service
+
+
+# --------------- Request schemas ---------------
+
+class UserRoleUpdate(BaseModel):
+    role: str  # 'user' or 'admin'
+
+class UserPointsUpdate(BaseModel):
+    points: float
+    reason: Optional[str] = None
+
+class MarketResolveRequest(BaseModel):
+    resolution_value: bool  # True = YES, False = NO
+
+class MarketEditRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    end_date: Optional[datetime] = None
 
 router = APIRouter(
     prefix="/api/admin",
@@ -687,3 +707,102 @@ def get_recent_activity(
 
     feed.sort(key=lambda x: x["timestamp"] or "", reverse=True)
     return feed[:limit]
+
+
+# --------------- User Management Actions ---------------
+
+@router.patch("/users/{user_id}/toggle-active")
+def toggle_user_active(user_id: str, db: Session = Depends(get_db)):
+    """Ban or unban a user by toggling is_active."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user.is_active = not user.is_active
+    db.commit()
+    db.refresh(user)
+    return {"id": str(user.id), "is_active": user.is_active}
+
+
+@router.patch("/users/{user_id}/role")
+def update_user_role(user_id: str, body: UserRoleUpdate, db: Session = Depends(get_db)):
+    """Change a user's role (user / admin)."""
+    if body.role not in ("user", "admin"):
+        raise HTTPException(status_code=400, detail="Rol inválido. Use 'user' o 'admin'")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user.role = body.role
+    db.commit()
+    db.refresh(user)
+    return {"id": str(user.id), "role": user.role}
+
+
+@router.patch("/users/{user_id}/points")
+def update_user_points(user_id: str, body: UserPointsUpdate, db: Session = Depends(get_db)):
+    """Adjust a user's points balance."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user.points = body.points
+    db.commit()
+    db.refresh(user)
+    return {"id": str(user.id), "points": user.points}
+
+
+# --------------- Market Management Actions ---------------
+
+@router.post("/markets/{market_id}/resolve")
+def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Depends(get_db)):
+    """Resolve a market with YES (True) or NO (False)."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    if market.status != MarketStatus.ACTIVE:
+        raise HTTPException(status_code=400, detail="Solo se pueden resolver mercados activos")
+    market.status = MarketStatus.RESOLVED
+    market.resolution_value = body.resolution_value
+    market.resolved_at = datetime.utcnow()
+    db.commit()
+    db.refresh(market)
+    return {
+        "id": str(market.id),
+        "status": market.status,
+        "resolution_value": market.resolution_value,
+        "resolved_at": market.resolved_at.isoformat(),
+    }
+
+
+@router.post("/markets/{market_id}/cancel")
+def cancel_market(market_id: str, db: Session = Depends(get_db)):
+    """Cancel an active market."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    if market.status != MarketStatus.ACTIVE:
+        raise HTTPException(status_code=400, detail="Solo se pueden cancelar mercados activos")
+    market.status = MarketStatus.CANCELLED
+    db.commit()
+    db.refresh(market)
+    return {"id": str(market.id), "status": market.status}
+
+
+@router.patch("/markets/{market_id}")
+def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(get_db)):
+    """Edit market title, description or end date."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    if body.title is not None:
+        market.title = body.title
+    if body.description is not None:
+        market.description = body.description
+    if body.end_date is not None:
+        market.end_date = body.end_date
+    db.commit()
+    db.refresh(market)
+    return {
+        "id": str(market.id),
+        "title": market.title,
+        "description": market.description,
+        "end_date": market.end_date.isoformat(),
+    }
