@@ -4,7 +4,6 @@ Request tracking middleware and activity logging utilities.
 
 import json
 import logging
-import time
 from typing import Optional
 
 from app.core.database import SessionLocal

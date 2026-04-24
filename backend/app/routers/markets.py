@@ -1,9 +1,11 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+
 from app.core.database import get_db
-from app.schemas.market import MarketResponse, MarketHistoryPoint
-from app.services import market_service, ai_service
+from app.schemas.market import MarketHistoryPoint, MarketResponse
+from app.services import ai_service, market_service
 
 router = APIRouter()
 

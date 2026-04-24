@@ -1,14 +1,12 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from unittest.mock import patch, MagicMock
 
-from app.main import app
 from app.core.database import Base, get_db
-
-# Use a separate test database — falls back to SQLite for CI without PostgreSQL
-import os
+from app.main import app
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -134,8 +132,9 @@ def admin_headers(admin_token):
 @pytest.fixture()
 def sample_market(db):
     """Create a sample market in the DB."""
+    from datetime import datetime, timedelta, timezone
+
     from app.models.market import Market, MarketCategory, MarketStatus, MarketType
-    from datetime import datetime, timezone, timedelta
 
     market = Market(
         title="Test Market: Will BTC hit 100k?",
@@ -157,8 +156,9 @@ def sample_market(db):
 @pytest.fixture()
 def sample_markets(db):
     """Create multiple sample markets."""
+    from datetime import datetime, timedelta, timezone
+
     from app.models.market import Market, MarketCategory, MarketStatus, MarketType
-    from datetime import datetime, timezone, timedelta
 
     markets = []
     data = [

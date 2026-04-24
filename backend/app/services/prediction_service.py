@@ -1,10 +1,11 @@
-from sqlalchemy.orm import Session
 from typing import List
+
+from sqlalchemy.orm import Session
+
+from app.core.exceptions import InsufficientPointsException
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.models.market import Market
 from app.schemas.prediction import PredictionCreate
-from app.core.exceptions import InsufficientPointsException, NotFoundException
 from app.services import market_service, snapshot_service
 
 

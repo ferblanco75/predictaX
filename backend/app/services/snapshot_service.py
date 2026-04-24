@@ -1,5 +1,7 @@
-from sqlalchemy.orm import Session
 from datetime import datetime
+
+from sqlalchemy.orm import Session
+
 from app.models.market_snapshot import MarketSnapshot
 
 

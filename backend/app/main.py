@@ -1,12 +1,14 @@
+import logging
 import time
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.config import settings
-from app.routers import auth, markets, predictions, users, admin
-from app.schemas.common import HealthResponse
 from app.core.tracking import log_activity
-import logging
+from app.routers import admin, auth, markets, predictions, users
+from app.schemas.common import HealthResponse
 
 try:
     from prometheus_fastapi_instrumentator import Instrumentator

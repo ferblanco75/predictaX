@@ -5,19 +5,20 @@ All endpoints require admin role.
 
 from datetime import date, datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import func, case, and_, distinct
+from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.dependencies import get_current_admin
-from app.models.user import User
-from app.models.market import Market, MarketStatus, MarketCategory
-from app.models.prediction import Prediction
-from app.models.ai_usage_log import AIUsageLog
 from app.models.activity_log import ActivityLog
+from app.models.ai_usage_log import AIUsageLog
+from app.models.market import Market, MarketCategory, MarketStatus
+from app.models.prediction import Prediction
+from app.models.user import User
 from app.services import ai_service
-
 
 # --------------- Request schemas ---------------
 
@@ -97,17 +98,17 @@ def get_overview(db: Session = Depends(get_db)):
     # AI
     ai_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
     ).scalar()
     ai_cache_hits_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == True,
+        AIUsageLog.cache_hit.is_(True),
     ).scalar()
     ai_total_today = ai_today + ai_cache_hits_today
     cache_hit_rate = round(ai_cache_hits_today / ai_total_today, 2) if ai_total_today > 0 else 0
     avg_latency = db.query(func.avg(AIUsageLog.response_time_ms)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
         AIUsageLog.status == "success",
     ).scalar()
     quota_used = ai_service.get_daily_usage_count()
@@ -228,7 +229,10 @@ def get_user_detail(user_id: str, db: Session = Depends(get_db)):
 
 @router.get("/metrics/markets/ranking")
 def get_markets_ranking(
-    sort: str = Query("most_active", description="most_active, least_active, most_volume, most_participants"),
+    sort: str = Query(
+        "most_active",
+        description="most_active, least_active, most_volume, most_participants",
+    ),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
@@ -301,30 +305,30 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     # Today stats
     today_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
     ).scalar()
     today_cache_hits = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == True,
+        AIUsageLog.cache_hit.is_(True),
     ).scalar()
     today_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
     ).scalar()
     today_avg_latency = db.query(func.avg(AIUsageLog.response_time_ms)).filter(
         func.date(AIUsageLog.created_at) == today,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
         AIUsageLog.status == "success",
     ).scalar()
 
     # Week stats
     week_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
     ).scalar()
     week_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
-        AIUsageLog.cache_hit == False,
+        AIUsageLog.cache_hit.is_(False),
     ).scalar()
 
     # Errors
@@ -393,10 +397,10 @@ def get_ai_usage_history(
     daily = (
         db.query(
             func.date(AIUsageLog.created_at).label("day"),
-            func.count(case((AIUsageLog.cache_hit == False, 1))).label("requests"),
-            func.count(case((AIUsageLog.cache_hit == True, 1))).label("cache_hits"),
+            func.count(case((AIUsageLog.cache_hit.is_(False), 1))).label("requests"),
+            func.count(case((AIUsageLog.cache_hit.is_(True), 1))).label("cache_hits"),
             func.coalesce(func.sum(
-                case((AIUsageLog.cache_hit == False, AIUsageLog.total_tokens), else_=0)
+                case((AIUsageLog.cache_hit.is_(False), AIUsageLog.total_tokens), else_=0)
             ), 0).label("tokens"),
         )
         .filter(func.date(AIUsageLog.created_at) >= start_date)
@@ -656,7 +660,11 @@ def get_site_performance(
             "total_requests": total_requests,
             "errors_4xx": errors_4xx,
             "errors_5xx": errors_5xx,
-            "error_rate": round((errors_4xx + errors_5xx) / total_requests * 100, 2) if total_requests > 0 else 0,
+            "error_rate": (
+                round((errors_4xx + errors_5xx) / total_requests * 100, 2)
+                if total_requests > 0
+                else 0
+            ),
             "avg_response_ms": int(avg_time),
             "p50_ms": p50,
             "p95_ms": p95,
