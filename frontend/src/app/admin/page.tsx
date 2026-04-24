@@ -2,40 +2,84 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
-import { getOverview, getTopActiveUsers, getRecentActivity, getCategoryInterest } from '@/lib/api/admin';
 import {
-  Users, TrendingUp, BarChart3, Bot, Activity, Zap,
-  Trophy, Clock, ArrowUpRight, ArrowDownRight, Minus,
+  getOverview,
+  getTopActiveUsers,
+  getRecentActivity,
+  getCategoryInterest,
+} from '@/lib/api/admin';
+import {
+  Users,
+  TrendingUp,
+  BarChart3,
+  Bot,
+  Activity,
+  Zap,
+  Trophy,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from 'lucide-react';
 
 interface Overview {
   users: { total: number; new_today: number; new_this_week: number; new_this_month: number };
   markets: { total: number; active: number; resolved: number; by_category: Record<string, number> };
-  predictions: { total: number; today: number; this_week: number; volume_total: number; volume_today: number };
+  predictions: {
+    total: number;
+    today: number;
+    this_week: number;
+    volume_total: number;
+    volume_today: number;
+  };
   ai: {
-    requests_today: number; cache_hits_today: number; cache_hit_rate: number;
-    avg_latency_ms: number; quota_used: number; quota_limit: number; quota_remaining: number;
+    requests_today: number;
+    cache_hits_today: number;
+    cache_hit_rate: number;
+    avg_latency_ms: number;
+    quota_used: number;
+    quota_limit: number;
+    quota_remaining: number;
   };
 }
 
 interface TopUser {
-  id: string; username: string; email: string;
-  predictions_count: number; total_wagered: number; points: number;
+  id: string;
+  username: string;
+  email: string;
+  predictions_count: number;
+  total_wagered: number;
+  points: number;
 }
 
 interface ActivityItem {
-  type: string; user: string; action: string;
-  target: string; points: number; timestamp: string;
+  type: string;
+  user: string;
+  action: string;
+  target: string;
+  points: number;
+  timestamp: string;
 }
 
 interface CategoryData {
-  category: string; predictions_count: number; volume: number; unique_users: number;
+  category: string;
+  predictions_count: number;
+  volume: number;
+  unique_users: number;
 }
 
 function KPICard({
-  title, value, subtitle, icon: Icon, color,
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color,
 }: {
-  title: string; value: string | number; subtitle?: string; icon: React.ElementType; color: string;
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ElementType;
+  color: string;
 }) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
@@ -58,10 +102,15 @@ function QuotaBar({ used, limit }: { used: number; limit: number }) {
     <div>
       <div className="flex justify-between text-sm mb-1">
         <span className="text-gray-500">Gemini Quota</span>
-        <span className="font-medium">{used}/{limit} RPD</span>
+        <span className="font-medium">
+          {used}/{limit} RPD
+        </span>
       </div>
       <div className="h-2.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${percent}%` }} />
+        <div
+          className={`h-full rounded-full transition-all ${color}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );
@@ -90,7 +139,10 @@ function CategoryBreakdown({ data }: { data: Record<string, number> }) {
               <span className="text-sm font-medium">{count}</span>
             </div>
             <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full ${colors[cat] || 'bg-gray-400'}`} style={{ width: `${pct}%` }} />
+              <div
+                className={`h-full rounded-full ${colors[cat] || 'bg-gray-400'}`}
+                style={{ width: `${pct}%` }}
+              />
             </div>
           </div>
         );
@@ -138,13 +190,12 @@ export default function AdminDashboard() {
 
     const interval = setInterval(() => {
       if (!user?.token) return;
-      Promise.all([
-        getOverview(user.token),
-        getRecentActivity(user.token, 10),
-      ]).then(([overview, feed]) => {
-        setData(overview);
-        setActivity(feed);
-      }).catch(() => {});
+      Promise.all([getOverview(user.token), getRecentActivity(user.token, 10)])
+        .then(([overview, feed]) => {
+          setData(overview);
+          setActivity(feed);
+        })
+        .catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
   }, [user?.token]);
@@ -291,12 +342,17 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               {topUsers.map((u, i) => (
                 <div key={u.id} className="flex items-center gap-3">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    i === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' :
-                    i === 1 ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' :
-                    i === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400' :
-                    'bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500'
-                  }`}>
+                  <span
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      i === 0
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
+                        : i === 1
+                          ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                          : i === 2
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400'
+                            : 'bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500'
+                    }`}
+                  >
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -330,7 +386,9 @@ export default function AdminDashboard() {
                     <div className="text-sm">
                       <span className="font-medium">{a.user}</span>{' '}
                       <span className="text-gray-500">{a.action}</span>{' '}
-                      <span className="font-medium truncate">{a.target.length > 40 ? a.target.slice(0, 40) + '...' : a.target}</span>
+                      <span className="font-medium truncate">
+                        {a.target.length > 40 ? a.target.slice(0, 40) + '...' : a.target}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                       <span>{a.points} pts</span>

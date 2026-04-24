@@ -11,11 +11,7 @@ export function ChartSkeleton({ height = 'h-80', showAxes = true }: ChartSkeleto
       {/* Bars / lines area */}
       <div className="flex-1 flex items-end gap-3 px-4">
         {[60, 80, 50, 90, 70, 85, 65, 75].map((h, i) => (
-          <Skeleton
-            key={i}
-            className="flex-1 rounded-t-sm"
-            style={{ height: `${h}%` }}
-          />
+          <Skeleton key={i} className="flex-1 rounded-t-sm" style={{ height: `${h}%` }} />
         ))}
       </div>
       {/* X axis */}

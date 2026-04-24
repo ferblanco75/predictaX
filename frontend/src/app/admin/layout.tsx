@@ -36,6 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!isLoggedIn || !user || user.role !== 'admin') {
       router.push('/auth');
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAuthorized(true);
     }
   }, [isLoggedIn, user, router]);
@@ -46,7 +47,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="text-center">
           <Shield className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h1 className="text-xl font-bold mb-2">Acceso denegado</h1>
-          <p className="text-gray-500 mb-4">Necesitás ser administrador para acceder a este panel.</p>
+          <p className="text-gray-500 mb-4">
+            Necesitás ser administrador para acceder a este panel.
+          </p>
           <Link href="/" className="text-blue-500 hover:underline">
             Volver al inicio
           </Link>
@@ -98,15 +101,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Volver al sitio
           </Link>
           <button
-            onClick={() => { logout(); router.push('/'); }}
+            onClick={() => {
+              logout();
+              router.push('/');
+            }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 w-full"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
           </button>
-          <div className="px-3 py-2 text-xs text-gray-400">
-            {user?.email}
-          </div>
+          <div className="px-3 py-2 text-xs text-gray-400">{user?.email}</div>
         </div>
       </aside>
 

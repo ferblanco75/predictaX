@@ -4,7 +4,8 @@ export const categories: Category[] = [
   {
     id: 'economia',
     name: 'Economía',
-    description: 'Predicciones sobre indicadores económicos, mercados financieros y política económica de Argentina y la región',
+    description:
+      'Predicciones sobre indicadores económicos, mercados financieros y política económica de Argentina y la región',
     icon: 'TrendingUp',
     color: '#10b981', // green-500
     count: 8,

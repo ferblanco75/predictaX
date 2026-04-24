@@ -61,12 +61,8 @@ export function MarketList({ markets, isLoading = false, onClearFilters }: Marke
           <Filter className="h-12 w-12 mx-auto" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No se encontraron mercados</h3>
-        <p className="text-gray-600 mb-4">
-          Intenta ajustar tus filtros para ver más resultados
-        </p>
-        {onClearFilters && (
-          <Button onClick={onClearFilters}>Limpiar filtros</Button>
-        )}
+        <p className="text-gray-600 mb-4">Intenta ajustar tus filtros para ver más resultados</p>
+        {onClearFilters && <Button onClick={onClearFilters}>Limpiar filtros</Button>}
       </CardContent>
     </Card>
   );

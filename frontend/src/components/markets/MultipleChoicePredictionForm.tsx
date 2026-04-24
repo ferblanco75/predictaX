@@ -102,9 +102,7 @@ export function MultipleChoicePredictionForm({
             <div className="flex items-center space-x-2">
               <span
                 className={`text-lg font-bold ${
-                  Math.abs(totalProbability - 100) < 0.5
-                    ? 'text-green-600'
-                    : 'text-orange-600'
+                  Math.abs(totalProbability - 100) < 0.5 ? 'text-green-600' : 'text-orange-600'
                 }`}
               >
                 {totalProbability.toFixed(1)}%
@@ -132,9 +130,7 @@ export function MultipleChoicePredictionForm({
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <label className="text-sm font-medium truncate">
-                      {option.label}
-                    </label>
+                    <label className="text-sm font-medium truncate">{option.label}</label>
                   </div>
                   <span className="text-lg font-bold w-16 text-right" style={{ color }}>
                     {predictions[option.id]}%

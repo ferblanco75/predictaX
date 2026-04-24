@@ -3,24 +3,56 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
 import {
-  getUsers, getTopActiveUsers, getInactiveUsers, getUserEngagement,
-  toggleUserActive, updateUserRole, updateUserPoints,
+  getUsers,
+  getTopActiveUsers,
+  getInactiveUsers,
+  getUserEngagement,
+  toggleUserActive,
+  updateUserRole,
+  updateUserPoints,
 } from '@/lib/api/admin';
-import { Search, Shield, User as UserIcon, Trophy, UserX, Clock, MoreVertical, Ban, CheckCircle, ChevronUp, ChevronDown, Coins } from 'lucide-react';
+import {
+  Search,
+  Shield,
+  User as UserIcon,
+  Trophy,
+  UserX,
+  Clock,
+  MoreVertical,
+  Ban,
+  CheckCircle,
+  ChevronUp,
+  ChevronDown,
+  Coins,
+} from 'lucide-react';
 
 interface UserData {
-  id: string; email: string; username: string; role: string;
-  points: number; is_active: boolean; predictions_count: number; created_at: string;
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+  points: number;
+  is_active: boolean;
+  predictions_count: number;
+  created_at: string;
 }
 
 interface TopUser {
-  id: string; username: string; email: string;
-  predictions_count: number; total_wagered: number; points: number;
+  id: string;
+  username: string;
+  email: string;
+  predictions_count: number;
+  total_wagered: number;
+  points: number;
 }
 
 interface InactiveUser {
-  id: string; username: string; email: string;
-  points: number; total_predictions: number; created_at: string;
+  id: string;
+  username: string;
+  email: string;
+  points: number;
+  total_predictions: number;
+  created_at: string;
 }
 
 interface Engagement {
@@ -30,7 +62,12 @@ interface Engagement {
 
 type Tab = 'all' | 'top' | 'inactive' | 'engagement';
 
-interface PointsModalState { open: boolean; userId: string; username: string; currentPoints: number }
+interface PointsModalState {
+  open: boolean;
+  userId: string;
+  username: string;
+  currentPoints: number;
+}
 
 export default function AdminUsersPage() {
   const { user } = useAppStore();
@@ -44,7 +81,12 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [pointsModal, setPointsModal] = useState<PointsModalState>({ open: false, userId: '', username: '', currentPoints: 0 });
+  const [pointsModal, setPointsModal] = useState<PointsModalState>({
+    open: false,
+    userId: '',
+    username: '',
+    currentPoints: 0,
+  });
   const [pointsInput, setPointsInput] = useState('');
 
   useEffect(() => {
@@ -57,8 +99,10 @@ export default function AdminUsersPage() {
       getUserEngagement(user.token, 30),
     ])
       .then(([u, top, inactive, eng]) => {
-        setUsers(u.data); setTotal(u.total);
-        setTopUsers(top); setInactiveUsers(inactive);
+        setUsers(u.data);
+        setTotal(u.total);
+        setTopUsers(top);
+        setInactiveUsers(inactive);
         setEngagement(eng);
       })
       .catch(() => {})
@@ -69,7 +113,10 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!user?.token) return;
     getUsers(user.token, { search, limit: 50 })
-      .then((res) => { setUsers(res.data); setTotal(res.total); })
+      .then((res) => {
+        setUsers(res.data);
+        setTotal(res.total);
+      })
       .catch(() => {});
   };
 
@@ -79,9 +126,14 @@ export default function AdminUsersPage() {
     setOpenMenu(null);
     try {
       const updated = await toggleUserActive(user.token, userId);
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_active: updated.is_active } : u));
-    } catch { /* silent */ }
-    finally { setActionLoading(null); }
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, is_active: updated.is_active } : u))
+      );
+    } catch {
+      /* silent */
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleToggleRole = async (userId: string, currentRole: string) => {
@@ -91,9 +143,12 @@ export default function AdminUsersPage() {
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     try {
       const updated = await updateUserRole(user.token, userId, newRole);
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: updated.role } : u));
-    } catch { /* silent */ }
-    finally { setActionLoading(null); }
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
+    } catch {
+      /* silent */
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const openPointsModal = (u: UserData) => {
@@ -109,10 +164,15 @@ export default function AdminUsersPage() {
     setActionLoading(pointsModal.userId);
     try {
       const updated = await updateUserPoints(user.token, pointsModal.userId, newPoints);
-      setUsers((prev) => prev.map((u) => u.id === pointsModal.userId ? { ...u, points: updated.points } : u));
+      setUsers((prev) =>
+        prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
+      );
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
-    } catch { /* silent */ }
-    finally { setActionLoading(null); }
+    } catch {
+      /* silent */
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -179,81 +239,125 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" /></td>
-                    ))}
-                  </tr>
-                )) : users.map((u) => (
-                  <tr key={u.id} className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!u.is_active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 font-medium">
-                      <div className="flex items-center gap-2">
-                        {u.role === 'admin' ? <Shield className="h-4 w-4 text-amber-500" /> : <UserIcon className="h-4 w-4 text-gray-400" />}
-                        {u.username}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.role === 'admin'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                      }`}>{u.role}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.is_active
-                          ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
-                          : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
-                      }`}>{u.is_active ? 'Activo' : 'Baneado'}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">{u.points.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">{u.predictions_count}</td>
-                    <td className="px-4 py-3 text-gray-500">{new Date(u.created_at).toLocaleDateString('es-AR')}</td>
-                    <td className="px-4 py-3 relative">
-                      <button
-                        disabled={actionLoading === u.id}
-                        onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === u.id ? null : u.id); }}
-                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                {loading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                        {Array.from({ length: 8 }).map((_, j) => (
+                          <td key={j} className="px-4 py-3">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  : users.map((u) => (
+                      <tr
+                        key={u.id}
+                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!u.is_active ? 'opacity-50' : ''}`}
                       >
-                        {actionLoading === u.id
-                          ? <span className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
-                          : <MoreVertical className="h-4 w-4 text-gray-400" />}
-                      </button>
-                      {openMenu === u.id && (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
-                        >
-                          <button
-                            onClick={() => handleToggleActive(u.id)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        <td className="px-4 py-3 font-medium">
+                          <div className="flex items-center gap-2">
+                            {u.role === 'admin' ? (
+                              <Shield className="h-4 w-4 text-amber-500" />
+                            ) : (
+                              <UserIcon className="h-4 w-4 text-gray-400" />
+                            )}
+                            {u.username}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              u.role === 'admin'
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            }`}
                           >
-                            {u.is_active
-                              ? <><Ban className="h-4 w-4 text-red-500" /><span className="text-red-600">Banear usuario</span></>
-                              : <><CheckCircle className="h-4 w-4 text-green-500" /><span className="text-green-600">Desbanear usuario</span></>}
-                          </button>
-                          <button
-                            onClick={() => handleToggleRole(u.id, u.role)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              u.is_active
+                                ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
+                                : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+                            }`}
                           >
-                            {u.role === 'admin'
-                              ? <><ChevronDown className="h-4 w-4 text-gray-500" /><span>Quitar rol admin</span></>
-                              : <><ChevronUp className="h-4 w-4 text-amber-500" /><span>Hacer admin</span></>}
-                          </button>
+                            {u.is_active ? 'Activo' : 'Baneado'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">
+                          {u.points.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right">{u.predictions_count}</td>
+                        <td className="px-4 py-3 text-gray-500">
+                          {new Date(u.created_at).toLocaleDateString('es-AR')}
+                        </td>
+                        <td className="px-4 py-3 relative">
                           <button
-                            onClick={() => openPointsModal(u)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            disabled={actionLoading === u.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenu(openMenu === u.id ? null : u.id);
+                            }}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
                           >
-                            <Coins className="h-4 w-4 text-blue-500" />
-                            <span>Ajustar puntos</span>
+                            {actionLoading === u.id ? (
+                              <span className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
+                            )}
                           </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {openMenu === u.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
+                            >
+                              <button
+                                onClick={() => handleToggleActive(u.id)}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                {u.is_active ? (
+                                  <>
+                                    <Ban className="h-4 w-4 text-red-500" />
+                                    <span className="text-red-600">Banear usuario</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                    <span className="text-green-600">Desbanear usuario</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleToggleRole(u.id, u.role)}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                {u.role === 'admin' ? (
+                                  <>
+                                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                                    <span>Quitar rol admin</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronUp className="h-4 w-4 text-amber-500" />
+                                    <span>Hacer admin</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => openPointsModal(u)}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <Coins className="h-4 w-4 text-blue-500" />
+                                <span>Ajustar puntos</span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
@@ -279,11 +383,24 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {topUsers.map((u, i) => (
-                <tr key={u.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
+                <tr
+                  key={u.id}
+                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors"
+                >
                   <td className="px-4 py-3">
-                    <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${
-                      i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-gray-100 text-gray-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'text-gray-400'
-                    }`}>{i + 1}</span>
+                    <span
+                      className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${
+                        i === 0
+                          ? 'bg-amber-100 text-amber-700'
+                          : i === 1
+                            ? 'bg-gray-100 text-gray-600'
+                            : i === 2
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'text-gray-400'
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
                   </td>
                   <td className="px-4 py-3 font-medium">{u.username}</td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
@@ -294,7 +411,9 @@ export default function AdminUsersPage() {
               ))}
             </tbody>
           </table>
-          {topUsers.length === 0 && <p className="text-gray-400 text-center py-8">Sin actividad en los últimos 30 días</p>}
+          {topUsers.length === 0 && (
+            <p className="text-gray-400 text-center py-8">Sin actividad en los últimos 30 días</p>
+          )}
         </div>
       )}
 
@@ -311,25 +430,35 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones Total</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">
+                  Predicciones Total
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Registro</th>
               </tr>
             </thead>
             <tbody>
               {inactiveUsers.map((u) => (
-                <tr key={u.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors">
+                <tr
+                  key={u.id}
+                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors"
+                >
                   <td className="px-4 py-3 font-medium flex items-center gap-2">
-                    <UserX className="h-4 w-4 text-gray-300" />{u.username}
+                    <UserX className="h-4 w-4 text-gray-300" />
+                    {u.username}
                   </td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
                   <td className="px-4 py-3 text-right">{u.points.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">{u.total_predictions}</td>
-                  <td className="px-4 py-3 text-gray-500">{new Date(u.created_at).toLocaleDateString('es-AR')}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(u.created_at).toLocaleDateString('es-AR')}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {inactiveUsers.length === 0 && <p className="text-gray-400 text-center py-8">Todos los usuarios están activos</p>}
+          {inactiveUsers.length === 0 && (
+            <p className="text-gray-400 text-center py-8">Todos los usuarios están activos</p>
+          )}
         </div>
       )}
 
@@ -346,7 +475,10 @@ export default function AdminUsersPage() {
                 const height = (count / maxCount) * 100;
                 return (
                   <div key={h} className="flex-1 flex flex-col items-center gap-1 group relative">
-                    <div className="w-full bg-blue-500 rounded-t hover:bg-blue-400 transition-colors min-h-[1px]" style={{ height: `${height}%` }} />
+                    <div
+                      className="w-full bg-blue-500 rounded-t hover:bg-blue-400 transition-colors min-h-[1px]"
+                      style={{ height: `${height}%` }}
+                    />
                     {h % 3 === 0 && <span className="text-[9px] text-gray-400">{h}h</span>}
                     <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                       {h}:00 — {count} acciones
@@ -369,12 +501,19 @@ export default function AdminUsersPage() {
                       <span className="font-medium">{d.count}</span>
                     </div>
                     <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full bg-purple-500 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </div>
                 );
               })}
-              {engagement.by_day_of_week.length === 0 && <p className="text-gray-400 text-sm text-center py-4">Sin datos de engagement aún</p>}
+              {engagement.by_day_of_week.length === 0 && (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  Sin datos de engagement aún
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -382,10 +521,20 @@ export default function AdminUsersPage() {
 
       {/* Points Modal */}
       {pointsModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })}>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-80 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() =>
+            setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })
+          }
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-80 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="font-semibold mb-1">Ajustar puntos</h3>
-            <p className="text-sm text-gray-500 mb-4">{pointsModal.username} — actual: {pointsModal.currentPoints.toLocaleString()}</p>
+            <p className="text-sm text-gray-500 mb-4">
+              {pointsModal.username} — actual: {pointsModal.currentPoints.toLocaleString()}
+            </p>
             <input
               type="number"
               min={0}
@@ -396,7 +545,9 @@ export default function AdminUsersPage() {
             />
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() => setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })}
+                onClick={() =>
+                  setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 })
+                }
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar

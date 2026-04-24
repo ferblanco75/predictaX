@@ -72,7 +72,10 @@ export default function AdminPredictionsPage() {
                   style={{ height: `${(d.count / maxCount) * 100}%` }}
                 />
                 <span className="text-[9px] text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">
-                  {new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                  {new Date(d.date).toLocaleDateString('es-AR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                  })}
                 </span>
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">

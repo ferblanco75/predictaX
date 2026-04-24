@@ -18,19 +18,13 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!email || !nombre) {
-      return NextResponse.json(
-        { error: 'Email y nombre son requeridos' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email y nombre son requeridos' }, { status: 400 });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Email inválido' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
     // Validate nombre length
@@ -61,20 +55,14 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json({ success: true });
       }
-      return NextResponse.json(
-        { error: 'Servicio de email no configurado' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Servicio de email no configurado' }, { status: 500 });
     }
 
     // Check if recipient email is configured
     const recipientEmail = process.env.WAITLIST_EMAIL_TO;
     if (!recipientEmail) {
       console.error('[Waitlist] WAITLIST_EMAIL_TO not configured');
-      return NextResponse.json(
-        { error: 'Destinatario de email no configurado' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Destinatario de email no configurado' }, { status: 500 });
     }
 
     // Send email notification using Resend
@@ -116,10 +104,13 @@ export async function POST(request: NextRequest) {
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Fecha:</td>
-                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${new Date().toLocaleString('es-ES', {
-                    dateStyle: 'full',
-                    timeStyle: 'short'
-                  })}</td>
+                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${new Date().toLocaleString(
+                    'es-ES',
+                    {
+                      dateStyle: 'full',
+                      timeStyle: 'short',
+                    }
+                  )}</td>
                 </tr>
               </table>
 
@@ -141,10 +132,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[Waitlist] Resend error:', error);
-      return NextResponse.json(
-        { error: 'Error al enviar el email' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error al enviar el email' }, { status: 500 });
     }
 
     console.log('[Waitlist] Email sent successfully:', data);

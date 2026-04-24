@@ -49,7 +49,10 @@ export default function AuthPage() {
     const passwordError = validatePassword(password);
     if (emailError) errors.email = emailError;
     if (passwordError) errors.password = passwordError;
-    if (Object.keys(errors).length > 0) { setLoginErrors(errors); return; }
+    if (Object.keys(errors).length > 0) {
+      setLoginErrors(errors);
+      return;
+    }
 
     setLoginErrors({});
     loginMutation.mutate({ email, password });
@@ -73,7 +76,10 @@ export default function AuthPage() {
     if (passwordError) errors.password = passwordError;
     if (password !== passwordConfirm) errors.passwordConfirm = 'Las contraseñas no coinciden';
     if (!terms) errors.terms = 'Debes aceptar los términos y condiciones';
-    if (Object.keys(errors).length > 0) { setRegisterErrors(errors); return; }
+    if (Object.keys(errors).length > 0) {
+      setRegisterErrors(errors);
+      return;
+    }
 
     setRegisterErrors({});
     registerMutation.mutate({ username: name, email, password });
@@ -112,7 +118,9 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="email-login" className="text-sm font-medium">Email</label>
+                    <label htmlFor="email-login" className="text-sm font-medium">
+                      Email
+                    </label>
                     <Input
                       id="email-login"
                       name="email"
@@ -124,15 +132,21 @@ export default function AuthPage() {
                     />
                     {loginErrors.email && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{loginErrors.email}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{loginErrors.email}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label htmlFor="password-login" className="text-sm font-medium">Contraseña</label>
-                      <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                      <label htmlFor="password-login" className="text-sm font-medium">
+                        Contraseña
+                      </label>
+                      <Link
+                        href="/forgot-password"
+                        className="text-sm text-blue-600 hover:underline"
+                      >
                         ¿Olvidaste tu contraseña?
                       </Link>
                     </div>
@@ -147,14 +161,16 @@ export default function AuthPage() {
                     />
                     {loginErrors.password && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{loginErrors.password}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{loginErrors.password}</span>
                       </div>
                     )}
                   </div>
 
                   {loginError && (
                     <div className="flex items-center space-x-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" /><span>{loginError}</span>
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{loginError}</span>
                     </div>
                   )}
 
@@ -168,7 +184,9 @@ export default function AuthPage() {
               <TabsContent value="register">
                 <form onSubmit={handleRegisterSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">Nombre de usuario</label>
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Nombre de usuario
+                    </label>
                     <Input
                       id="name"
                       name="name"
@@ -180,13 +198,16 @@ export default function AuthPage() {
                     />
                     {registerErrors.name && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{registerErrors.name}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.name}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="email-register" className="text-sm font-medium">Email</label>
+                    <label htmlFor="email-register" className="text-sm font-medium">
+                      Email
+                    </label>
                     <Input
                       id="email-register"
                       name="email"
@@ -198,13 +219,16 @@ export default function AuthPage() {
                     />
                     {registerErrors.email && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{registerErrors.email}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.email}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="password-register" className="text-sm font-medium">Contraseña</label>
+                    <label htmlFor="password-register" className="text-sm font-medium">
+                      Contraseña
+                    </label>
                     <Input
                       id="password-register"
                       name="password"
@@ -212,17 +236,22 @@ export default function AuthPage() {
                       placeholder="••••••••"
                       autoComplete="new-password"
                       aria-invalid={!!registerErrors.password}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, password: undefined }))}
+                      onChange={() =>
+                        setRegisterErrors((prev) => ({ ...prev, password: undefined }))
+                      }
                     />
                     {registerErrors.password && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{registerErrors.password}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.password}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="password-confirm" className="text-sm font-medium">Confirmar contraseña</label>
+                    <label htmlFor="password-confirm" className="text-sm font-medium">
+                      Confirmar contraseña
+                    </label>
                     <Input
                       id="password-confirm"
                       name="passwordConfirm"
@@ -230,11 +259,14 @@ export default function AuthPage() {
                       placeholder="••••••••"
                       autoComplete="new-password"
                       aria-invalid={!!registerErrors.passwordConfirm}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, passwordConfirm: undefined }))}
+                      onChange={() =>
+                        setRegisterErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
+                      }
                     />
                     {registerErrors.passwordConfirm && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{registerErrors.passwordConfirm}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.passwordConfirm}</span>
                       </div>
                     )}
                   </div>
@@ -246,25 +278,33 @@ export default function AuthPage() {
                         id="terms"
                         name="terms"
                         className="rounded border-gray-300 mt-1"
-                        onChange={() => setRegisterErrors((prev) => ({ ...prev, terms: undefined }))}
+                        onChange={() =>
+                          setRegisterErrors((prev) => ({ ...prev, terms: undefined }))
+                        }
                       />
                       <label htmlFor="terms" className="text-sm text-gray-600">
                         Acepto los{' '}
-                        <Link href="/terms" className="text-blue-600 hover:underline">términos y condiciones</Link>
-                        {' '}y la{' '}
-                        <Link href="/privacy" className="text-blue-600 hover:underline">política de privacidad</Link>
+                        <Link href="/terms" className="text-blue-600 hover:underline">
+                          términos y condiciones
+                        </Link>{' '}
+                        y la{' '}
+                        <Link href="/privacy" className="text-blue-600 hover:underline">
+                          política de privacidad
+                        </Link>
                       </label>
                     </div>
                     {registerErrors.terms && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" /><span>{registerErrors.terms}</span>
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerErrors.terms}</span>
                       </div>
                     )}
                   </div>
 
                   {registerError && (
                     <div className="flex items-center space-x-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" /><span>{registerError}</span>
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{registerError}</span>
                     </div>
                   )}
 
@@ -278,7 +318,9 @@ export default function AuthPage() {
         </Card>
 
         <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-white hover:underline">Volver al inicio</Link>
+          <Link href="/" className="text-sm text-white hover:underline">
+            Volver al inicio
+          </Link>
         </div>
       </div>
     </div>

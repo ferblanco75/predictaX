@@ -7,8 +7,7 @@ export const metadata: Metadata = {
     'Únete a la lista de espera de PredictaX y sé uno de los primeros en acceder a nuestra plataforma de mercados de predicción.',
   openGraph: {
     title: 'Únete a la lista de espera de PredictaX',
-    description:
-      'Regístrate y accede primero a las funciones exclusivas de PredictaX',
+    description: 'Regístrate y accede primero a las funciones exclusivas de PredictaX',
     type: 'website',
   },
 };

@@ -64,11 +64,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function MarketDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function MarketDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const market = getMarketById(resolvedParams.id);
 
@@ -169,15 +165,11 @@ export default async function MarketDetailPage({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Volumen total
-                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen total</span>
                     <span className="font-semibold">{market.volume}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Participantes
-                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Participantes</span>
                     <span className="font-semibold">{market.participants}</span>
                   </div>
                   <div className="flex items-center justify-between">

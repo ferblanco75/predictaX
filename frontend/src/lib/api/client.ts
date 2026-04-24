@@ -20,7 +20,7 @@ api.interceptors.response.use(
       window.location.href = '/auth';
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;

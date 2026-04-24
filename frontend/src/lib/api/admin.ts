@@ -14,7 +14,7 @@ async function adminMutate(
   endpoint: string,
   token: string,
   method: 'POST' | 'PATCH' | 'DELETE' = 'POST',
-  body?: unknown,
+  body?: unknown
 ) {
   const res = await fetch(`${API_URL}/admin${endpoint}`, {
     method,
@@ -35,7 +35,10 @@ export async function getOverview(token: string) {
   return adminFetch('/metrics/overview', token);
 }
 
-export async function getUsers(token: string, params?: { search?: string; limit?: number; offset?: number }) {
+export async function getUsers(
+  token: string,
+  params?: { search?: string; limit?: number; offset?: number }
+) {
   const query = new URLSearchParams();
   if (params?.search) query.set('search', params.search);
   if (params?.limit) query.set('limit', String(params.limit));
@@ -101,7 +104,9 @@ export async function updateUserPoints(token: string, userId: string, points: nu
 // --------------- Market Actions ---------------
 
 export async function resolveMarket(token: string, marketId: string, resolutionValue: boolean) {
-  return adminMutate(`/markets/${marketId}/resolve`, token, 'POST', { resolution_value: resolutionValue });
+  return adminMutate(`/markets/${marketId}/resolve`, token, 'POST', {
+    resolution_value: resolutionValue,
+  });
 }
 
 export async function cancelMarket(token: string, marketId: string) {
@@ -111,7 +116,7 @@ export async function cancelMarket(token: string, marketId: string) {
 export async function editMarket(
   token: string,
   marketId: string,
-  data: { title?: string; description?: string; end_date?: string },
+  data: { title?: string; description?: string; end_date?: string }
 ) {
   return adminMutate(`/markets/${marketId}`, token, 'PATCH', data);
 }

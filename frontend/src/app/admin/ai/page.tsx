@@ -6,7 +6,13 @@ import { getAIUsageSummary, getAIUsageHistory } from '@/lib/api/admin';
 import { Bot, Zap, Clock, AlertTriangle, Database } from 'lucide-react';
 
 interface AISummary {
-  today: { requests: number; cache_hits: number; tokens: number; avg_latency_ms: number; errors: number };
+  today: {
+    requests: number;
+    cache_hits: number;
+    tokens: number;
+    avg_latency_ms: number;
+    errors: number;
+  };
   this_week: { requests: number; tokens: number };
   quota: { daily_limit: number; used_today: number; remaining: number; usage_percent: number };
   cache_hit_rate: number;
@@ -28,9 +34,22 @@ function QuotaGauge({ used, limit }: { used: number; limit: number }) {
     <div className="text-center">
       <div className="relative w-32 h-32 mx-auto">
         <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10" className="text-gray-200 dark:text-gray-800" />
           <circle
-            cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="10"
+            cx="60"
+            cy="60"
+            r="50"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="10"
+            className="text-gray-200 dark:text-gray-800"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="50"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="10"
             className={color}
             strokeDasharray={`${percent * 3.14} ${(100 - percent) * 3.14}`}
             strokeLinecap="round"
@@ -41,15 +60,17 @@ function QuotaGauge({ used, limit }: { used: number; limit: number }) {
           <span className="text-xs text-gray-400">/ {limit}</span>
         </div>
       </div>
-      <div className={`mt-2 text-sm font-medium ${color}`}>
-        {percent.toFixed(0)}% usado
-      </div>
+      <div className={`mt-2 text-sm font-medium ${color}`}>{percent.toFixed(0)}% usado</div>
       <div className="mt-1 flex justify-center">
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-          percent > 80 ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' :
-          percent > 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400' :
-          'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
-        }`}>
+        <span
+          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            percent > 80
+              ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+              : percent > 50
+                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400'
+                : 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
+          }`}
+        >
           {percent > 80 ? 'Quota baja' : percent > 50 ? 'Moderado' : 'Saludable'}
         </span>
       </div>
@@ -65,17 +86,19 @@ export default function AdminAIPage() {
 
   useEffect(() => {
     if (!user?.token) return;
-    Promise.all([
-      getAIUsageSummary(user.token),
-      getAIUsageHistory(user.token, 30),
-    ])
-      .then(([s, h]) => { setSummary(s); setHistory(h); })
+    Promise.all([getAIUsageSummary(user.token), getAIUsageHistory(user.token, 30)])
+      .then(([s, h]) => {
+        setSummary(s);
+        setHistory(h);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
       if (user?.token) {
-        getAIUsageSummary(user.token).then(setSummary).catch(() => {});
+        getAIUsageSummary(user.token)
+          .then(setSummary)
+          .catch(() => {});
       }
     }, 15000);
     return () => clearInterval(interval);
@@ -180,7 +203,9 @@ export default function AdminAIPage() {
             <div className="space-y-2">
               {summary.top_markets_analyzed.map((m) => (
                 <div key={m.market_id} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[180px]">{m.title}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[180px]">
+                    {m.title}
+                  </span>
                   <span className="text-xs font-medium bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">
                     {m.analysis_count}x
                   </span>
@@ -203,13 +228,28 @@ export default function AdminAIPage() {
               const height = (total / maxRequests) * 100;
               const cachePercent = total > 0 ? (d.cache_hits / total) * 100 : 0;
               return (
-                <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  <div className="w-full rounded-t overflow-hidden" style={{ height: `${height}%` }}>
-                    <div className="bg-blue-500 w-full" style={{ height: `${100 - cachePercent}%` }} />
-                    <div className="bg-blue-300 dark:bg-blue-700 w-full" style={{ height: `${cachePercent}%` }} />
+                <div
+                  key={d.date}
+                  className="flex-1 flex flex-col items-center gap-1 group relative"
+                >
+                  <div
+                    className="w-full rounded-t overflow-hidden"
+                    style={{ height: `${height}%` }}
+                  >
+                    <div
+                      className="bg-blue-500 w-full"
+                      style={{ height: `${100 - cachePercent}%` }}
+                    />
+                    <div
+                      className="bg-blue-300 dark:bg-blue-700 w-full"
+                      style={{ height: `${cachePercent}%` }}
+                    />
                   </div>
                   <span className="text-[9px] text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">
-                    {new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+                    {new Date(d.date).toLocaleDateString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                    })}
                   </span>
                   <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                     {d.requests} API / {d.cache_hits} cache / {d.tokens.toLocaleString()} tokens
@@ -220,8 +260,12 @@ export default function AdminAIPage() {
           </div>
         )}
         <div className="flex gap-4 mt-3 text-xs text-gray-400">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded" /> API requests</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-300 dark:bg-blue-700 rounded" /> Cache hits</span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 bg-blue-500 rounded" /> API requests
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 bg-blue-300 dark:bg-blue-700 rounded" /> Cache hits
+          </span>
         </div>
       </div>
     </div>

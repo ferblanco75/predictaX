@@ -28,6 +28,7 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(true);
       const timer = setTimeout(() => {
         setIsLoading(false);
@@ -58,7 +59,10 @@ export default function Home() {
               Decisiones informadas con inteligencia artificial.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/markets" className={cn(buttonVariants({ size: 'lg', variant: 'secondary' }))}>
+              <Link
+                href="/markets"
+                className={cn(buttonVariants({ size: 'lg', variant: 'secondary' }))}
+              >
                 Explorar mercados
               </Link>
               <Link
@@ -159,9 +163,7 @@ export default function Home() {
         viewport={{ once: true, amount: 0.2 }}
       >
         <div className="container mx-auto px-4 py-16 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ¿Listo para comenzar a predecir?
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para comenzar a predecir?</h2>
           <p className="text-xl mb-8 text-purple-100">
             Únete a nuestra comunidad y empieza a participar en mercados de predicción.
           </p>

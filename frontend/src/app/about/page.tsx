@@ -39,8 +39,8 @@ export default function AboutPage() {
             Predecimos el futuro de América Latina
           </h1>
           <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
-            Combinamos la sabiduría colectiva con inteligencia artificial para
-            crear los mercados de predicción más precisos de la región
+            Combinamos la sabiduría colectiva con inteligencia artificial para crear los mercados de
+            predicción más precisos de la región
           </p>
         </div>
       </section>
@@ -56,17 +56,15 @@ export default function AboutPage() {
             <Card className="mb-8">
               <CardContent className="pt-6">
                 <p className="text-lg text-muted-foreground mb-6">
-                  Los mercados de predicción son plataformas donde las personas
-                  pueden pronosticar el resultado de eventos futuros. A
-                  diferencia de las encuestas tradicionales, los participantes
-                  tienen incentivos reales para ser precisos, lo que genera
+                  Los mercados de predicción son plataformas donde las personas pueden pronosticar
+                  el resultado de eventos futuros. A diferencia de las encuestas tradicionales, los
+                  participantes tienen incentivos reales para ser precisos, lo que genera
                   probabilidades más confiables.
                 </p>
                 <p className="text-lg text-muted-foreground">
-                  Al agregar las predicciones de miles de personas, obtenemos un
-                  "consenso inteligente" que históricamente ha demostrado ser más
-                  preciso que los expertos individuales o los sondeos
-                  tradicionales.
+                  Al agregar las predicciones de miles de personas, obtenemos un &ldquo;consenso
+                  inteligente&rdquo; que históricamente ha demostrado ser más preciso que los
+                  expertos individuales o los sondeos tradicionales.
                 </p>
               </CardContent>
             </Card>
@@ -81,8 +79,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Miles de participantes aportan su conocimiento y experiencia
-                    para generar predicciones más precisas
+                    Miles de participantes aportan su conocimiento y experiencia para generar
+                    predicciones más precisas
                   </p>
                 </CardContent>
               </Card>
@@ -96,8 +94,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Los mercados agregán información de forma eficiente,
-                    generando probabilidades más confiables que otros métodos
+                    Los mercados agregán información de forma eficiente, generando probabilidades
+                    más confiables que otros métodos
                   </p>
                 </CardContent>
               </Card>
@@ -111,8 +109,8 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Usa estas probabilidades para tomar mejores decisiones en tu
-                    negocio, inversiones o vida personal
+                    Usa estas probabilidades para tomar mejores decisiones en tu negocio,
+                    inversiones o vida personal
                   </p>
                 </CardContent>
               </Card>
@@ -138,9 +136,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Somos la primera plataforma de mercados de predicción diseñada
-                  específicamente para América Latina, con eventos y categorías
-                  relevantes para la región
+                  Somos la primera plataforma de mercados de predicción diseñada específicamente
+                  para América Latina, con eventos y categorías relevantes para la región
                 </p>
               </CardContent>
             </Card>
@@ -154,9 +151,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Nuestros modelos de inteligencia artificial analizan miles de
-                  datos en tiempo real para proporcionar predicciones mejoradas y
-                  análisis profundos
+                  Nuestros modelos de inteligencia artificial analizan miles de datos en tiempo real
+                  para proporcionar predicciones mejoradas y análisis profundos
                 </p>
               </CardContent>
             </Card>
@@ -170,8 +166,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Desde economía y política hasta deportes, tecnología y crypto.
-                  Predicciones sobre los temas que más te importan
+                  Desde economía y política hasta deportes, tecnología y crypto. Predicciones sobre
+                  los temas que más te importan
                 </p>
               </CardContent>
             </Card>
@@ -185,8 +181,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Únete a una comunidad de analistas, inversores y entusiastas
-                  que comparten sus perspectivas y aprenden juntos
+                  Únete a una comunidad de analistas, inversores y entusiastas que comparten sus
+                  perspectivas y aprenden juntos
                 </p>
               </CardContent>
             </Card>
@@ -200,8 +196,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Las probabilidades se actualizan en tiempo real a medida que
-                  llegan nuevas predicciones y información al mercado
+                  Las probabilidades se actualizan en tiempo real a medida que llegan nuevas
+                  predicciones y información al mercado
                 </p>
               </CardContent>
             </Card>
@@ -215,8 +211,8 @@ export default function AboutPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Visualiza tendencias históricas, compara probabilidades y
-                  accede a métricas avanzadas para cada mercado
+                  Visualiza tendencias históricas, compara probabilidades y accede a métricas
+                  avanzadas para cada mercado
                 </p>
               </CardContent>
             </Card>
@@ -227,9 +223,7 @@ export default function AboutPage() {
       {/* Roadmap Section */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Nuestro Roadmap
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Nuestro Roadmap</h2>
 
           <div className="max-w-4xl mx-auto space-y-6">
             <Card className="border-l-4 border-l-green-500">
@@ -239,9 +233,7 @@ export default function AboutPage() {
                     <Calendar className="w-5 h-5 text-muted-foreground" />
                     <CardTitle>Q1 2026 - Lanzamiento de Plataforma</CardTitle>
                   </div>
-                  <Badge className="bg-green-500 hover:bg-green-600">
-                    Completado
-                  </Badge>
+                  <Badge className="bg-green-500 hover:bg-green-600">Completado</Badge>
                 </div>
               </CardHeader>
               <CardContent>
