@@ -9,12 +9,7 @@ interface ErrorStateProps {
   type?: 'generic' | 'network' | 'notfound';
 }
 
-export function ErrorState({
-  title,
-  message,
-  onRetry,
-  type = 'generic',
-}: ErrorStateProps) {
+export function ErrorState({ title, message, onRetry, type = 'generic' }: ErrorStateProps) {
   const config = {
     generic: {
       icon: AlertCircle,

@@ -19,29 +19,41 @@ const categories = [
 ];
 
 export function Navbar() {
-  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } = useAppStore();
+  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } =
+    useAppStore();
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <nav
+      className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50"
+      role="navigation"
+      aria-label="Navegación principal"
+    >
       <div className="container mx-auto px-4">
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg" />
+          <Link href="/" className="flex items-center space-x-2" aria-label="PredictaX - Inicio">
+            <div
+              className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg"
+              aria-hidden="true"
+            />
             <span className="text-xl font-bold">PredictaX</span>
           </Link>
 
           {/* Search bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"
+                aria-hidden="true"
+              />
               <Input
                 type="search"
                 placeholder="Buscar mercados..."
                 className="pl-10 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Buscar mercados"
               />
             </div>
           </div>
@@ -54,13 +66,23 @@ export function Navbar() {
                 <span className="hidden sm:block text-sm font-medium text-muted-foreground">
                   Bienvenido, <span className="text-foreground font-semibold">{user.username}</span>
                 </span>
-                <Button variant="outline" size="sm" onClick={() => { logout(); localStorage.removeItem('token'); }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    localStorage.removeItem('token');
+                  }}
+                >
                   Cerrar sesión
                 </Button>
               </>
             ) : (
               <>
-                <Link href="/waitlist" className={cn(buttonVariants({ variant: 'outline' }), 'hidden sm:flex')}>
+                <Link
+                  href="/waitlist"
+                  className={cn(buttonVariants({ variant: 'outline' }), 'hidden sm:flex')}
+                >
                   Lista de espera
                 </Link>
                 <Link href="/auth" className={cn(buttonVariants({ variant: 'ghost' }))}>
@@ -75,7 +97,11 @@ export function Navbar() {
         </div>
 
         {/* Categories tabs */}
-        <div className="flex items-center space-x-1 overflow-x-auto pb-2 scrollbar-hide">
+        <div
+          className="flex items-center space-x-1 overflow-x-auto pb-2 scrollbar-hide"
+          role="tablist"
+          aria-label="Categorías de mercados"
+        >
           <Link
             href="/markets"
             onClick={() => setCategory('all')}

@@ -7,7 +7,9 @@ interface User {
   username: string;
   email: string;
   points: number;
+  role: string;
   avatarUrl?: string;
+  token?: string;
 }
 
 interface AppState {

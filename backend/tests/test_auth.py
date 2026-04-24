@@ -1,6 +1,4 @@
-import pytest
 from fastapi.testclient import TestClient
-
 
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"

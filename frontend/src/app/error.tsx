@@ -29,17 +29,15 @@ export default function Error({
           <h1 className="text-3xl font-bold mb-3">Oops! Algo salió mal</h1>
 
           <p className="text-gray-600 mb-6">
-            Lo sentimos, ocurrió un error inesperado. Nuestro equipo ha sido notificado y
-            estamos trabajando para solucionarlo.
+            Lo sentimos, ocurrió un error inesperado. Nuestro equipo ha sido notificado y estamos
+            trabajando para solucionarlo.
           </p>
 
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-6 p-4 bg-red-50 rounded-lg text-left">
               <p className="text-sm font-semibold text-red-900 mb-2">Error Details:</p>
               <p className="text-sm font-mono text-red-800 break-all">{error.message}</p>
-              {error.digest && (
-                <p className="text-xs text-red-600 mt-2">Digest: {error.digest}</p>
-              )}
+              {error.digest && <p className="text-xs text-red-600 mt-2">Digest: {error.digest}</p>}
             </div>
           )}
 

@@ -116,9 +116,7 @@ export function WaitlistForm() {
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -141,8 +139,8 @@ export function WaitlistForm() {
           <CardHeader>
             <CardTitle className="text-3xl">Únete a la lista de espera</CardTitle>
             <CardDescription className="text-lg">
-              Sé de los primeros en acceder a PredictaX y recibe actualizaciones
-              exclusivas sobre el lanzamiento de nuevas funcionalidades
+              Sé de los primeros en acceder a PredictaX y recibe actualizaciones exclusivas sobre el
+              lanzamiento de nuevas funcionalidades
             </CardDescription>
           </CardHeader>
 
@@ -158,14 +156,10 @@ export function WaitlistForm() {
                   ¡Registro exitoso!
                 </h3>
                 <p className="text-green-700 dark:text-green-300 mb-4">
-                  Gracias por unirte a nuestra lista de espera. Te enviaremos
-                  actualizaciones a tu correo electrónico.
+                  Gracias por unirte a nuestra lista de espera. Te enviaremos actualizaciones a tu
+                  correo electrónico.
                 </p>
-                <Button
-                  onClick={() => setIsSuccess(false)}
-                  variant="outline"
-                  className="mt-2"
-                >
+                <Button onClick={() => setIsSuccess(false)} variant="outline" className="mt-2">
                   Registrar otra persona
                 </Button>
               </div>
@@ -255,18 +249,13 @@ export function WaitlistForm() {
                 {/* Info Box */}
                 <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 p-4">
                   <p className="text-sm text-blue-900 dark:text-blue-100">
-                    🔒 Tu información es segura. No compartiremos tu correo con
-                    terceros y podrás darte de baja en cualquier momento.
+                    🔒 Tu información es segura. No compartiremos tu correo con terceros y podrás
+                    darte de baja en cualquier momento.
                   </p>
                 </div>
 
                 {/* Submit Button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -285,10 +274,7 @@ export function WaitlistForm() {
         <div className="mt-8 text-center text-muted-foreground">
           <p className="text-sm">
             ¿Preguntas? Contáctanos en{' '}
-            <a
-              href="mailto:hola@predictax.com"
-              className="text-primary hover:underline"
-            >
+            <a href="mailto:hola@predictax.com" className="text-primary hover:underline">
               hola@predictax.com
             </a>
           </p>

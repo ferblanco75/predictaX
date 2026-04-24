@@ -9,6 +9,7 @@ import { PredictionForm } from './PredictionForm';
 import { MultipleChoiceBarChart } from './MultipleChoiceBarChart';
 import { MultipleChoicePredictionForm } from './MultipleChoicePredictionForm';
 import { ProbabilityGauge } from './ProbabilityGauge';
+import { useMakePrediction } from '@/lib/hooks/useMakePrediction';
 import type { Market } from '@/lib/types';
 
 interface MarketDetailClientProps {
@@ -19,22 +20,40 @@ interface MarketDetailClientProps {
 
 export function MarketDetailClient({ market, categoryColor, isLoggedIn }: MarketDetailClientProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('ALL');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
+    null
+  );
+  const prediction = useMakePrediction(market.id);
 
-  const handlePredictionSubmit = (prediction: number, betAmount: number) => {
-    alert(`Predicción confirmada: ${prediction}% con ${betAmount} puntos`);
+  const handlePredictionSubmit = (predictionValue: number, amount: number) => {
+    setFeedback(null);
+    prediction.mutate(
+      { predictionValue, amount },
+      {
+        onSuccess: () =>
+          setFeedback({
+            type: 'success',
+            message: `Predicción registrada: ${predictionValue}% con ${amount} puntos`,
+          }),
+        onError: (err) => setFeedback({ type: 'error', message: err.message }),
+      }
+    );
   };
 
   const handleMultipleChoicePredictionSubmit = (
     predictions: Record<string, number>,
-    betAmount: number
+    amount: number
   ) => {
-    alert(
-      `Predicción confirmada con ${betAmount} puntos:\n${Object.entries(predictions)
-        .map(([id, prob]) => {
-          const option = market.options?.find((o) => o.id === id);
-          return `${option?.label}: ${prob}%`;
-        })
-        .join('\n')}`
+    const topOption = Object.entries(predictions).sort(([, a], [, b]) => b - a)[0];
+    if (!topOption) return;
+    setFeedback(null);
+    prediction.mutate(
+      { predictionValue: topOption[1], amount },
+      {
+        onSuccess: () =>
+          setFeedback({ type: 'success', message: `Predicción registrada con ${amount} puntos` }),
+        onError: (err) => setFeedback({ type: 'error', message: err.message }),
+      }
     );
   };
 
@@ -57,7 +76,11 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-6">
-                  <ProbabilityGauge probability={market.probability} size="large" showLabel={false} />
+                  <ProbabilityGauge
+                    probability={market.probability}
+                    size="large"
+                    showLabel={false}
+                  />
                   <div>
                     <div className="text-5xl font-bold text-gray-900 dark:text-gray-100">
                       {market.probability}%
@@ -96,12 +119,25 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
 
           {/* Prediction Form */}
           {market.status === 'active' && (
-            <PredictionForm
-              marketId={market.id}
-              currentProbability={market.probability}
-              onSubmit={handlePredictionSubmit}
-              disabled={!isLoggedIn}
-            />
+            <>
+              <PredictionForm
+                marketId={market.id}
+                currentProbability={market.probability}
+                onSubmit={handlePredictionSubmit}
+                disabled={!isLoggedIn || prediction.isPending}
+              />
+              {feedback && (
+                <div
+                  className={`mt-2 px-4 py-3 rounded-lg text-sm font-medium ${
+                    feedback.type === 'success'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400'
+                      : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
+                  }`}
+                >
+                  {feedback.message}
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -121,12 +157,25 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
 
           {/* Prediction Form */}
           {market.status === 'active' && (
-            <MultipleChoicePredictionForm
-              marketId={market.id}
-              options={market.options}
-              onSubmit={handleMultipleChoicePredictionSubmit}
-              disabled={!isLoggedIn}
-            />
+            <>
+              <MultipleChoicePredictionForm
+                marketId={market.id}
+                options={market.options}
+                onSubmit={handleMultipleChoicePredictionSubmit}
+                disabled={!isLoggedIn || prediction.isPending}
+              />
+              {feedback && (
+                <div
+                  className={`mt-2 px-4 py-3 rounded-lg text-sm font-medium ${
+                    feedback.type === 'success'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400'
+                      : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
+                  }`}
+                >
+                  {feedback.message}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

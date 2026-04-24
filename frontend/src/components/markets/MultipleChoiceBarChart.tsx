@@ -1,11 +1,30 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import type { MultipleChoiceOption } from '@/lib/types';
 
 interface MultipleChoiceBarChartProps {
   options: MultipleChoiceOption[];
   categoryColor?: string;
+}
+
+interface TooltipPayloadItem {
+  fill: string;
+  payload: { label: string; probability: number };
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
 }
 
 // Vibrant color palette for multiple choice options
@@ -27,30 +46,29 @@ export const getOptionColor = (index: number): string => {
   return COLOR_PALETTE[index % COLOR_PALETTE.length];
 };
 
-export function MultipleChoiceBarChart({ options, categoryColor = '#3b82f6' }: MultipleChoiceBarChartProps) {
+function CustomTooltip({ active, payload }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <p className="font-semibold text-sm mb-1">{data.label}</p>
+        <p className="text-lg font-bold" style={{ color: payload[0].fill }}>
+          {data.probability}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
+export function MultipleChoiceBarChart({ options }: MultipleChoiceBarChartProps) {
   // Sort options by probability (descending)
   const sortedOptions = [...options].sort((a, b) => b.probability - a.probability);
 
   // Get color for each option based on its original index
   const getBarColor = (optionId: string) => {
-    const originalIndex = options.findIndex(opt => opt.id === optionId);
+    const originalIndex = options.findIndex((opt) => opt.id === optionId);
     return COLOR_PALETTE[originalIndex % COLOR_PALETTE.length];
-  };
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-          <p className="font-semibold text-sm mb-1">{data.label}</p>
-          <p className="text-lg font-bold" style={{ color: payload[0].fill }}>
-            {data.probability}%
-          </p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -77,7 +95,13 @@ export function MultipleChoiceBarChart({ options, categoryColor = '#3b82f6' }: M
             tick={{ fill: 'currentColor', fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} />
-          <Bar dataKey="probability" radius={[0, 8, 8, 0]} isAnimationActive={false}>
+          <Bar
+            dataKey="probability"
+            radius={[0, 8, 8, 0]}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-out"
+          >
             {sortedOptions.map((option) => (
               <Cell key={`cell-${option.id}`} fill={getBarColor(option.id)} />
             ))}

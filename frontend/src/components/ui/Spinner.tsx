@@ -30,9 +30,7 @@ export function LoadingOverlay({ message }: LoadingOverlayProps) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center space-y-4 shadow-xl">
         <Spinner size="xl" />
-        {message && (
-          <p className="text-gray-700 dark:text-gray-300 font-medium">{message}</p>
-        )}
+        {message && <p className="text-gray-700 dark:text-gray-300 font-medium">{message}</p>}
       </div>
     </div>
   );

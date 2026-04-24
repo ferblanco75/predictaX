@@ -1,10 +1,12 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.models.market import Market, MarketStatus, MarketCategory
+
+from sqlalchemy.orm import Session
+
+from app.core.exceptions import NotFoundException
+from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.market_snapshot import MarketSnapshot
 from app.models.prediction import Prediction
-from app.schemas.market import MarketResponse, MarketHistoryPoint
-from app.core.exceptions import NotFoundException
+from app.schemas.market import MarketHistoryPoint
 
 
 def format_volume(amount: float) -> str:

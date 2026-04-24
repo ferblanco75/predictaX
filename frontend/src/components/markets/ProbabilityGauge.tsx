@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts';
 import { useTheme } from 'next-themes';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 interface ProbabilityGaugeProps {
   probability: number;
@@ -56,6 +57,7 @@ export function ProbabilityGauge({
   const { theme } = useTheme();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -121,9 +123,12 @@ export function ProbabilityGauge({
           aria-valuemax={100}
           aria-label={`Probabilidad: ${probability}%`}
         >
-          <div className={`${config.textSize} font-bold text-gray-900 dark:text-gray-100`}>
-            {probability}%
-          </div>
+          <AnimatedNumber
+            value={probability}
+            decimals={0}
+            suffix="%"
+            className={`${config.textSize} font-bold text-gray-900 dark:text-gray-100`}
+          />
           {showLabel && (
             <div className={`${config.labelSize} text-gray-500 dark:text-gray-400 mt-1`}>
               Probabilidad

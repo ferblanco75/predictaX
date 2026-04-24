@@ -18,11 +18,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
     const range: (number | string)[] = [];
 
     for (let i = 1; i <= totalPages; i++) {
-      if (
-        i === 1 ||
-        i === totalPages ||
-        (i >= currentPage - delta && i <= currentPage + delta)
-      ) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
         range.push(i);
       } else if (range[range.length - 1] !== '...') {
         range.push('...');

@@ -2,16 +2,16 @@
 Pydantic schemas for request/response validation.
 """
 
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token, TokenData
+from app.schemas.common import ErrorResponse, HealthResponse, SuccessResponse
 from app.schemas.market import (
     MarketCreate,
-    MarketUpdate,
-    MarketResponse,
-    MarketListResponse,
     MarketHistoryPoint,
+    MarketListResponse,
+    MarketResponse,
+    MarketUpdate,
 )
 from app.schemas.prediction import PredictionCreate, PredictionResponse
-from app.schemas.common import ErrorResponse, SuccessResponse, HealthResponse
+from app.schemas.user import Token, TokenData, UserCreate, UserLogin, UserResponse
 
 __all__ = [
     # User schemas

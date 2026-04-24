@@ -23,6 +23,7 @@ export default function MarketsPage() {
   // Simulate initial loading (disabled for build)
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(true);
       const timer = setTimeout(() => {
         setIsLoading(false);
@@ -33,6 +34,7 @@ export default function MarketsPage() {
 
   // Reset to page 1 when filters change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [selectedCategory, selectedStatus, searchQuery]);
 

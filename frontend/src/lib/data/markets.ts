@@ -903,6 +903,8 @@ export const getRelatedMarkets = (marketId: string): Market[] => {
 export const getTrendingMarkets = (limit: number = 6): Market[] => {
   return [...markets]
     .filter((m) => m.status === 'active')
-    .sort((a, b) => parseInt(b.volume.replace(/[$K]/g, '')) - parseInt(a.volume.replace(/[$K]/g, '')))
+    .sort(
+      (a, b) => parseInt(b.volume.replace(/[$K]/g, '')) - parseInt(a.volume.replace(/[$K]/g, ''))
+    )
     .slice(0, limit);
 };

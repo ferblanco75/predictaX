@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: 'standalone',
 };
 
 // Sentry configuration options
@@ -30,7 +30,7 @@ const sentryWebpackPluginOptions = {
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the Sentry DSN in your .env.local file is correct before deploying to production.
-  tunnelRoute: "/monitoring",
+  tunnelRoute: '/monitoring',
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,

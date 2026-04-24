@@ -8,6 +8,7 @@
 // Extend Window interface to include gtag function
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gtag?: (...args: any[]) => void;
   }
 }
@@ -53,6 +54,7 @@ export const analyticsEvents = {
  */
 export function trackEvent(
   eventName: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties?: Record<string, any>
 ): void {
   // Only track in browser environment
@@ -139,11 +141,7 @@ export function trackConversion(value: number, currency: string = 'USD'): void {
  * @example
  * trackTiming('load_time', 1250, 'page_load');
  */
-export function trackTiming(
-  name: string,
-  value: number,
-  category?: string
-): void {
+export function trackTiming(name: string, value: number, category?: string): void {
   trackEvent('timing_complete', {
     name,
     value,

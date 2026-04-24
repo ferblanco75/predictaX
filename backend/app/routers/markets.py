@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.schemas.market import MarketResponse, MarketHistoryPoint
-from app.services import market_service
+from app.schemas.market import MarketHistoryPoint, MarketResponse
+from app.services import ai_service, market_service
 
 router = APIRouter()
 
@@ -40,7 +42,7 @@ def list_markets(
 
 
 @router.get("/{market_id}", response_model=MarketResponse)
-def get_market(market_id: int, db: Session = Depends(get_db)):
+def get_market(market_id: str, db: Session = Depends(get_db)):
     """
     Get market by ID.
 
@@ -59,7 +61,7 @@ def get_market(market_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{market_id}/history", response_model=List[MarketHistoryPoint])
-def get_market_history(market_id: int, db: Session = Depends(get_db)):
+def get_market_history(market_id: str, db: Session = Depends(get_db)):
     """
     Get market probability history for charts.
 
@@ -78,3 +80,52 @@ def get_market_history(market_id: int, db: Session = Depends(get_db)):
 
     # Get history
     return market_service.get_market_history(db, market_id)
+
+
+@router.post("/{market_id}/ai-analysis", tags=["AI"])
+def analyze_market(market_id: str, db: Session = Depends(get_db)):
+    """
+    Generate AI analysis for a market using Google Gemini.
+
+    Returns cached analysis if available (6h TTL), otherwise generates a new one.
+
+    Args:
+        market_id: Market ID
+        db: Database session
+
+    Returns:
+        AI analysis with probability, confidence, reasoning, key_factors, risks
+    """
+    market = market_service.get_market_by_id(db, market_id)
+    formatted = market_service.format_market_response(db, market)
+
+    try:
+        analysis = ai_service.get_or_create_analysis(str(market_id), formatted)
+        return analysis
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@router.get("/{market_id}/ai-analysis", tags=["AI"])
+def get_market_analysis(market_id: str, db: Session = Depends(get_db)):
+    """
+    Get cached AI analysis for a market. Returns 404 if no analysis exists.
+
+    Args:
+        market_id: Market ID
+        db: Database session
+
+    Returns:
+        Cached AI analysis or 404
+    """
+    # Verify market exists
+    market_service.get_market_by_id(db, market_id)
+
+    cached = ai_service.get_cached_analysis(str(market_id))
+    if not cached:
+        raise HTTPException(
+            status_code=404,
+            detail="No AI analysis available. Use POST to generate one.",
+        )
+    cached["cached"] = True
+    return cached
