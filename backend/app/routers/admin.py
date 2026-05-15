@@ -814,3 +814,39 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
         "description": market.description,
         "end_date": market.end_date.isoformat(),
     }
+
+
+# --------------- Seed Actions ---------------
+
+@router.post("/seed/mundial-2026")
+def seed_mundial_2026(db: Session = Depends(get_db)):
+    """Run Mundial 2026 seed — creates 14 polls if not already present."""
+    existing = db.query(Market).filter(Market.category == MarketCategory.MUNDIAL).count()
+    if existing > 0:
+        return {"status": "skipped", "message": f"Ya existen {existing} polls del Mundial. No se crearon duplicados."}
+
+    import sys, os
+    sys.path.insert(0, "/app")
+    from scripts.seed_mundial_2026 import MUNDIAL_POLLS, seed_mundial_snapshots
+
+    markets = []
+    for data in MUNDIAL_POLLS:
+        m = Market(
+            title=data["title"],
+            description=data["description"],
+            category=data["category"],
+            type=data["type"],
+            probability_market=data["probability_market"],
+            volume=data["volume"],
+            participants_count=data["participants_count"],
+            end_date=data["end_date"],
+            status=data["status"],
+        )
+        markets.append(m)
+
+    db.add_all(markets)
+    db.flush()
+    seed_mundial_snapshots(db, markets)
+    db.commit()
+
+    return {"status": "ok", "created": len(markets), "message": f"Se crearon {len(markets)} polls del Mundial 2026."}
