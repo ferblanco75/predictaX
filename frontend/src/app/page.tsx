@@ -8,7 +8,9 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { MarketCardSkeleton } from '@/components/markets/MarketCardSkeleton';
 import { CategoryCardSkeletonGrid } from '@/components/ui/CategoryCardSkeleton';
+import { MundialHero } from '@/components/markets/MundialHero';
 import { getTrendingMarkets } from '@/lib/api/markets';
+import { useMarkets } from '@/lib/hooks/useMarkets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -25,6 +27,7 @@ const fadeInUp = {
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const trendingMarkets = getTrendingMarkets(6);
+  const { data: mundialPolls = [] } = useMarkets({ category: 'mundial', limit: 3 });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -37,12 +40,13 @@ export default function Home() {
     }
   }, []);
 
-  const categoryIcons = {
+  const categoryIcons: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
     TrendingUp,
     Users,
     Trophy,
     Smartphone,
     Bitcoin,
+    mundial: Trophy,
   };
 
   return (
@@ -78,6 +82,11 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Mundial 2026 Hero */}
+      <div className="container mx-auto px-4 pt-10">
+        <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
+      </div>
 
       {/* Categories Grid */}
       <motion.section

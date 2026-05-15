@@ -26,8 +26,10 @@ export function MarketCard({ market }: MarketCardProps) {
   const isPositiveTrend = trend > 0;
   const categoryColor = getCategoryColor(market.category);
 
-  // Format end date
-  const endDate = format(new Date(market.endDate), 'dd MMM yyyy', { locale: es });
+  // Format end date — parse as UTC to avoid server/client timezone mismatch
+  const endDate = market.endDate
+    ? format(new Date(market.endDate.replace('Z', '+00:00')), 'dd MMM yyyy', { locale: es })
+    : '';
 
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
