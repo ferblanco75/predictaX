@@ -28,6 +28,7 @@ class MarketCategory(str, enum.Enum):
     DEPORTES = "deportes"
     TECNOLOGIA = "tecnologia"
     CRYPTO = "crypto"
+    MUNDIAL = "mundial"
 
 
 class MarketStatus(str, enum.Enum):
