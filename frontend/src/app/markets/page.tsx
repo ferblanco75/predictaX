@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Filter, Search } from 'lucide-react';
 import { MarketList } from '@/components/markets/MarketList';
@@ -14,7 +14,7 @@ import type { MarketCategory } from '@/lib/types';
 
 const MARKETS_PER_PAGE = 12;
 
-export default function MarketsPage() {
+function MarketsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { selectedCategory, selectedStatus, setCategory, setStatus, resetFilters } = useAppStore();
@@ -30,16 +30,13 @@ export default function MarketsPage() {
   // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [selectedCategory, selectedStatus, search]);
 
-  // Fetch all markets from backend
   const { data: allMarkets = [], isLoading } = useMarkets({
     status: selectedStatus === 'all' ? undefined : selectedStatus as 'active' | 'resolved',
     limit: 100,
   });
 
-  // Fetch Mundial polls for hero (always, regardless of current filter)
   const { data: mundialPolls = [] } = useMarkets({ category: 'mundial' as MarketCategory, limit: 3 });
 
-  // Client-side filter by category + search
   const filtered = allMarkets.filter((m) => {
     const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
     const searchMatch = !search || m.title.toLowerCase().includes(search.toLowerCase());
@@ -53,10 +50,8 @@ export default function MarketsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
 
-        {/* Mundial Hero — always visible at top */}
         <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
 
-        {/* Page header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-1">Mercados de predicción</h1>
           <p className="text-gray-500 text-sm">
@@ -74,7 +69,6 @@ export default function MarketsPage() {
                   <h2 className="font-semibold">Filtros</h2>
                 </div>
 
-                {/* Search */}
                 <div className="relative mb-5">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                   <input
@@ -86,7 +80,6 @@ export default function MarketsPage() {
                   />
                 </div>
 
-                {/* Category filter */}
                 <div className="mb-5">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
                     Categoría
@@ -123,7 +116,6 @@ export default function MarketsPage() {
                   </div>
                 </div>
 
-                {/* Status filter */}
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
                     Estado
@@ -189,5 +181,20 @@ export default function MarketsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="h-64 bg-green-100 dark:bg-green-950 rounded-2xl animate-pulse mb-8" />
+          <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-64 animate-pulse mb-8" />
+        </div>
+      </div>
+    }>
+      <MarketsContent />
+    </Suspense>
   );
 }
