@@ -2,6 +2,14 @@ import { Category } from '../types/market';
 
 export const categories: Category[] = [
   {
+    id: 'mundial',
+    name: '⚽ Mundial 2026',
+    description: 'Predicciones del Mundial FIFA 2026 — USA, México y Canadá',
+    icon: 'Trophy',
+    color: '#16a34a', // green-600
+    count: 14,
+  },
+  {
     id: 'economia',
     name: 'Economía',
     description:

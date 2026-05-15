@@ -1,4 +1,4 @@
-export type MarketCategory = 'economia' | 'politica' | 'deportes' | 'tecnologia' | 'crypto';
+export type MarketCategory = 'economia' | 'politica' | 'deportes' | 'tecnologia' | 'crypto' | 'mundial';
 
 export type MarketStatus = 'active' | 'resolved';
 
