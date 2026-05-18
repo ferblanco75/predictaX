@@ -31,9 +31,14 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend
+# Allow all Vercel preview deployments via regex pattern
+cors_origins = settings.CORS_ORIGINS
+cors_origin_regex = r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
