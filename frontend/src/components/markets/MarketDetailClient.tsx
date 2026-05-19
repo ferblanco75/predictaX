@@ -10,6 +10,7 @@ import { MultipleChoiceBarChart } from './MultipleChoiceBarChart';
 import { MultipleChoicePredictionForm } from './MultipleChoicePredictionForm';
 import { ProbabilityGauge } from './ProbabilityGauge';
 import { useMakePrediction } from '@/lib/hooks/useMakePrediction';
+import { MarketStats } from './MarketStats';
 import type { Market } from '@/lib/types';
 
 interface MarketDetailClientProps {
@@ -116,6 +117,11 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
               <ProbabilityChart data={market.history} categoryColor={categoryColor} />
             </CardContent>
           </Card>
+
+          {/* Stats block — only for markets with statsData */}
+          {market.statsData && (
+            <MarketStats statsData={market.statsData as Record<string, unknown>} />
+          )}
 
           {/* Prediction Form */}
           {market.status === 'active' && (

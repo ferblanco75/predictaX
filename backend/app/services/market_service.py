@@ -144,6 +144,7 @@ def format_market_response(db: Session, market: Market) -> dict:
         "status": market.status.value,
         "history": [{"date": h.date, "probability": h.probability} for h in history],
         "relatedMarkets": [],  # TODO: Implement related markets
+        "statsData": market.stats_data,
     }
 
 

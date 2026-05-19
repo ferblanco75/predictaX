@@ -29,6 +29,7 @@ export interface Market {
   status: MarketStatus;
   history: MarketHistoryPoint[];
   relatedMarkets: string[];
+  statsData?: Record<string, unknown> | null;
   // For multiple_choice type
   options?: MultipleChoiceOption[];
 }

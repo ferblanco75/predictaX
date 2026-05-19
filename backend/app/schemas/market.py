@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -48,6 +48,7 @@ class MarketResponse(BaseModel):
     status: str
     history: List[MarketHistoryPoint]
     relatedMarkets: List[str] = []
+    statsData: Optional[Dict[str, Any]] = None
 
     class Config:
         from_attributes = True
