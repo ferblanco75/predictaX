@@ -10,7 +10,7 @@ interface HeadToHeadRow {
 }
 
 interface FormaReciente {
-  [team: string]: string[] | string;
+  [team: string]: string[] | string | undefined;
   descripcion?: string;
 }
 
