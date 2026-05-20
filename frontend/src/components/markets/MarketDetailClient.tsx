@@ -153,6 +153,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
                 currentProbability={market.probability}
                 onSubmit={handlePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
+                requiresAuth={!isLoggedIn}
               />
               {feedback && (
                 <div
@@ -191,6 +192,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
                 options={market.options}
                 onSubmit={handleMultipleChoicePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
+                requiresAuth={!isLoggedIn}
               />
               {feedback && (
                 <div

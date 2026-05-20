@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { AlertCircle, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ interface MultipleChoicePredictionFormProps {
   options: MultipleChoiceOption[];
   onSubmit: (predictions: Record<string, number>, betAmount: number) => void;
   disabled?: boolean;
+  requiresAuth?: boolean;
 }
 
 export function MultipleChoicePredictionForm({
@@ -21,6 +23,7 @@ export function MultipleChoicePredictionForm({
   options,
   onSubmit,
   disabled = false,
+  requiresAuth = false,
 }: MultipleChoicePredictionFormProps) {
   // Initialize predictions with current probabilities
   const [predictions, setPredictions] = useState<Record<string, number>>(() => {
@@ -183,7 +186,26 @@ export function MultipleChoicePredictionForm({
               +{potentialGain.toFixed(0)} puntos
             </span>
           </div>
+          <p className="mt-2 text-xs text-blue-700/70 dark:text-blue-300/70">
+            Estimación simplificada para MVP. El cálculo final puede cambiar según reglas del
+            mercado.
+          </p>
         </div>
+
+        {requiresAuth && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="font-medium">Iniciá sesión para participar</p>
+            <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
+              Necesitás una cuenta para registrar predicciones y usar tus puntos virtuales.
+            </p>
+            <Link
+              href="/auth"
+              className="mt-3 inline-flex rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+            >
+              Iniciar sesión o registrarme
+            </Link>
+          </div>
+        )}
 
         {/* CTA Button */}
         <Button
@@ -192,7 +214,11 @@ export function MultipleChoicePredictionForm({
           onClick={handleSubmit}
           disabled={disabled || Math.abs(totalProbability - 100) > 0.5}
         >
-          {disabled ? 'Inicia sesión para predecir' : 'Confirmar predicción'}
+          {requiresAuth
+            ? 'Iniciá sesión para predecir'
+            : disabled
+              ? 'Procesando...'
+              : 'Confirmar predicción'}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">

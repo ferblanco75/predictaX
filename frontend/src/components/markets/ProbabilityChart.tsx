@@ -34,6 +34,19 @@ export function ProbabilityChart({ data, categoryColor }: ProbabilityChartProps)
     );
   }
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-80 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center dark:border-gray-700 dark:bg-gray-900/40">
+        <div className="max-w-sm px-6">
+          <p className="font-medium text-gray-700 dark:text-gray-200">Sin historial suficiente</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            El gráfico aparecerá cuando el mercado tenga snapshots de probabilidad disponibles.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="h-80"

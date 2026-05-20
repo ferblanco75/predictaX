@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Users, Calendar, DollarSign, ArrowLeft } from 'lucide-react';
+import { Users, Calendar, DollarSign, ArrowLeft, Clock3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getCategoryColor } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
-import { EmptyPredictions } from '@/components/ui/EmptyState';
 import { generateMarketStructuredData } from '@/lib/utils/structured-data';
 import { useMarket } from '@/lib/hooks/useMarkets';
 import { getRelatedMarkets } from '@/lib/api/markets';
@@ -153,7 +152,9 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                     <span className="font-semibold">{market.participants}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Fecha de cierre</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Fecha de cierre
+                    </span>
                     <span className="font-semibold">{endDate}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -169,8 +170,24 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                 <CardHeader>
                   <CardTitle className="text-lg">Predicciones recientes</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <EmptyPredictions />
+                <CardContent className="space-y-4">
+                  <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
+                    <Clock3 className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+                    <p className="font-medium">Feed público en preparación</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      En esta versión MVP todavía no mostramos predicciones recientes individuales.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
+                      <p className="text-gray-500 dark:text-gray-400">Participantes</p>
+                      <p className="mt-1 font-semibold">{market.participants}</p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
+                      <p className="text-gray-500 dark:text-gray-400">Volumen</p>
+                      <p className="mt-1 font-semibold">{market.volume}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
