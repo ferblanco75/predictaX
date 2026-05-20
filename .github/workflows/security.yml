@@ -54,7 +54,9 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: poetry install --no-interaction --only main
+        run: |
+          poetry install --no-interaction --only main --no-root
+          poetry run python -m pip install --upgrade pip-audit
 
       - name: Run pip-audit screen report
         working-directory: backend
