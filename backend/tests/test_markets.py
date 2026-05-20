@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.services.market_service import format_volume
+
 
 def test_list_markets(client: TestClient, sample_markets):
     """List all markets returns data."""
@@ -66,3 +68,10 @@ def test_market_response_format(client: TestClient, sample_market):
                        "volume", "participants", "endDate", "status", "history"]
     for field in required_fields:
         assert field in data, f"Missing field: {field}"
+
+
+def test_format_volume_uses_virtual_points_label():
+    """Market volume should not look like real-money currency."""
+    assert format_volume(500) == "500 pts"
+    assert format_volume(15_100) == "15.1K pts"
+    assert format_volume(1_500_000) == "1.5M pts"

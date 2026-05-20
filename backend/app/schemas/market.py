@@ -42,7 +42,7 @@ class MarketResponse(BaseModel):
     category: str
     type: str
     probability: float
-    volume: str  # Formatted as "$15.1K"
+    volume: str  # Formatted as "15.1K pts"
     participants: int
     endDate: str  # ISO format
     status: str

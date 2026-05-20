@@ -15,9 +15,9 @@ def format_volume(amount: float) -> str:
     Format volume amount as string.
 
     Examples:
-        15100.0 -> "$15.1K"
-        1500000.0 -> "$1.5M"
-        500.0 -> "$500"
+        15100.0 -> "15.1K pts"
+        1500000.0 -> "1.5M pts"
+        500.0 -> "500 pts"
 
     Args:
         amount: Volume amount in points
@@ -26,11 +26,11 @@ def format_volume(amount: float) -> str:
         Formatted volume string
     """
     if amount >= 1_000_000:
-        return f"${amount/1_000_000:.1f}M"
+        return f"{amount/1_000_000:.1f}M pts"
     elif amount >= 1_000:
-        return f"${amount/1_000:.1f}K"
+        return f"{amount/1_000:.1f}K pts"
     else:
-        return f"${amount:.0f}"
+        return f"{amount:.0f} pts"
 
 
 def get_markets(
@@ -198,7 +198,7 @@ def format_market_response(
         "category": market.category.value,
         "type": market.type.value,
         "probability": market.probability_market,
-        "volume": format_volume(market.volume),  # Format as "$15.1K"
+        "volume": format_volume(market.volume),  # Format as "15.1K pts"
         "participants": market.participants_count,
         "endDate": market.end_date.isoformat(),  # ISO format
         "status": market.status.value,

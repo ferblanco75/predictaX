@@ -1,6 +1,6 @@
 export type MarketCategory = 'economia' | 'politica' | 'deportes' | 'tecnologia' | 'crypto' | 'mundial';
 
-export type MarketStatus = 'active' | 'resolved';
+export type MarketStatus = 'active' | 'resolved' | 'cancelled';
 
 export type MarketType = 'binary' | 'multiple_choice' | 'numeric';
 

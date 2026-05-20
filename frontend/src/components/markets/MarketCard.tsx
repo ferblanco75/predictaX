@@ -28,6 +28,20 @@ export function MarketCard({ market }: MarketCardProps) {
   const topOptions = market.options
     ? [...market.options].sort((a, b) => b.probability - a.probability).slice(0, 3)
     : [];
+  const statusConfig = {
+    active: {
+      label: 'Activo',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    },
+    resolved: {
+      label: 'Resuelto',
+      className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
+    },
+    cancelled: {
+      label: 'Cancelado',
+      className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+    },
+  }[market.status];
 
   const endDate = market.endDate
     ? (() => {
@@ -54,11 +68,9 @@ export function MarketCard({ market }: MarketCardProps) {
               >
                 {market.category}
               </Badge>
-              {market.status === 'resolved' && (
-                <Badge variant="outline" className="text-xs">
-                  Resuelto
-                </Badge>
-              )}
+              <Badge variant="secondary" className={`text-xs ${statusConfig.className}`}>
+                {statusConfig.label}
+              </Badge>
             </div>
 
             {/* Title */}
@@ -135,7 +147,7 @@ export function MarketCard({ market }: MarketCardProps) {
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <TrendingUp className="h-4 w-4" />
-                <span>{market.volume} volumen</span>
+                <span>Volumen: {market.volume}</span>
               </div>
             </div>
           </CardContent>

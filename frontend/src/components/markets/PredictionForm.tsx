@@ -29,7 +29,7 @@ export function PredictionForm({
 
   const handleSubmit = () => {
     if (betAmount < 1) {
-      setPredictionError('Debes apostar al menos 1 punto');
+      setPredictionError('Debes usar al menos 1 punto');
       return;
     }
     if (betAmount > 10000) {
@@ -73,9 +73,9 @@ export function PredictionForm({
           </div>
         </div>
 
-        {/* Bet amount */}
+        {/* Points amount */}
         <div>
-          <label className="text-sm font-medium mb-2 block">Puntos a apostar</label>
+          <label className="text-sm font-medium mb-2 block">Puntos a usar</label>
           <Input
             type="number"
             value={betAmount}

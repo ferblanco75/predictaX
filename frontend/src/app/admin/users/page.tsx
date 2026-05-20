@@ -512,7 +512,7 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Total Apostado</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos usados</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos</th>
               </tr>
             </thead>
@@ -540,7 +540,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3 font-medium">{u.username}</td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
                   <td className="px-4 py-3 text-right font-medium">{u.predictions_count}</td>
-                  <td className="px-4 py-3 text-right">${u.total_wagered.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">{u.total_wagered.toLocaleString()} pts</td>
                   <td className="px-4 py-3 text-right">{u.points.toLocaleString()}</td>
                 </tr>
               ))}

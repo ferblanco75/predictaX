@@ -67,7 +67,7 @@ export default function AdminPredictionsPage() {
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <span className="text-sm text-gray-500">Volumen Total (30d)</span>
-            <div className="text-2xl font-bold mt-1">${totalVolume.toLocaleString()}</div>
+            <div className="text-2xl font-bold mt-1">{totalVolume.toLocaleString()} pts</div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <span className="text-sm text-gray-500">Promedio Diario</span>
@@ -108,7 +108,7 @@ export default function AdminPredictionsPage() {
                   </span>
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    {d.count} predicciones / ${d.volume.toLocaleString()}
+                    {d.count} predicciones / {d.volume.toLocaleString()} pts
                   </div>
                 </div>
               ))}

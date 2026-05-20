@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Users, Calendar, DollarSign, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
+import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getCategoryColor } from '@/lib/data/categories';
@@ -156,8 +156,8 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                       <span>{market.participants} participantes</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span>{market.volume} volumen</span>
+                      <Coins className="h-4 w-4" />
+                      <span>Volumen: {market.volume}</span>
                     </div>
                   </div>
                 </CardHeader>
@@ -186,7 +186,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen total</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen virtual</span>
                     <span className="font-semibold">{market.volume}</span>
                   </div>
                   <div className="flex items-center justify-between">

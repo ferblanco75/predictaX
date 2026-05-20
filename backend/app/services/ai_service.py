@@ -166,7 +166,7 @@ Analiza el siguiente mercado y proporciona tu predicción:
 **Probabilidad actual del mercado:** {market.get('probability', 'N/A')}%
 **Fecha de cierre:** {market.get('endDate', 'N/A')}
 **Participantes:** {market.get('participants', 0)}
-**Volumen:** {market.get('volume', '$0')}
+**Volumen:** {market.get('volume', '0 pts')}
 
 Proporciona un análisis detallado con:
 1. Tu estimación de probabilidad (puede diferir del mercado)

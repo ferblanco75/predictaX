@@ -12,7 +12,7 @@ import { getMarketsRanking, resolveMarket, cancelMarket, editMarket } from '@/li
 import {
   Flame,
   Snowflake,
-  DollarSign,
+  Coins,
   Users,
   MoreVertical,
   CheckCircle,
@@ -65,7 +65,7 @@ function getErrorMessage(error: unknown) {
 const sortOptions = [
   { value: 'most_active', label: 'Más activo', icon: Flame },
   { value: 'least_active', label: 'Menos activo', icon: Snowflake },
-  { value: 'most_volume', label: 'Mayor volumen', icon: DollarSign },
+  { value: 'most_volume', label: 'Mayor volumen', icon: Coins },
   { value: 'most_participants', label: 'Más participantes', icon: Users },
 ];
 
@@ -314,7 +314,7 @@ export default function AdminMarketsPage() {
                         </td>
                         <td className="px-4 py-3 text-right font-medium">{m.probability}%</td>
                         <td className="px-4 py-3 text-right">{m.predictions_count}</td>
-                        <td className="px-4 py-3 text-right">${m.volume.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right">{m.volume.toLocaleString()} pts</td>
                         <td className="px-4 py-3 text-right">{m.participants}</td>
                         <td className="px-4 py-3 text-gray-500">
                           {new Date(m.end_date).toLocaleDateString('es-AR')}
