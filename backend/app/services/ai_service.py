@@ -5,6 +5,7 @@ AI Service for market analysis using Google Gemini.
 import json
 import logging
 import time
+from datetime import datetime, time as datetime_time, timezone
 from typing import Optional
 
 import redis
@@ -108,12 +109,35 @@ def _get_daily_quota_key() -> str:
 def get_daily_usage_count() -> int:
     """Get the number of Gemini API calls made today."""
     if not redis_client:
-        return 0
+        return get_daily_usage_count_from_db()
     try:
         count = redis_client.get(_get_daily_quota_key())
-        return int(count) if count else 0
-    except Exception:
+        return int(count) if count else get_daily_usage_count_from_db()
+    except Exception as e:
+        logger.warning(f"Redis quota counter read failed, falling back to DB: {e}")
+        return get_daily_usage_count_from_db()
+
+
+def get_daily_usage_count_from_db() -> int:
+    """Fallback daily Gemini usage count based on persisted AI usage logs."""
+    db = None
+    try:
+        today = datetime.now(timezone.utc).date()
+        start = datetime.combine(today, datetime_time.min, tzinfo=timezone.utc)
+        end = datetime.combine(today, datetime_time.max, tzinfo=timezone.utc)
+        db = SessionLocal()
+        return db.query(AIUsageLog).filter(
+            AIUsageLog.created_at >= start,
+            AIUsageLog.created_at <= end,
+            AIUsageLog.cache_hit.is_(False),
+            AIUsageLog.status == "success",
+        ).count()
+    except Exception as e:
+        logger.warning(f"Failed to calculate AI quota from DB: {e}")
         return 0
+    finally:
+        if db:
+            db.close()
 
 
 def _increment_daily_quota():

@@ -25,6 +25,7 @@ def log_activity(
     status_code: Optional[int] = None,
 ):
     """Log a user activity to the database."""
+    db = None
     try:
         db = SessionLocal()
         log = ActivityLog(
@@ -41,6 +42,8 @@ def log_activity(
         )
         db.add(log)
         db.commit()
-        db.close()
     except Exception as e:
         logger.warning(f"Failed to log activity: {e}")
+    finally:
+        if db:
+            db.close()

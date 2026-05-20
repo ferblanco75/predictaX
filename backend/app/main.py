@@ -68,6 +68,25 @@ app.add_middleware(
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+TRACKING_EXACT_EXCLUDES = {"/api/health", "/api/metrics", "/api/openapi.json"}
+TRACKING_PREFIX_EXCLUDES = (
+    "/api/docs",
+    "/api/redoc",
+    "/api/admin/metrics",
+    "/api/admin/ai/usage",
+    "/api/admin/activity",
+)
+
+
+def should_track_api_request(path: str) -> bool:
+    """Return whether an API path should be stored in activity_log."""
+    if not path.startswith("/api/"):
+        return False
+    if path in TRACKING_EXACT_EXCLUDES:
+        return False
+    return not path.startswith(TRACKING_PREFIX_EXCLUDES)
+
+
 # Request tracking middleware
 class TrackingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -75,9 +94,8 @@ class TrackingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         elapsed_ms = int((time.time() - start) * 1000)
 
-        # Only track API calls, skip health checks and static files
         path = request.url.path
-        if path.startswith("/api/") and path != "/api/health" and not path.startswith("/api/docs"):
+        if should_track_api_request(path):
             log_activity(
                 action="api_request",
                 endpoint=f"{request.method} {path}",

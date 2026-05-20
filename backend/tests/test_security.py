@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.config import settings
+from app.main import should_track_api_request
 
 
 def test_api_security_headers(client: TestClient):
@@ -21,3 +22,13 @@ def test_metrics_respects_environment_setting(client: TestClient):
 
     expected_status = 200 if settings.METRICS_ENABLED else 404
     assert response.status_code == expected_status
+
+
+def test_activity_tracking_skips_noisy_admin_metrics():
+    """High-volume admin polling endpoints should not write activity logs."""
+    assert should_track_api_request("/api/markets") is True
+    assert should_track_api_request("/api/admin/users/123/toggle-active") is True
+    assert should_track_api_request("/api/admin/metrics/overview") is False
+    assert should_track_api_request("/api/admin/ai/usage/summary") is False
+    assert should_track_api_request("/api/admin/activity/recent") is False
+    assert should_track_api_request("/api/health") is False
