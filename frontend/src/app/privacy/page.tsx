@@ -21,45 +21,50 @@ const sections = [
   {
     title: '1. Datos que recolectamos',
     content:
-      'Podemos recolectar email, nombre de usuario, contraseña hasheada, rol, puntos, predicciones realizadas, mercados consultados, actividad dentro de la API, dirección IP, user-agent, fecha de registro y preferencias guardadas en el navegador.',
+      'Podemos recolectar email, nombre de usuario, contraseña hasheada, rol, puntos, predicciones realizadas, mercados consultados, actividad dentro de la API, dirección IP, user-agent, fecha de registro, métricas técnicas y preferencias guardadas en el navegador.',
   },
   {
-    title: '2. Uso de la información',
+    title: '2. Waitlist y comunicaciones',
+    content:
+      'Si te registrás en la waitlist podemos procesar tu nombre, email y el motivo de interés que compartas. Usamos esa información para administrar el acceso temprano, responder consultas y enviar comunicaciones relacionadas con PredictaX.',
+  },
+  {
+    title: '3. Uso de la información',
     content:
       'Usamos estos datos para crear y proteger cuentas, permitir predicciones, calcular rankings, prevenir abuso, mejorar la experiencia, medir rendimiento, enviar comunicaciones transaccionales y operar funcionalidades de análisis con inteligencia artificial.',
   },
   {
-    title: '3. Cookies, localStorage y analítica',
+    title: '4. Cookies, localStorage y analítica',
     content:
-      'PredictaX puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión puede almacenarse en el navegador. En producción se podrán usar Google Analytics, Vercel Analytics y Sentry según la configuración vigente.',
+      'PredictaX puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión y parte del estado de usuario pueden almacenarse en el navegador. En producción se podrán usar Google Analytics, Vercel Analytics y Sentry según la configuración vigente.',
   },
   {
-    title: '4. Proveedores externos',
+    title: '5. Inteligencia artificial y proveedores externos',
     content:
-      'La plataforma puede operar sobre servicios de terceros como Vercel, Render, proveedores de base de datos administrada, Google Gemini, Google Analytics, Vercel Analytics, Sentry y Resend. Estos proveedores procesan datos solo en la medida necesaria para prestar sus servicios.',
+      'La plataforma puede operar sobre servicios de terceros como Vercel, Render, proveedores de base de datos administrada, Google Gemini, Google Analytics, Vercel Analytics, Sentry y Resend. Las funciones de IA pueden enviar datos del mercado o contexto necesario al proveedor de IA y registrar uso, latencia, tokens, errores y cache hits para administrar cuota y calidad del servicio.',
   },
   {
-    title: '5. Seguridad',
+    title: '6. Seguridad',
     content:
       'Aplicamos medidas razonables para proteger la información, incluyendo HTTPS, hashing de contraseñas, controles de acceso, monitoreo y revisión de vulnerabilidades. Ningún sistema conectado a internet puede garantizar seguridad absoluta.',
   },
   {
-    title: '6. Retención',
+    title: '7. Retención',
     content:
       'Conservamos los datos mientras la cuenta esté activa o mientras sea necesario para operar el servicio, cumplir obligaciones legales, resolver disputas, prevenir fraude o mantener registros de seguridad.',
   },
   {
-    title: '7. Derechos del usuario',
+    title: '8. Derechos del usuario',
     content:
       'Podés solicitar acceso, rectificación, actualización o eliminación de tus datos personales. Algunas solicitudes pueden requerir verificación de identidad y podrían estar limitadas por obligaciones legales o de seguridad.',
   },
   {
-    title: '8. Menores de edad',
+    title: '9. Menores de edad',
     content:
       'PredictaX no está dirigida a menores de 18 años. Si detectamos una cuenta creada por una persona menor de edad, podremos suspenderla o eliminarla.',
   },
   {
-    title: '9. Contacto',
+    title: '10. Contacto',
     content:
       'Para consultas o solicitudes sobre privacidad, escribinos a privacy@neuropredict.io o al canal de contacto oficial publicado en la plataforma.',
   },
@@ -101,7 +106,7 @@ export default function PrivacyPage() {
               <p className="text-sm leading-6">
                 Esta política es una versión inicial para MVP. Debe revisarse legalmente antes del
                 lanzamiento público definitivo y actualizarse cuando se confirme proveedor de base
-                de datos, dominio final y configuración de analítica/cookies.
+                de datos de producción y configuración final de analítica/cookies.
               </p>
             </CardContent>
           </Card>

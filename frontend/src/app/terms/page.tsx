@@ -21,7 +21,7 @@ const sections = [
   {
     title: '1. Descripción del servicio',
     content:
-      'PredictaX es una plataforma de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan en polls y mercados sobre deportes, economía, política, tecnología y otros temas disponibles en la plataforma.',
+      'PredictaX es una plataforma MVP de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan con puntos virtuales en mercados sobre Mundial 2026, fútbol, economía, política, tecnología, cripto y otros temas disponibles en la plataforma.',
   },
   {
     title: '2. Elegibilidad y cuenta',
@@ -31,12 +31,12 @@ const sections = [
   {
     title: '3. Sistema de puntos',
     content:
-      'La plataforma puede asignar puntos virtuales a los usuarios para participar en predicciones. Salvo indicación expresa en contrario, estos puntos no representan dinero, no tienen valor monetario, no son transferibles fuera de PredictaX y no pueden canjearse por efectivo.',
+      'La plataforma puede asignar puntos virtuales a los usuarios para participar en predicciones. Salvo indicación expresa en contrario, estos puntos no representan dinero, no tienen valor monetario, no son transferibles fuera de PredictaX, no pueden canjearse por efectivo y no constituyen apuestas con dinero real.',
   },
   {
     title: '4. Predicciones y resolución de mercados',
     content:
-      'Cada mercado o poll informa su pregunta, opciones, descripción y fecha de cierre. PredictaX podrá resolver mercados usando fuentes públicas, proveedores de datos deportivos, revisión manual o criterios definidos en cada mercado.',
+      'Cada mercado informa su pregunta, opciones o tipo de predicción, descripción y fecha de cierre. PredictaX podrá resolver mercados usando fuentes públicas, proveedores de datos deportivos, revisión manual o criterios definidos en cada mercado.',
   },
   {
     title: '5. Conducta prohibida',
@@ -46,7 +46,7 @@ const sections = [
   {
     title: '6. Información e inteligencia artificial',
     content:
-      'Los análisis generados por IA y las estadísticas mostradas son informativos. Pueden contener errores, quedar desactualizados o no contemplar todos los factores relevantes. No constituyen asesoramiento financiero, legal, deportivo ni profesional.',
+      'Los análisis generados por IA, probabilidades y estadísticas mostradas son informativos. Pueden contener errores, quedar desactualizados o no contemplar todos los factores relevantes. No constituyen asesoramiento financiero, legal, deportivo, de inversión ni profesional.',
   },
   {
     title: '7. Cambios y disponibilidad',
@@ -56,7 +56,7 @@ const sections = [
   {
     title: '8. Limitación de responsabilidad',
     content:
-      'PredictaX se ofrece en el estado en que se encuentra. La plataforma no garantiza disponibilidad continua, exactitud absoluta de datos ni resultados específicos derivados del uso del servicio.',
+      'PredictaX se ofrece en el estado en que se encuentra, especialmente durante la etapa MVP. La plataforma no garantiza disponibilidad continua, exactitud absoluta de datos, continuidad de mercados ni resultados específicos derivados del uso del servicio.',
   },
   {
     title: '9. Contacto',
