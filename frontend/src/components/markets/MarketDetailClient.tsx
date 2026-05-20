@@ -19,6 +19,27 @@ interface MarketDetailClientProps {
   isLoggedIn: boolean;
 }
 
+const timeframeDurationsMs: Partial<Record<Timeframe, number>> = {
+  '1H': 60 * 60 * 1000,
+  '6H': 6 * 60 * 60 * 1000,
+  '1D': 24 * 60 * 60 * 1000,
+  '1W': 7 * 24 * 60 * 60 * 1000,
+  '1M': 30 * 24 * 60 * 60 * 1000,
+};
+
+function filterHistoryByTimeframe(history: Market['history'], timeframe: Timeframe) {
+  if (timeframe === 'ALL' || history.length === 0) return history;
+
+  const latestTimestamp = Math.max(...history.map((point) => new Date(point.date).getTime()));
+  const duration = timeframeDurationsMs[timeframe];
+  if (!duration || Number.isNaN(latestTimestamp)) return history;
+
+  const cutoff = latestTimestamp - duration;
+  const filtered = history.filter((point) => new Date(point.date).getTime() >= cutoff);
+
+  return filtered.length > 0 ? filtered : history;
+}
+
 export function MarketDetailClient({ market, categoryColor, isLoggedIn }: MarketDetailClientProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('ALL');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
@@ -66,6 +87,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
   const isPositiveTrend = trend > 0;
 
   const marketType = market.type || 'binary';
+  const chartHistory = filterHistoryByTimeframe(market.history, timeframe);
 
   return (
     <>
@@ -114,7 +136,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
               <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             </CardHeader>
             <CardContent>
-              <ProbabilityChart data={market.history} categoryColor={categoryColor} />
+              <ProbabilityChart data={chartHistory} categoryColor={categoryColor} />
             </CardContent>
           </Card>
 

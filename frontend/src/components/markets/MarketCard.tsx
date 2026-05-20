@@ -25,11 +25,18 @@ export function MarketCard({ market }: MarketCardProps) {
 
   const isPositiveTrend = trend > 0;
   const categoryColor = getCategoryColor(market.category);
+  const topOptions = market.options
+    ? [...market.options].sort((a, b) => b.probability - a.probability).slice(0, 3)
+    : [];
 
   const endDate = market.endDate
     ? (() => {
         const d = new Date(market.endDate);
-        return format(new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()), 'dd MMM yyyy', { locale: es });
+        return format(
+          new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+          'dd MMM yyyy',
+          { locale: es }
+        );
       })()
     : '';
 
@@ -100,20 +107,17 @@ export function MarketCard({ market }: MarketCardProps) {
               <>
                 {/* Multiple Choice: Top options with bars */}
                 <div className="space-y-3">
-                  {market.options
-                    .sort((a, b) => b.probability - a.probability)
-                    .slice(0, 3)
-                    .map((option) => (
-                      <div key={option.id} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium truncate flex-1 mr-2">{option.label}</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">
-                            {option.probability}%
-                          </span>
-                        </div>
-                        <Progress value={option.probability} className="h-2" />
+                  {topOptions.map((option) => (
+                    <div key={option.id} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate flex-1 mr-2">{option.label}</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          {option.probability}%
+                        </span>
                       </div>
-                    ))}
+                      <Progress value={option.probability} className="h-2" />
+                    </div>
+                  ))}
                   {market.options.length > 3 && (
                     <p className="text-xs text-gray-500 text-center mt-2">
                       +{market.options.length - 3} opciones más
