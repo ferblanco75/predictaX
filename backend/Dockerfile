@@ -12,8 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN useradd --create-home --shell /bin/bash appuser
 
-# Install Poetry
-RUN pip install poetry==1.8.0
+# Install packaging tooling with patched versions before resolving dependencies
+RUN pip install --no-cache-dir --upgrade pip==26.1.1 wheel==0.46.2 \
+    && pip install --no-cache-dir poetry==2.3.4
 
 # Copy dependency files
 COPY pyproject.toml ./
