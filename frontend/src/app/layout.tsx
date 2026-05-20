@@ -19,15 +19,22 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.neuropredict.io';
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(BASE_URL),
+  applicationName: 'PredictaX',
   title: {
-    default: 'PredictaX - Mercados de Predicción de América Latina',
+    default: 'PredictaX - Predicciones Mundial 2026 y mercados de América Latina',
     template: '%s | PredictaX',
   },
   description:
-    'Participa en mercados de predicción sobre economía, política, deportes y tecnología en América Latina. Decisiones informadas con inteligencia artificial.',
+    'Participa en polls y mercados de predicción del Mundial 2026, fútbol, economía, política, deportes y tecnología en América Latina.',
   keywords: [
+    'Mundial 2026',
+    'predicciones Mundial 2026',
+    'polls Mundial 2026',
+    'predicciones fútbol',
     'mercados de predicción',
     'pronósticos',
     'América Latina',
@@ -41,11 +48,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'es_LA',
-    url: 'https://predictax.com',
+    url: BASE_URL,
     siteName: 'PredictaX',
-    title: 'PredictaX - Mercados de Predicción de América Latina',
+    title: 'PredictaX - Predicciones Mundial 2026',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: [
       {
         url: '/og-image.png',
@@ -57,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PredictaX - Mercados de Predicción',
+    title: 'PredictaX - Predicciones Mundial 2026',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: ['/og-image.png'],
   },
   robots: {

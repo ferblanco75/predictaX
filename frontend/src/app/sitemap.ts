@@ -1,29 +1,59 @@
 import { MetadataRoute } from 'next';
 import { getAllMarkets } from '@/lib/api/markets';
 import { categories } from '@/lib/data/categories';
+import type { Market } from '@/lib/types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.neuropredict.io';
+const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+
+export const revalidate = 3600;
+
+async function getSitemapMarkets(): Promise<Market[]> {
+  if (!API_URL) {
+    return getAllMarkets();
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/markets?status=active&limit=100`, {
+      next: { revalidate },
+    });
+
+    if (!response.ok) {
+      return getAllMarkets();
+    }
+
+    return response.json();
+  } catch {
+    return getAllMarkets();
+  }
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const now = new Date();
+
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
+      lastModified: now,
       changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${BASE_URL}/markets`,
+      lastModified: now,
       changeFrequency: 'hourly',
       priority: 0.9,
     },
     {
       url: `${BASE_URL}/about`,
+      lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${BASE_URL}/waitlist`,
+      lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.6,
     },
@@ -32,22 +62,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Category pages
   const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
     url: `${BASE_URL}/markets/category/${cat.id}`,
+    lastModified: now,
     changeFrequency: 'daily' as const,
-    priority: 0.8,
+    priority: cat.id === 'mundial' ? 0.95 : 0.8,
   }));
 
-  // Market pages (dynamic — generated from data)
-  let marketPages: MetadataRoute.Sitemap = [];
-  try {
-    const markets = await getAllMarkets();
-    marketPages = markets.map((market) => ({
-      url: `${BASE_URL}/markets/${market.id}`,
-      changeFrequency: 'hourly' as const,
-      priority: 0.7,
-    }));
-  } catch {
-    // If API is not available, use empty list — sitemap still works with static pages
-  }
+  const markets = await getSitemapMarkets();
+  const marketPages = markets.map((market) => ({
+    url: `${BASE_URL}/markets/${market.id}`,
+    lastModified: now,
+    changeFrequency: 'hourly' as const,
+    priority: market.category === 'mundial' ? 0.85 : 0.7,
+  }));
 
   return [...staticPages, ...categoryPages, ...marketPages];
 }
