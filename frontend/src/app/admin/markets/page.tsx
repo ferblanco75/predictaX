@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import {
+  AdminConfirmModal,
+  AdminEmptyState,
+  AdminErrorState,
+  AdminNotice,
+} from '@/components/admin/AdminState';
 import { getMarketsRanking, resolveMarket, cancelMarket, editMarket } from '@/lib/api/admin';
 import {
   Flame,
@@ -38,6 +44,24 @@ interface EditModalState {
   description: string;
 }
 
+interface NoticeState {
+  variant: 'success' | 'error' | 'info';
+  title: string;
+  message?: string;
+}
+
+interface ConfirmActionState {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => Promise<void>;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
+}
+
 const sortOptions = [
   { value: 'most_active', label: 'Más activo', icon: Flame },
   { value: 'least_active', label: 'Menos activo', icon: Snowflake },
@@ -51,6 +75,7 @@ const categoryColors: Record<string, string> = {
   deportes: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
   tecnologia: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400',
   crypto: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400',
+  mundial: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-400',
 };
 
 export default function AdminMarketsPage() {
@@ -58,6 +83,9 @@ export default function AdminMarketsPage() {
   const [markets, setMarkets] = useState<MarketRanking[]>([]);
   const [sort, setSort] = useState('most_active');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [resolveModal, setResolveModal] = useState<ResolveModalState>({
@@ -72,13 +100,23 @@ export default function AdminMarketsPage() {
     description: '',
   });
 
-  useEffect(() => {
+  const loadMarkets = async () => {
     if (!user?.token) return;
     setLoading(true);
-    getMarketsRanking(user.token, sort, 50)
-      .then(setMarkets)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setLoadError('');
+    try {
+      const ranking = await getMarketsRanking(user.token, sort, 50);
+      setMarkets(ranking);
+    } catch (error) {
+      setLoadError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadMarkets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.token, sort]);
 
   const handleResolve = async (resolutionValue: boolean) => {
@@ -90,27 +128,57 @@ export default function AdminMarketsPage() {
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: 'Mercado resuelto',
+        message: `Resultado guardado como ${resolutionValue ? 'SÍ' : 'NO'}.`,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo resolver el mercado',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleCancel = async (marketId: string) => {
+  const handleCancel = async (marketId: string, title: string) => {
     if (!user?.token) return;
     setActionLoading(marketId);
     setOpenMenu(null);
+    setConfirmAction(null);
     try {
       const updated = await cancelMarket(user.token, marketId);
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: 'Mercado cancelado',
+        message: title,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo cancelar el mercado',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const requestCancel = (market: MarketRanking) => {
+    setOpenMenu(null);
+    setConfirmAction({
+      title: 'Cancelar mercado',
+      description: `Vas a cancelar "${market.title}". El mercado dejará de aceptar nuevas predicciones.`,
+      confirmLabel: 'Cancelar mercado',
+      danger: true,
+      onConfirm: () => handleCancel(market.id, market.title),
+    });
   };
 
   const handleEditSave = async () => {
@@ -125,8 +193,17 @@ export default function AdminMarketsPage() {
         prev.map((m) => (m.id === updated.id ? { ...m, title: updated.title } : m))
       );
       setEditModal({ open: false, marketId: '', title: '', description: '' });
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: 'Mercado actualizado',
+        message: updated.title,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo actualizar el mercado',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -138,6 +215,15 @@ export default function AdminMarketsPage() {
         <h1 className="text-2xl font-bold">Mercados</h1>
         <p className="text-gray-500 text-sm">Ranking y gestión de mercados</p>
       </div>
+
+      {notice && (
+        <AdminNotice
+          variant={notice.variant}
+          title={notice.title}
+          message={notice.message}
+          onDismiss={() => setNotice(null)}
+        />
+      )}
 
       {/* Sort buttons */}
       <div className="flex gap-2 flex-wrap">
@@ -157,140 +243,173 @@ export default function AdminMarketsPage() {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
-              <th className="text-left px-4 py-3 font-medium text-gray-500">#</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Mercado</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Categoría</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Prob.</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Volumen</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-500">Participantes</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Cierre</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    {Array.from({ length: 10 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              : markets.map((m, i) => {
-                  const isActive = !m.status || m.status === 'active';
-                  return (
-                    <tr
-                      key={m.id}
-                      className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!isActive ? 'opacity-60' : ''}`}
-                    >
-                      <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
-                      <td className="px-4 py-3 font-medium max-w-xs">
-                        <span className="line-clamp-2">{m.title}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${categoryColors[m.category] || ''}`}
-                        >
-                          {m.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            m.status === 'resolved'
-                              ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
-                              : m.status === 'cancelled'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
-                                : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
-                          }`}
-                        >
-                          {m.status === 'resolved'
-                            ? 'Resuelto'
-                            : m.status === 'cancelled'
-                              ? 'Cancelado'
-                              : 'Activo'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium">{m.probability}%</td>
-                      <td className="px-4 py-3 text-right">{m.predictions_count}</td>
-                      <td className="px-4 py-3 text-right">${m.volume.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right">{m.participants}</td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {new Date(m.end_date).toLocaleDateString('es-AR')}
-                      </td>
-                      <td className="px-4 py-3 relative">
-                        <button
-                          disabled={actionLoading === m.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenu(openMenu === m.id ? null : m.id);
-                          }}
-                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
-                        >
-                          {actionLoading === m.id ? (
-                            <span className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
-                          ) : (
-                            <MoreVertical className="h-4 w-4 text-gray-400" />
-                          )}
-                        </button>
-                        {openMenu === m.id && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
-                          >
-                            <button
-                              onClick={() => {
-                                setEditModal({
-                                  open: true,
-                                  marketId: m.id,
-                                  title: m.title,
-                                  description: '',
-                                });
-                                setOpenMenu(null);
-                              }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                            >
-                              <Pencil className="h-4 w-4 text-gray-500" />
-                              <span>Editar título</span>
-                            </button>
-                            {isActive && (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setResolveModal({ open: true, marketId: m.id, title: m.title });
-                                    setOpenMenu(null);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                  <span className="text-green-600">Resolver mercado</span>
-                                </button>
-                                <button
-                                  onClick={() => handleCancel(m.id)}
-                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                  <XCircle className="h-4 w-4 text-red-500" />
-                                  <span className="text-red-600">Cancelar mercado</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </td>
+      {loadError && !loading ? (
+        <AdminErrorState
+          title="No se pudieron cargar mercados"
+          message={loadError}
+          onAction={loadMarkets}
+        />
+      ) : (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
+          <table className="w-full min-w-[1020px] text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                <th className="text-left px-4 py-3 font-medium text-gray-500">#</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Mercado</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Categoría</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Prob.</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Volumen</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Participantes</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Cierre</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {loading
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                      {Array.from({ length: 10 }).map((_, j) => (
+                        <td key={j} className="px-4 py-3">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                        </td>
+                      ))}
                     </tr>
-                  );
-                })}
-          </tbody>
-        </table>
-      </div>
+                  ))
+                : markets.map((m, i) => {
+                    const isActive = !m.status || m.status === 'active';
+                    return (
+                      <tr
+                        key={m.id}
+                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!isActive ? 'opacity-60' : ''}`}
+                      >
+                        <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
+                        <td className="px-4 py-3 font-medium max-w-xs">
+                          <span className="line-clamp-2">{m.title}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${categoryColors[m.category] || ''}`}
+                          >
+                            {m.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              m.status === 'resolved'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400'
+                                : m.status === 'cancelled'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+                                  : 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
+                            }`}
+                          >
+                            {m.status === 'resolved'
+                              ? 'Resuelto'
+                              : m.status === 'cancelled'
+                                ? 'Cancelado'
+                                : 'Activo'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">{m.probability}%</td>
+                        <td className="px-4 py-3 text-right">{m.predictions_count}</td>
+                        <td className="px-4 py-3 text-right">${m.volume.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right">{m.participants}</td>
+                        <td className="px-4 py-3 text-gray-500">
+                          {new Date(m.end_date).toLocaleDateString('es-AR')}
+                        </td>
+                        <td className="px-4 py-3 relative">
+                          <button
+                            disabled={actionLoading === m.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenu(openMenu === m.id ? null : m.id);
+                            }}
+                            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                          >
+                            {actionLoading === m.id ? (
+                              <span className="h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
+                            )}
+                          </button>
+                          {openMenu === m.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
+                            >
+                              <button
+                                onClick={() => {
+                                  setEditModal({
+                                    open: true,
+                                    marketId: m.id,
+                                    title: m.title,
+                                    description: '',
+                                  });
+                                  setOpenMenu(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                              >
+                                <Pencil className="h-4 w-4 text-gray-500" />
+                                <span>Editar título</span>
+                              </button>
+                              {isActive && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setResolveModal({
+                                        open: true,
+                                        marketId: m.id,
+                                        title: m.title,
+                                      });
+                                      setOpenMenu(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                    <span className="text-green-600">Resolver mercado</span>
+                                  </button>
+                                  <button
+                                    onClick={() => requestCancel(m)}
+                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                  >
+                                    <XCircle className="h-4 w-4 text-red-500" />
+                                    <span className="text-red-600">Cancelar mercado</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+            </tbody>
+          </table>
+          {!loading && markets.length === 0 && (
+            <div className="p-6">
+              <AdminEmptyState
+                title="Sin mercados para mostrar"
+                message="No hay mercados disponibles para el ranking seleccionado."
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <AdminConfirmModal
+        open={!!confirmAction}
+        title={confirmAction?.title ?? ''}
+        description={confirmAction?.description ?? ''}
+        confirmLabel={confirmAction?.confirmLabel ?? 'Confirmar'}
+        danger={confirmAction?.danger}
+        loading={!!actionLoading}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          void confirmAction?.onConfirm();
+        }}
+      />
 
       {/* Resolve Modal */}
       {resolveModal.open && (

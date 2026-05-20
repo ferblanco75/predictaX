@@ -1,7 +1,9 @@
 'use client';
 
+import type { FormEvent } from 'react';
 import Link from 'next/link';
-import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +21,21 @@ const categories = [
 ];
 
 export function Navbar() {
+  const router = useRouter();
   const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } =
     useAppStore();
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    setCategory('all');
+    router.push(query ? `/markets?q=${encodeURIComponent(query)}` : '/markets');
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    router.push('/markets');
+  };
 
   return (
     <nav
@@ -41,7 +56,7 @@ export function Navbar() {
           </Link>
 
           {/* Search bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"
@@ -55,8 +70,18 @@ export function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="Buscar mercados"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          </div>
+          </form>
 
           {/* Auth buttons */}
           <div className="flex items-center space-x-3">

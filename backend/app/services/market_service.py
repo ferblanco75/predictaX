@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundException
@@ -118,7 +119,57 @@ def get_market_history(db: Session, market_id: int) -> List[MarketHistoryPoint]:
     ]
 
 
-def format_market_response(db: Session, market: Market) -> dict:
+def get_recent_market_history_by_market(
+    db: Session, market_ids: List[int], points_per_market: int = 2
+) -> dict[str, list[dict]]:
+    """
+    Get a short probability history for many markets in one query.
+
+    Market cards only need enough history to show trend, so list endpoints should not load
+    the full snapshot history for every market.
+    """
+    if not market_ids:
+        return {}
+
+    row_number = func.row_number().over(
+        partition_by=MarketSnapshot.market_id,
+        order_by=MarketSnapshot.timestamp.desc(),
+    )
+
+    ranked_snapshots = (
+        db.query(
+            MarketSnapshot.market_id.label("market_id"),
+            MarketSnapshot.timestamp.label("timestamp"),
+            MarketSnapshot.probability.label("probability"),
+            row_number.label("row_number"),
+        )
+        .filter(MarketSnapshot.market_id.in_(market_ids))
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            ranked_snapshots.c.market_id,
+            ranked_snapshots.c.timestamp,
+            ranked_snapshots.c.probability,
+        )
+        .filter(ranked_snapshots.c.row_number <= points_per_market)
+        .order_by(ranked_snapshots.c.market_id, ranked_snapshots.c.timestamp.asc())
+        .all()
+    )
+
+    history_by_market: dict[str, list[dict]] = {str(market_id): [] for market_id in market_ids}
+    for row in rows:
+        history_by_market[str(row.market_id)].append(
+            {"date": row.timestamp.isoformat(), "probability": row.probability}
+        )
+
+    return history_by_market
+
+
+def format_market_response(
+    db: Session, market: Market, history: Optional[List[MarketHistoryPoint] | list[dict]] = None
+) -> dict:
     """
     Format market model to response dict matching frontend expectations.
 
@@ -129,7 +180,16 @@ def format_market_response(db: Session, market: Market) -> dict:
     Returns:
         Dict with formatted market data
     """
-    history = get_market_history(db, market.id)
+    if history is None:
+        history = get_market_history(db, market.id)
+
+    formatted_history = [
+        {
+            "date": h["date"] if isinstance(h, dict) else h.date,
+            "probability": h["probability"] if isinstance(h, dict) else h.probability,
+        }
+        for h in history
+    ]
 
     return {
         "id": str(market.id),  # Frontend expects string
@@ -142,7 +202,7 @@ def format_market_response(db: Session, market: Market) -> dict:
         "participants": market.participants_count,
         "endDate": market.end_date.isoformat(),  # ISO format
         "status": market.status.value,
-        "history": [{"date": h.date, "probability": h.probability} for h in history],
+        "history": formatted_history,
         "relatedMarkets": [],  # TODO: Implement related markets
         "statsData": market.stats_data,
     }

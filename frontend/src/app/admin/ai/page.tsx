@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import { AdminEmptyState, AdminErrorState } from '@/components/admin/AdminState';
 import { getAIUsageSummary, getAIUsageHistory } from '@/lib/api/admin';
 import { Bot, Zap, Clock, AlertTriangle, Database } from 'lucide-react';
 
@@ -83,25 +84,40 @@ export default function AdminAIPage() {
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [history, setHistory] = useState<DailyAI[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadAIData = async () => {
+    if (!user?.token) return;
+    setLoading(true);
+    setError('');
+    try {
+      const [s, h] = await Promise.all([
+        getAIUsageSummary(user.token),
+        getAIUsageHistory(user.token, 30),
+      ]);
+      setSummary(s);
+      setHistory(h);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar AI usage.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!user?.token) return;
-    Promise.all([getAIUsageSummary(user.token), getAIUsageHistory(user.token, 30)])
-      .then(([s, h]) => {
-        setSummary(s);
-        setHistory(h);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    void loadAIData();
 
     const interval = setInterval(() => {
       if (user?.token) {
         getAIUsageSummary(user.token)
           .then(setSummary)
-          .catch(() => {});
+          .catch(() => {
+            setError('No se pudo refrescar el resumen de AI.');
+          });
       }
     }, 15000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.token]);
 
   if (loading) {
@@ -117,7 +133,26 @@ export default function AdminAIPage() {
     );
   }
 
-  if (!summary) return null;
+  if (error && !summary) {
+    return (
+      <AdminErrorState
+        title="No se pudieron cargar métricas de AI"
+        message={error}
+        onAction={loadAIData}
+      />
+    );
+  }
+
+  if (!summary) {
+    return (
+      <AdminEmptyState
+        title="Sin métricas de AI"
+        message="Todavía no hay datos disponibles para mostrar en esta sección."
+        actionLabel="Reintentar"
+        onAction={loadAIData}
+      />
+    );
+  }
 
   const maxRequests = Math.max(...history.map((d) => d.requests + d.cache_hits), 1);
 
@@ -127,6 +162,10 @@ export default function AdminAIPage() {
         <h1 className="text-2xl font-bold">AI / LLM</h1>
         <p className="text-gray-500 text-sm">Monitoreo de uso de Google Gemini Flash 2.5</p>
       </div>
+
+      {error && (
+        <AdminErrorState title="Auto-refresh falló" message={error} onAction={loadAIData} />
+      )}
 
       {/* Top row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

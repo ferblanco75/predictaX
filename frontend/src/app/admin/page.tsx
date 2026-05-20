@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import { AdminEmptyState } from '@/components/admin/AdminState';
 import {
   getOverview,
   getTopActiveUsers,
@@ -222,7 +223,14 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <AdminEmptyState
+        title="Sin métricas disponibles"
+        message="El dashboard todavía no tiene datos suficientes para mostrar."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

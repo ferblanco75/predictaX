@@ -35,8 +35,14 @@ def list_markets(
         db, category=category, status=status, limit=limit, offset=offset
     )
 
-    # Format markets for frontend
-    formatted_markets = [market_service.format_market_response(db, m) for m in markets]
+    # List cards only need recent history for trend; full history is loaded on detail.
+    history_by_market = market_service.get_recent_market_history_by_market(
+        db, [m.id for m in markets]
+    )
+    formatted_markets = [
+        market_service.format_market_response(db, m, history_by_market.get(str(m.id), []))
+        for m in markets
+    ]
 
     return formatted_markets
 
