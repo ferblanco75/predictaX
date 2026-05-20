@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Users, TrendingUp } from 'lucide-react';
+import { ArrowRight, Users } from 'lucide-react';
 import type { Market } from '@/lib/types';
 
 // Partido inaugural: Argentina vs Arabia Saudita, 14 junio 2026, 12:00 ET
@@ -54,22 +54,31 @@ interface MundialHeroProps {
 
 export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
   const countdown = useCountdown(KICKOFF);
-  const started = countdown.days === 0 && countdown.hours === 0 && countdown.minutes === 0 && countdown.seconds === 0;
+  const started =
+    countdown.days === 0 &&
+    countdown.hours === 0 &&
+    countdown.minutes === 0 &&
+    countdown.seconds === 0;
 
   return (
     <div className="relative overflow-hidden rounded-2xl mb-8">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-800 via-green-700 to-emerald-600" />
       {/* Decorative pattern */}
-      <div className="absolute inset-0 opacity-10"
-        style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
       {/* Ball decoration */}
       <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/5 border border-white/10" />
       <div className="absolute -right-8 -bottom-20 w-48 h-48 rounded-full bg-white/5 border border-white/10" />
 
       <div className="relative px-6 py-8 sm:px-10 sm:py-10">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-
           {/* Left: title + countdown */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-3">
@@ -104,7 +113,7 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
             </div>
 
             <Link
-              href="?categoria=mundial"
+              href="/markets?categoria=mundial"
               className="inline-flex items-center gap-2 bg-white text-green-800 font-semibold px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
             >
               Ver todos los polls
@@ -124,7 +133,9 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
                 >
                   <Link href={`/markets/${poll.id}`}>
                     <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 hover:bg-white/20 transition-colors cursor-pointer">
-                      <p className="text-white text-sm font-medium line-clamp-1 mb-2">{poll.title}</p>
+                      <p className="text-white text-sm font-medium line-clamp-1 mb-2">
+                        {poll.title}
+                      </p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {/* Probability bar */}
