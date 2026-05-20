@@ -52,6 +52,17 @@
   ],
   "redirects": [
     {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "neuropredict.io"
+        }
+      ],
+      "destination": "https://www.neuropredict.io/$1",
+      "permanent": true
+    },
+    {
       "source": "/home",
       "destination": "/",
       "permanent": true

@@ -3,10 +3,14 @@ import Link from 'next/link';
 import { AlertTriangle, CalendarDays, LockKeyhole } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad',
   description: 'Política de privacidad de PredictaX.',
+  alternates: {
+    canonical: canonicalUrl('/privacy'),
+  },
   robots: {
     index: false,
     follow: true,

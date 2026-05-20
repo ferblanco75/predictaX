@@ -8,6 +8,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
+import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,10 +20,8 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.neuropredict.io';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(SITE_URL),
   applicationName: 'PredictaX',
   title: {
     default: 'PredictaX - Predicciones Mundial 2026 y mercados de América Latina',
@@ -48,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'es_LA',
-    url: BASE_URL,
+    url: canonicalUrl('/'),
     siteName: 'PredictaX',
     title: 'PredictaX - Predicciones Mundial 2026',
     description:

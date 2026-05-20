@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
-import { getMarketById, getRelatedMarkets, getTrendingMarkets } from '@/lib/api/markets';
+import { getMarketById, getTrendingMarkets } from '@/lib/api/markets';
 import { MarketDetailPage } from '@/components/markets/MarketDetailPage';
 import type { Metadata } from 'next';
+import { canonicalUrl } from '@/lib/site';
 
 export async function generateStaticParams() {
   const topMarkets = getTrendingMarkets(20);
@@ -25,11 +26,14 @@ export async function generateMetadata({
   return {
     title: `${market.title} - ${market.probability}%`,
     description,
+    alternates: {
+      canonical: canonicalUrl(`/markets/${market.id}`),
+    },
     openGraph: {
       title: market.title,
       description: `Probabilidad actual: ${market.probability}%. ${description}`,
       type: 'article',
-      url: `https://predictax.com/markets/${market.id}`,
+      url: canonicalUrl(`/markets/${market.id}`),
       images: [{ url: `/og/market-${market.id}.png`, width: 1200, height: 630, alt: market.title }],
     },
     twitter: {

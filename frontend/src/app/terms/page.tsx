@@ -3,10 +3,14 @@ import Link from 'next/link';
 import { AlertTriangle, CalendarDays, ShieldCheck } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones',
   description: 'Términos y condiciones de uso de PredictaX.',
+  alternates: {
+    canonical: canonicalUrl('/terms'),
+  },
   robots: {
     index: false,
     follow: true,
