@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "PredictaX API"
     DEBUG: bool = False
+    METRICS_ENABLED: bool = False
 
     # Database
     DATABASE_URL: str

@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"]|'/g, (char) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[char];
+  });
+}
 
 /**
  * POST /api/waitlist
@@ -17,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { email, nombre, razon } = body;
 
     // Validation
-    if (!email || !nombre) {
+    if (!email || !nombre || typeof email !== 'string' || typeof nombre !== 'string') {
       return NextResponse.json({ error: 'Email y nombre son requeridos' }, { status: 400 });
     }
 
@@ -36,6 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate razon length if provided
+    if (razon && typeof razon !== 'string') {
+      return NextResponse.json({ error: 'Razón inválida' }, { status: 400 });
+    }
+
     if (razon && razon.length > 500) {
       return NextResponse.json(
         { error: 'La razón no puede exceder 500 caracteres' },
@@ -65,11 +79,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinatario de email no configurado' }, { status: 500 });
     }
 
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const safeNombre = escapeHtml(nombre.trim());
+    const safeEmail = escapeHtml(email.trim());
+    const safeRazon = razon
+      ? escapeHtml(razon.trim())
+      : '<em style="color: #9ca3af;">No especificada</em>';
+
     // Send email notification using Resend
     const { data, error } = await resend.emails.send({
       from: 'PredictaX Waitlist <onboarding@resend.dev>',
       to: recipientEmail,
-      subject: `Nueva inscripción waitlist: ${nombre}`,
+      subject: `Nueva inscripción waitlist: ${nombre.trim()}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -90,17 +111,17 @@ export async function POST(request: NextRequest) {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold; width: 40%;">Nombre:</td>
-                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${nombre}</td>
+                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${safeNombre}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Email:</td>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">
-                    <a href="mailto:${email}" style="color: #3b82f6; text-decoration: none;">${email}</a>
+                    <a href="mailto:${safeEmail}" style="color: #3b82f6; text-decoration: none;">${safeEmail}</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Razón:</td>
-                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${razon || '<em style="color: #9ca3af;">No especificada</em>'}</td>
+                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${safeRazon}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Fecha:</td>

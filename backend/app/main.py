@@ -20,6 +20,28 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add conservative security headers to API responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), payment=()"
+        )
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+
+        if not settings.DEBUG:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains; preload"
+            )
+
+        return response
+
 # Create FastAPI app — disable Swagger/OpenAPI docs in production
 app = FastAPI(
     title="PredictaX API",
@@ -44,6 +66,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Request tracking middleware
 class TrackingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -66,8 +90,8 @@ class TrackingMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(TrackingMiddleware)
 
-# Prometheus metrics at /api/metrics
-if PROMETHEUS_AVAILABLE:
+# Prometheus metrics at /api/metrics. Disabled by default in production.
+if PROMETHEUS_AVAILABLE and settings.METRICS_ENABLED:
     Instrumentator(
         excluded_handlers=["/api/metrics", "/api/docs", "/api/redoc"],
     ).instrument(app).expose(app, endpoint="/api/metrics", include_in_schema=False)

@@ -823,9 +823,13 @@ def seed_mundial_2026(db: Session = Depends(get_db)):
     """Run Mundial 2026 seed — creates 14 polls if not already present."""
     existing = db.query(Market).filter(Market.category == MarketCategory.MUNDIAL).count()
     if existing > 0:
-        return {"status": "skipped", "message": f"Ya existen {existing} polls del Mundial. No se crearon duplicados."}
+        return {
+            "status": "skipped",
+            "message": f"Ya existen {existing} polls del Mundial. No se crearon duplicados.",
+        }
 
-    import sys, os
+    import sys
+
     sys.path.insert(0, "/app")
     from scripts.seed_mundial_2026 import MUNDIAL_POLLS, seed_mundial_snapshots
 
@@ -849,4 +853,8 @@ def seed_mundial_2026(db: Session = Depends(get_db)):
     seed_mundial_snapshots(db, markets)
     db.commit()
 
-    return {"status": "ok", "created": len(markets), "message": f"Se crearon {len(markets)} polls del Mundial 2026."}
+    return {
+        "status": "ok",
+        "created": len(markets),
+        "message": f"Se crearon {len(markets)} polls del Mundial 2026.",
+    }
