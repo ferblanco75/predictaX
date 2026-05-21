@@ -68,6 +68,11 @@ export function Footer() {
                   Privacidad
                 </Link>
               </li>
+              <li>
+                <Link href="/security-policy" className="hover:text-gray-900">
+                  Seguridad
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
