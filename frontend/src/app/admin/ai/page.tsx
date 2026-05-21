@@ -13,8 +13,9 @@ interface AISummary {
     tokens: number;
     avg_latency_ms: number;
     errors: number;
+    rate_limited: number;
   };
-  this_week: { requests: number; tokens: number };
+  this_week: { requests: number; tokens: number; rate_limited: number };
   quota: { daily_limit: number; used_today: number; remaining: number; usage_percent: number };
   cache_hit_rate: number;
   top_markets_analyzed: { market_id: string; title: string; analysis_count: number }[];
@@ -24,6 +25,7 @@ interface DailyAI {
   date: string;
   requests: number;
   cache_hits: number;
+  rate_limited: number;
   tokens: number;
 }
 
@@ -215,6 +217,14 @@ export default function AdminAIPage() {
                 <span className="font-medium">{summary.today.errors}</span>
               </div>
             )}
+            {summary.today.rate_limited > 0 && (
+              <div className="flex justify-between text-amber-500">
+                <span className="text-sm flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Rate limits
+                </span>
+                <span className="font-medium">{summary.today.rate_limited}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -232,6 +242,10 @@ export default function AdminAIPage() {
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Tokens consumidos</span>
               <span className="font-medium">{summary.this_week.tokens.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Rate limits</span>
+              <span className="font-medium">{summary.this_week.rate_limited}</span>
             </div>
           </div>
 
@@ -291,7 +305,8 @@ export default function AdminAIPage() {
                     })}
                   </span>
                   <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                    {d.requests} API / {d.cache_hits} cache / {d.tokens.toLocaleString()} tokens
+                    {d.requests} API / {d.cache_hits} cache / {d.rate_limited} limits /{' '}
+                    {d.tokens.toLocaleString()} tokens
                   </div>
                 </div>
               );

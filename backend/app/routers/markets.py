@@ -1,13 +1,32 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import decode_token
 from app.schemas.market import MarketHistoryPoint, MarketResponse
 from app.services import ai_service, market_service
 
 router = APIRouter()
+
+
+def _get_ai_requester_id(request: Request) -> str:
+    """Prefer authenticated user id for AI throttling; fall back to client IP."""
+    auth_header = request.headers.get("authorization", "")
+    scheme, _, token = auth_header.partition(" ")
+    if scheme.lower() == "bearer" and token:
+        payload = decode_token(token)
+        user_id = payload.get("sub") if payload else None
+        if user_id:
+            return f"user:{user_id}"
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",", 1)[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
+    return f"ip:{client_ip}"
 
 
 @router.get("", response_model=List[MarketResponse])
@@ -89,7 +108,7 @@ def get_market_history(market_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{market_id}/ai-analysis", tags=["AI"])
-def analyze_market(market_id: str, db: Session = Depends(get_db)):
+def analyze_market(market_id: str, request: Request, db: Session = Depends(get_db)):
     """
     Generate AI analysis for a market using Google Gemini.
 
@@ -106,8 +125,14 @@ def analyze_market(market_id: str, db: Session = Depends(get_db)):
     formatted = market_service.format_market_response(db, market)
 
     try:
-        analysis = ai_service.get_or_create_analysis(str(market_id), formatted)
+        analysis = ai_service.get_or_create_analysis(
+            str(market_id),
+            formatted,
+            requester_id=_get_ai_requester_id(request),
+        )
         return analysis
+    except ai_service.AIRateLimitError as e:
+        raise HTTPException(status_code=429, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
 

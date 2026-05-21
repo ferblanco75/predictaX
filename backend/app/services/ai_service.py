@@ -39,6 +39,21 @@ else:
 # Cache TTL: 6 hours
 CACHE_TTL = 6 * 60 * 60
 
+# Keep a small buffer below Gemini free-tier quota to avoid hard failures.
+DAILY_QUOTA_LIMIT = 250
+DAILY_QUOTA_BUFFER = 10
+
+# Redis-backed abuse controls for POST /ai-analysis.
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_MAX_REQUESTS = 10
+MARKET_COOLDOWN_SECONDS = 60
+GENERATION_LOCK_TTL = 60
+
+
+class AIRateLimitError(RuntimeError):
+    """Raised when an AI analysis request is intentionally throttled."""
+
+
 # Response schema for structured output
 ANALYSIS_SCHEMA = types.Schema(
     type=types.Type.OBJECT,
@@ -182,6 +197,87 @@ def _get_cache_key(market_id: str) -> str:
     return f"ai_analysis:{market_id}"
 
 
+def _get_requester_rate_key(requester_id: str) -> str:
+    return f"ai_rate:requester:{requester_id}"
+
+
+def _get_market_rate_key(market_id: str, requester_id: str) -> str:
+    return f"ai_rate:market:{requester_id}:{market_id}"
+
+
+def _get_generation_lock_key(market_id: str) -> str:
+    return f"ai_analysis_lock:{market_id}"
+
+
+def check_ai_rate_limit(market_id: str, requester_id: Optional[str]) -> None:
+    """Throttle repeated AI analysis POSTs by requester and market."""
+    if not redis_client or not requester_id:
+        return
+
+    try:
+        requester_key = _get_requester_rate_key(requester_id)
+        request_count = redis_client.incr(requester_key)
+        if request_count == 1:
+            redis_client.expire(requester_key, RATE_LIMIT_WINDOW_SECONDS)
+
+        if request_count > RATE_LIMIT_MAX_REQUESTS:
+            _log_usage(
+                market_id=market_id,
+                cache_hit=False,
+                status="rate_limited",
+                error_message="requester_rate_limit",
+            )
+            raise AIRateLimitError(
+                "Demasiadas solicitudes de IA. Esperá un minuto e intentá nuevamente."
+            )
+
+        market_key = _get_market_rate_key(market_id, requester_id)
+        market_allowed = redis_client.set(
+            market_key,
+            "1",
+            ex=MARKET_COOLDOWN_SECONDS,
+            nx=True,
+        )
+        if not market_allowed:
+            _log_usage(
+                market_id=market_id,
+                cache_hit=False,
+                status="rate_limited",
+                error_message="market_cooldown",
+            )
+            raise AIRateLimitError(
+                "Ya pediste un análisis IA para este mercado. Esperá un minuto antes de intentar de nuevo."
+            )
+    except AIRateLimitError:
+        raise
+    except Exception as e:
+        logger.warning(f"AI rate limit check failed open: {e}")
+
+
+def _acquire_generation_lock(market_id: str) -> tuple[bool, Optional[str]]:
+    """Ensure only one Gemini generation runs per market on cache miss."""
+    if not redis_client:
+        return True, None
+
+    lock_key = _get_generation_lock_key(market_id)
+    try:
+        acquired = redis_client.set(lock_key, "1", ex=GENERATION_LOCK_TTL, nx=True)
+        return bool(acquired), lock_key
+    except Exception as e:
+        logger.warning(f"AI generation lock failed open: {e}")
+        return True, None
+
+
+def _release_generation_lock(lock_key: Optional[str]) -> None:
+    if not redis_client or not lock_key:
+        return
+
+    try:
+        redis_client.delete(lock_key)
+    except Exception as e:
+        logger.warning(f"AI generation lock release failed: {e}")
+
+
 def get_cached_analysis(market_id: str) -> Optional[dict]:
     """Get cached analysis from Redis."""
     if not redis_client:
@@ -228,9 +324,10 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
 
     # Check daily quota (250 RPD for free tier)
     daily_count = get_daily_usage_count()
-    if daily_count >= 240:  # Leave 10 buffer
+    quota_threshold = DAILY_QUOTA_LIMIT - DAILY_QUOTA_BUFFER
+    if daily_count >= quota_threshold:
         raise RuntimeError(
-            f"Daily AI quota nearly exhausted ({daily_count}/250). Try again tomorrow."
+            f"Daily AI quota nearly exhausted ({daily_count}/{DAILY_QUOTA_LIMIT}). Try again tomorrow."
         )
 
     prompt = _build_prompt(market)
@@ -288,7 +385,10 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
 
 
 def get_or_create_analysis(
-    market_id: str, market: dict, user_id: Optional[str] = None
+    market_id: str,
+    market: dict,
+    user_id: Optional[str] = None,
+    requester_id: Optional[str] = None,
 ) -> dict:
     """
     Get cached analysis or generate a new one.
@@ -297,10 +397,13 @@ def get_or_create_analysis(
         market_id: Market ID for cache key
         market: Market data dict
         user_id: Optional user ID for tracking
+        requester_id: Optional requester fingerprint for rate limiting
 
     Returns:
         Analysis dict
     """
+    check_ai_rate_limit(market_id, requester_id)
+
     # Try cache first
     cached = get_cached_analysis(market_id)
     if cached:
@@ -308,11 +411,34 @@ def get_or_create_analysis(
         _log_usage(market_id=market_id, user_id=user_id, cache_hit=True, status="success")
         return cached
 
-    # Generate new analysis
-    analysis = analyze_market(market, user_id=user_id)
-    analysis["cached"] = False
+    lock_acquired, lock_key = _acquire_generation_lock(market_id)
+    if not lock_acquired:
+        _log_usage(
+            market_id=market_id,
+            user_id=user_id,
+            cache_hit=False,
+            status="rate_limited",
+            error_message="analysis_in_progress",
+        )
+        raise AIRateLimitError(
+            "Ya hay un análisis IA en curso para este mercado. Esperá unos segundos e intentá nuevamente."
+        )
 
-    # Cache it
-    cache_analysis(market_id, analysis)
+    try:
+        # Another request may have filled the cache while this one waited for the lock.
+        cached = get_cached_analysis(market_id)
+        if cached:
+            cached["cached"] = True
+            _log_usage(market_id=market_id, user_id=user_id, cache_hit=True, status="success")
+            return cached
+
+        # Generate new analysis
+        analysis = analyze_market(market, user_id=user_id)
+        analysis["cached"] = False
+
+        # Cache it
+        cache_analysis(market_id, analysis)
+    finally:
+        _release_generation_lock(lock_key)
 
     return analysis

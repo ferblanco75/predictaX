@@ -99,6 +99,7 @@ def get_overview(db: Session = Depends(get_db)):
     ai_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     ai_cache_hits_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -139,8 +140,8 @@ def get_overview(db: Session = Depends(get_db)):
             "cache_hit_rate": cache_hit_rate,
             "avg_latency_ms": int(avg_latency) if avg_latency else 0,
             "quota_used": quota_used,
-            "quota_limit": 250,
-            "quota_remaining": max(0, 250 - quota_used),
+            "quota_limit": ai_service.DAILY_QUOTA_LIMIT,
+            "quota_remaining": max(0, ai_service.DAILY_QUOTA_LIMIT - quota_used),
         },
     }
 
@@ -306,6 +307,7 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     today_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     today_cache_hits = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -314,6 +316,7 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     today_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     today_avg_latency = db.query(func.avg(AIUsageLog.response_time_ms)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -325,16 +328,26 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     week_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     week_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
 
     # Errors
     today_errors = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.status == "error",
+    ).scalar()
+    today_rate_limited = db.query(func.count(AIUsageLog.id)).filter(
+        func.date(AIUsageLog.created_at) == today,
+        AIUsageLog.status == "rate_limited",
+    ).scalar()
+    week_rate_limited = db.query(func.count(AIUsageLog.id)).filter(
+        func.date(AIUsageLog.created_at) >= week_ago,
+        AIUsageLog.status == "rate_limited",
     ).scalar()
 
     # Top markets analyzed
@@ -368,16 +381,18 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
             "tokens": int(today_tokens),
             "avg_latency_ms": int(today_avg_latency) if today_avg_latency else 0,
             "errors": today_errors,
+            "rate_limited": today_rate_limited,
         },
         "this_week": {
             "requests": week_requests,
             "tokens": int(week_tokens),
+            "rate_limited": week_rate_limited,
         },
         "quota": {
-            "daily_limit": 250,
+            "daily_limit": ai_service.DAILY_QUOTA_LIMIT,
             "used_today": quota_used,
-            "remaining": max(0, 250 - quota_used),
-            "usage_percent": round(quota_used / 250 * 100, 1),
+            "remaining": max(0, ai_service.DAILY_QUOTA_LIMIT - quota_used),
+            "usage_percent": round(quota_used / ai_service.DAILY_QUOTA_LIMIT * 100, 1),
         },
         "cache_hit_rate": round(
             today_cache_hits / (today_requests + today_cache_hits), 2
@@ -397,10 +412,17 @@ def get_ai_usage_history(
     daily = (
         db.query(
             func.date(AIUsageLog.created_at).label("day"),
-            func.count(case((AIUsageLog.cache_hit.is_(False), 1))).label("requests"),
+            func.count(case((
+                AIUsageLog.cache_hit.is_(False) & (AIUsageLog.status == "success"),
+                1,
+            ))).label("requests"),
             func.count(case((AIUsageLog.cache_hit.is_(True), 1))).label("cache_hits"),
+            func.count(case((AIUsageLog.status == "rate_limited", 1))).label("rate_limited"),
             func.coalesce(func.sum(
-                case((AIUsageLog.cache_hit.is_(False), AIUsageLog.total_tokens), else_=0)
+                case((
+                    AIUsageLog.cache_hit.is_(False) & (AIUsageLog.status == "success"),
+                    AIUsageLog.total_tokens,
+                ), else_=0)
             ), 0).label("tokens"),
         )
         .filter(func.date(AIUsageLog.created_at) >= start_date)
@@ -414,6 +436,7 @@ def get_ai_usage_history(
             "date": str(row.day),
             "requests": row.requests,
             "cache_hits": row.cache_hits,
+            "rate_limited": row.rate_limited,
             "tokens": int(row.tokens),
         }
         for row in daily
