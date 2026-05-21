@@ -32,13 +32,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!isLoggedIn || !user || user.role !== 'admin') {
+    if (!isLoggedIn || !user) {
       router.push('/auth');
-    } else {
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      router.push('/403');
+      return;
+    }
+
+    if (!authorized) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAuthorized(true);
     }
-  }, [isLoggedIn, user, router]);
+  }, [authorized, isLoggedIn, user, router]);
 
   if (!authorized) {
     return (

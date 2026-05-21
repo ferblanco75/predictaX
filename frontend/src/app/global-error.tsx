@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, Home } from 'lucide-react';
 
 export default function GlobalError({
@@ -12,33 +13,34 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Global Error:', error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
     <html lang="es">
       <body className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-lg w-full bg-card rounded-lg shadow-lg p-12 text-center">
-          <div className="text-red-500 mb-6">
-            <AlertTriangle className="h-20 w-20 mx-auto" />
+        <div className="max-w-xl w-full rounded-2xl border border-red-100 bg-card p-8 text-center shadow-xl dark:border-red-950 md:p-12">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
+            <AlertTriangle className="h-10 w-10" />
           </div>
 
-          <h1 className="text-3xl font-bold mb-3">Error Crítico</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-500">Error crítico</p>
+          <h1 className="mt-3 text-3xl font-bold">No pudimos cargar PredictaX</h1>
 
-          <p className="text-gray-600 mb-6">
-            Lo sentimos, ocurrió un error crítico en la aplicación. Por favor, recarga la página o
-            contacta al soporte si el problema persiste.
+          <p className="mt-4 text-muted-foreground">
+            La aplicación encontró un problema inesperado. Reintentá cargar la página o volvé al
+            inicio si el problema persiste.
           </p>
 
           {process.env.NODE_ENV === 'development' && (
-            <div className="mb-6 p-4 bg-red-50 rounded-lg text-left">
+            <div className="mt-6 mb-6 p-4 bg-red-50 rounded-lg text-left">
               <p className="text-sm font-semibold text-red-900 mb-2">Error Details:</p>
               <p className="text-sm font-mono text-red-800 break-all">{error.message}</p>
               {error.digest && <p className="text-xs text-red-600 mt-2">Digest: {error.digest}</p>}
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => reset()}
               className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
