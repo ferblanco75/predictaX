@@ -8,6 +8,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
@@ -111,6 +112,7 @@ export default function RootLayout({
         </QueryProvider>
         <GoogleAnalytics />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
