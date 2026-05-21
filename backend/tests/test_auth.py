@@ -1,4 +1,8 @@
+from datetime import timedelta
+
 from fastapi.testclient import TestClient
+
+from app.core.security import create_access_token, decode_token
 
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
@@ -75,6 +79,27 @@ def test_login_nonexistent_user(client: TestClient):
         json={"email": "nobody@predictax.com", "password": "whatever"},
     )
     assert response.status_code == 401
+
+
+def test_access_token_roundtrip():
+    token = create_access_token({"sub": "user-123"})
+
+    payload = decode_token(token)
+
+    assert payload is not None
+    assert payload["sub"] == "user-123"
+
+
+def test_decode_token_rejects_expired_token():
+    token = create_access_token(
+        {"sub": "user-123"}, expires_delta=timedelta(seconds=-1)
+    )
+
+    assert decode_token(token) is None
+
+
+def test_decode_token_rejects_invalid_token():
+    assert decode_token("invalid.token.here") is None
 
 
 def test_protected_route(client: TestClient):
