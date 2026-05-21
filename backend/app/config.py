@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    AUTH_RATE_LIMIT_WINDOW_SECONDS: int = 60
+    AUTH_LOGIN_RATE_LIMIT_MAX: int = 5
+    AUTH_REGISTER_RATE_LIMIT_MAX: int = 3
 
     # CORS - stored as str to avoid pydantic_settings auto JSON parsing
     CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000"]

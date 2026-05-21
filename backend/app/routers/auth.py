@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import enforce_rate_limit
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
@@ -10,8 +12,13 @@ from app.services import auth_service
 router = APIRouter()
 
 
+def _auth_rate_limit_key(action: str, request: Request) -> str:
+    client_host = request.client.host if request.client else "unknown"
+    return f"auth:{action}:{client_host}"
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+def register(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
     """
     Register a new user.
 
@@ -25,12 +32,17 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     Raises:
         400: If email or username already exists
     """
+    enforce_rate_limit(
+        _auth_rate_limit_key("register", request),
+        settings.AUTH_REGISTER_RATE_LIMIT_MAX,
+        settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
     user = auth_service.create_user(db, user_data)
     return user
 
 
 @router.post("/login", response_model=Token)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db)):
     """
     Login with email and password.
 
@@ -44,6 +56,11 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     Raises:
         401: If credentials are invalid
     """
+    enforce_rate_limit(
+        _auth_rate_limit_key("login", request),
+        settings.AUTH_LOGIN_RATE_LIMIT_MAX,
+        settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
     user = auth_service.authenticate_user(db, credentials.email, credentials.password)
     access_token = auth_service.create_user_token(user)
 

@@ -81,6 +81,52 @@ def test_login_nonexistent_user(client: TestClient):
     assert response.status_code == 401
 
 
+def test_login_rate_limit_returns_429(client: TestClient):
+    register_response = client.post(REGISTER_URL, json=USER_DATA)
+    assert register_response.status_code == 201
+
+    for _ in range(5):
+        response = client.post(
+            LOGIN_URL,
+            json={"email": USER_DATA["email"], "password": "wrongpassword"},
+        )
+        assert response.status_code == 401
+
+    response = client.post(
+        LOGIN_URL,
+        json={"email": USER_DATA["email"], "password": "wrongpassword"},
+    )
+
+    assert response.status_code == 429
+    assert response.json()["detail"] == "Too many authentication attempts. Try again later."
+    assert response.headers["retry-after"].isdigit()
+
+
+def test_register_rate_limit_returns_429(client: TestClient):
+    for index in range(3):
+        response = client.post(
+            REGISTER_URL,
+            json={
+                "email": f"rate-limit-{index}@predictax.com",
+                "username": f"ratelimit{index}",
+                "password": "securepass123",
+            },
+        )
+        assert response.status_code == 201
+
+    response = client.post(
+        REGISTER_URL,
+        json={
+            "email": "rate-limit-3@predictax.com",
+            "username": "ratelimit3",
+            "password": "securepass123",
+        },
+    )
+
+    assert response.status_code == 429
+    assert response.headers["retry-after"].isdigit()
+
+
 def test_access_token_roundtrip():
     token = create_access_token({"sub": "user-123"})
 

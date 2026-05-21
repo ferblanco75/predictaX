@@ -5,7 +5,8 @@ AI Service for market analysis using Google Gemini.
 import json
 import logging
 import time
-from datetime import datetime, time as datetime_time, timezone
+from datetime import date, datetime, timezone
+from datetime import time as datetime_time
 from typing import Optional
 
 import redis
@@ -117,7 +118,6 @@ def _log_usage(
 
 
 def _get_daily_quota_key() -> str:
-    from datetime import date
     return f"ai_quota:daily:{date.today().isoformat()}"
 
 
@@ -246,7 +246,8 @@ def check_ai_rate_limit(market_id: str, requester_id: Optional[str]) -> None:
                 error_message="market_cooldown",
             )
             raise AIRateLimitError(
-                "Ya pediste un análisis IA para este mercado. Esperá un minuto antes de intentar de nuevo."
+                "Ya pediste un análisis IA para este mercado. "
+                "Esperá un minuto antes de intentar de nuevo."
             )
     except AIRateLimitError:
         raise
@@ -327,7 +328,8 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
     quota_threshold = DAILY_QUOTA_LIMIT - DAILY_QUOTA_BUFFER
     if daily_count >= quota_threshold:
         raise RuntimeError(
-            f"Daily AI quota nearly exhausted ({daily_count}/{DAILY_QUOTA_LIMIT}). Try again tomorrow."
+            f"Daily AI quota nearly exhausted ({daily_count}/{DAILY_QUOTA_LIMIT}). "
+            "Try again tomorrow."
         )
 
     prompt = _build_prompt(market)
@@ -421,7 +423,8 @@ def get_or_create_analysis(
             error_message="analysis_in_progress",
         )
         raise AIRateLimitError(
-            "Ya hay un análisis IA en curso para este mercado. Esperá unos segundos e intentá nuevamente."
+            "Ya hay un análisis IA en curso para este mercado. "
+            "Esperá unos segundos e intentá nuevamente."
         )
 
     try:
