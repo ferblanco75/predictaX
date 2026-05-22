@@ -37,6 +37,31 @@ def test_register(client: TestClient):
     assert "hashed_password" not in data
 
 
+def test_register_normalizes_email_and_username(client: TestClient):
+    response = client.post(
+        REGISTER_URL,
+        json={
+            **USER_DATA,
+            "email": "  Normalized@PredictaX.COM  ",
+            "username": "  Test_User-1  ",
+        },
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == "normalized@predictax.com"
+    assert data["username"] == "test_user-1"
+
+
+def test_register_rejects_invalid_username_characters(client: TestClient):
+    response = client.post(
+        REGISTER_URL,
+        json={**USER_DATA, "username": "<script>alert(1)</script>"},
+    )
+
+    assert response.status_code == 422
+
+
 def test_register_records_marketing_opt_in(client: TestClient):
     response = client.post(
         REGISTER_URL,

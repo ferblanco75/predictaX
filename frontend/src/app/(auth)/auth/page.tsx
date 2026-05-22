@@ -22,8 +22,10 @@ interface FormErrors {
 const LEGAL_CONSENT_VERSION = '2026-05-21';
 
 function validateEmail(email: string): string | undefined {
-  if (!email) return 'El email es requerido';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Email inválido';
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail) return 'El email es requerido';
+  if (normalizedEmail.length > 255) return 'El email es demasiado largo';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return 'Email inválido';
 }
 
 function validatePassword(password: string): string | undefined {
@@ -32,8 +34,13 @@ function validatePassword(password: string): string | undefined {
 }
 
 function validateName(name: string): string | undefined {
-  if (!name) return 'El nombre es requerido';
-  if (name.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+  const normalizedName = name.trim().toLowerCase();
+  if (!normalizedName) return 'El nombre es requerido';
+  if (normalizedName.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+  if (normalizedName.length > 30) return 'El nombre debe tener máximo 30 caracteres';
+  if (!/^[a-z0-9_-]+$/.test(normalizedName)) {
+    return 'Usá solo letras, números, guion bajo o guion medio';
+  }
 }
 
 function LegalCheckbox({
@@ -104,8 +111,12 @@ export default function AuthPage() {
   const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
+    const name = String(formData.get('name') ?? '')
+      .trim()
+      .toLowerCase();
+    const email = String(formData.get('email') ?? '')
+      .trim()
+      .toLowerCase();
     const password = formData.get('password') as string;
     const passwordConfirm = formData.get('passwordConfirm') as string;
     const termsAccepted = formData.get('termsAccepted') === 'on';

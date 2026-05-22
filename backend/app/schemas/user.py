@@ -9,8 +9,8 @@ from app.config import settings
 class UserCreate(BaseModel):
     """Schema for user registration"""
 
-    email: EmailStr
-    username: str = Field(min_length=3, max_length=50)
+    email: EmailStr = Field(max_length=255)
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[a-z0-9_-]+$")
     password: str = Field(min_length=8, max_length=100)
     terms_accepted: bool
     privacy_accepted: bool
@@ -20,6 +20,16 @@ class UserCreate(BaseModel):
         default=settings.LEGAL_CONSENT_VERSION,
         max_length=32,
     )
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower() if isinstance(value, str) else value
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        return value.strip().lower() if isinstance(value, str) else value
 
     @field_validator("terms_accepted", "privacy_accepted", "is_adult")
     @classmethod
