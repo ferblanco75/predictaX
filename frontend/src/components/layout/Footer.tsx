@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CookieSettingsButton } from '@/components/privacy/CookieConsentManager';
 
 export function Footer() {
   return (
@@ -67,6 +68,9 @@ export function Footer() {
                 <Link href="/privacy" className="hover:text-gray-900">
                   Privacidad
                 </Link>
+              </li>
+              <li>
+                <CookieSettingsButton />
               </li>
               <li>
                 <Link href="/security-policy" className="hover:text-gray-900">

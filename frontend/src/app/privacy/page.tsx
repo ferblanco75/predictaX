@@ -36,7 +36,7 @@ const sections = [
   {
     title: '4. Cookies, localStorage y analítica',
     content:
-      'PredictaX puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión y parte del estado de usuario pueden almacenarse en el navegador. En producción se podrán usar Google Analytics, Vercel Analytics y Sentry según la configuración vigente.',
+      'PredictaX puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión y parte del estado de usuario pueden almacenarse en el navegador. Analytics, medición de rendimiento y monitoreo client-side no esencial se cargan solo si aceptás esa categoría en el banner o en las preferencias de privacidad del footer.',
   },
   {
     title: '5. Inteligencia artificial y proveedores externos',
@@ -90,9 +90,9 @@ export default function PrivacyPage() {
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-blue-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
                 <CalendarDays className="h-4 w-4" />
-                Última actualización: 20 de mayo de 2026
+                Última actualización: 21 de mayo de 2026
               </span>
-              <span className="rounded-full bg-white/10 px-3 py-1">Versión 0.1</span>
+              <span className="rounded-full bg-white/10 px-3 py-1">Versión 0.2</span>
             </div>
           </div>
         </div>
