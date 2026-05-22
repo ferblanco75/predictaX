@@ -36,6 +36,20 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserDeleteRequest(BaseModel):
+    """Schema for deleting/anonymizing the current user account"""
+
+    password: str = Field(min_length=8, max_length=100)
+    confirm_delete: bool
+
+    @field_validator("confirm_delete")
+    @classmethod
+    def required_delete_confirmation(cls, value: bool) -> bool:
+        if value is not True:
+            raise ValueError("Account deletion must be explicitly confirmed")
+        return value
+
+
 class UserResponse(BaseModel):
     """Schema for user response"""
 
@@ -50,6 +64,7 @@ class UserResponse(BaseModel):
     legal_consent_version: str | None = None
     marketing_opt_in: bool = False
     marketing_opt_in_at: datetime | None = None
+    deleted_at: datetime | None = None
     created_at: datetime
 
     class Config:

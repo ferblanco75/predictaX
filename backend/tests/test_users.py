@@ -43,3 +43,54 @@ def test_data_export_includes_profile_consents_and_predictions(
     assert data["predictions"][0]["points_wagered"] == 25
     assert "activity_logs" in data
     assert "ai_usage" in data
+
+
+def test_delete_account_requires_confirmation(client: TestClient, user_headers):
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        headers=user_headers,
+        json={"password": "securepass123", "confirm_delete": False},
+    )
+
+    assert response.status_code == 422
+
+
+def test_delete_account_rejects_wrong_password(client: TestClient, user_headers):
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        headers=user_headers,
+        json={"password": "wrongpass123", "confirm_delete": True},
+    )
+
+    assert response.status_code == 401
+
+
+def test_delete_account_anonymizes_and_deactivates_user(client: TestClient, db, user_headers):
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    user_id = user.id
+
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        headers=user_headers,
+        json={"password": "securepass123", "confirm_delete": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "Account anonymized and deactivated"
+
+    db.refresh(user)
+    assert user.id == user_id
+    assert user.email == f"deleted-{user_id}@deleted.local"
+    assert user.username == f"deleted-{user_id}"
+    assert user.points == 0
+    assert user.role == "user"
+    assert user.is_active is False
+    assert user.marketing_opt_in is False
+    assert user.marketing_opt_in_at is None
+    assert user.deleted_at is not None
+
+    me_response = client.get("/api/auth/me", headers=user_headers)
+    assert me_response.status_code == 401

@@ -1,22 +1,28 @@
 from datetime import datetime, timezone
+from secrets import token_urlsafe
 from typing import Any, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_password_hash, verify_password
 from app.dependencies import get_current_user
 from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.schemas.user import UserResponse
+from app.schemas.user import UserDeleteRequest, UserResponse
 
 router = APIRouter()
 
 
 def _isoformat(value) -> str | None:
     return value.isoformat() if value else None
+
+
+def _deleted_user_identifier(user_id) -> str:
+    return f"deleted-{user_id}"
 
 
 @router.get("/leaderboard", response_model=List[UserResponse])
@@ -141,4 +147,40 @@ def export_current_user_data(
             "This JSON export contains data currently linked to the authenticated user account.",
             "Activity logs are included only when they are explicitly associated with the user id.",
         ],
+    }
+
+
+@router.delete("/me")
+def delete_current_user_account(
+    delete_request: UserDeleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Anonymize and deactivate the authenticated user's account."""
+    if not verify_password(delete_request.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    deleted_identifier = _deleted_user_identifier(current_user.id)
+    deleted_at = datetime.now(timezone.utc)
+
+    current_user.email = f"{deleted_identifier}@deleted.local"
+    current_user.username = deleted_identifier
+    current_user.hashed_password = get_password_hash(token_urlsafe(32))
+    current_user.avatar_url = None
+    current_user.points = 0
+    current_user.role = "user"
+    current_user.is_active = False
+    current_user.marketing_opt_in = False
+    current_user.marketing_opt_in_at = None
+    current_user.deleted_at = deleted_at
+
+    db.commit()
+
+    return {
+        "message": "Account anonymized and deactivated",
+        "deleted_at": deleted_at.isoformat(),
     }

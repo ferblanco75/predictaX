@@ -76,6 +76,9 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     if not verify_password(password, user.hashed_password):
         raise UnauthorizedException("Invalid email or password")
 
+    if not user.is_active or user.deleted_at is not None:
+        raise UnauthorizedException("Invalid email or password")
+
     return user
 
 

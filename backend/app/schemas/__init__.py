@@ -11,11 +11,19 @@ from app.schemas.market import (
     MarketUpdate,
 )
 from app.schemas.prediction import PredictionCreate, PredictionResponse
-from app.schemas.user import Token, TokenData, UserCreate, UserLogin, UserResponse
+from app.schemas.user import (
+    Token,
+    TokenData,
+    UserCreate,
+    UserDeleteRequest,
+    UserLogin,
+    UserResponse,
+)
 
 __all__ = [
     # User schemas
     "UserCreate",
+    "UserDeleteRequest",
     "UserLogin",
     "UserResponse",
     "Token",
