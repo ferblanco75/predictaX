@@ -12,7 +12,7 @@ from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.schemas.user import UserDeleteRequest, UserResponse
+from app.schemas.user import CookieConsentUpdate, UserDeleteRequest, UserResponse
 
 router = APIRouter()
 
@@ -96,6 +96,13 @@ def export_current_user_data(
             "legal_consent_version": current_user.legal_consent_version,
             "marketing_opt_in": current_user.marketing_opt_in,
             "marketing_opt_in_at": _isoformat(current_user.marketing_opt_in_at),
+            "cookie_consent": {
+                "analytics": current_user.cookie_consent_analytics,
+                "functional": current_user.cookie_consent_functional,
+                "marketing": current_user.cookie_consent_marketing,
+                "version": current_user.cookie_consent_version,
+                "updated_at": _isoformat(current_user.cookie_consent_updated_at),
+            },
         },
         "predictions": [
             {
@@ -150,6 +157,31 @@ def export_current_user_data(
     }
 
 
+@router.put("/me/cookie-consent")
+def update_current_user_cookie_consent(
+    consent: CookieConsentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Persist authenticated cookie consent preferences."""
+    updated_at = datetime.now(timezone.utc)
+    current_user.cookie_consent_analytics = consent.analytics
+    current_user.cookie_consent_functional = consent.functional
+    current_user.cookie_consent_marketing = consent.marketing
+    current_user.cookie_consent_version = consent.version
+    current_user.cookie_consent_updated_at = updated_at
+    db.commit()
+
+    return {
+        "essential": True,
+        "analytics": current_user.cookie_consent_analytics,
+        "functional": current_user.cookie_consent_functional,
+        "marketing": current_user.cookie_consent_marketing,
+        "version": current_user.cookie_consent_version,
+        "updated_at": updated_at.isoformat(),
+    }
+
+
 @router.delete("/me")
 def delete_current_user_account(
     delete_request: UserDeleteRequest,
@@ -176,6 +208,11 @@ def delete_current_user_account(
     current_user.is_active = False
     current_user.marketing_opt_in = False
     current_user.marketing_opt_in_at = None
+    current_user.cookie_consent_analytics = False
+    current_user.cookie_consent_functional = False
+    current_user.cookie_consent_marketing = False
+    current_user.cookie_consent_version = None
+    current_user.cookie_consent_updated_at = None
     current_user.deleted_at = deleted_at
 
     db.commit()

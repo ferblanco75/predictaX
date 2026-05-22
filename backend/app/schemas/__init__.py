@@ -12,6 +12,7 @@ from app.schemas.market import (
 )
 from app.schemas.prediction import PredictionCreate, PredictionResponse
 from app.schemas.user import (
+    CookieConsentUpdate,
     Token,
     TokenData,
     UserCreate,
@@ -22,6 +23,7 @@ from app.schemas.user import (
 
 __all__ = [
     # User schemas
+    "CookieConsentUpdate",
     "UserCreate",
     "UserDeleteRequest",
     "UserLogin",

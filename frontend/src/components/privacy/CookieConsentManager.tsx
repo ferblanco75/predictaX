@@ -68,6 +68,34 @@ function saveConsent(consent: CookieConsent) {
   window.dispatchEvent(new Event('predictax-cookie-consent-change'));
 }
 
+async function syncConsentToBackend(consent: CookieConsent) {
+  const token = window.localStorage.getItem('token');
+  if (!token) {
+    return;
+  }
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+  try {
+    await fetch(`${apiBaseUrl}/users/me/cookie-consent`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        essential: consent.essential,
+        analytics: consent.analytics,
+        functional: consent.functional,
+        marketing: consent.marketing,
+        version: consent.version,
+      }),
+    });
+  } catch {
+    // Local consent remains authoritative for blocking scripts if sync fails.
+  }
+}
+
 function subscribeToConsent(onStoreChange: () => void) {
   window.addEventListener('storage', onStoreChange);
   window.addEventListener('predictax-cookie-consent-change', onStoreChange);
@@ -131,6 +159,7 @@ export function CookieConsentManager() {
 
   const persistConsent = (nextConsent: CookieConsent) => {
     saveConsent(nextConsent);
+    void syncConsentToBackend(nextConsent);
     setDraft(nextConsent);
     setSettingsOpen(false);
   };

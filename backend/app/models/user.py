@@ -30,6 +30,11 @@ class User(Base):
     marketing_opt_in = Column(Boolean, default=False, nullable=False)
     marketing_opt_in_at = Column(DateTime(timezone=True), nullable=True)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    cookie_consent_analytics = Column(Boolean, default=False, nullable=False)
+    cookie_consent_functional = Column(Boolean, default=False, nullable=False)
+    cookie_consent_marketing = Column(Boolean, default=False, nullable=False)
+    cookie_consent_version = Column(String(32), nullable=True)
+    cookie_consent_updated_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     predictions = relationship(

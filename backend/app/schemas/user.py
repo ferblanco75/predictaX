@@ -50,6 +50,23 @@ class UserDeleteRequest(BaseModel):
         return value
 
 
+class CookieConsentUpdate(BaseModel):
+    """Schema for storing authenticated cookie consent preferences"""
+
+    essential: bool = True
+    analytics: bool = False
+    functional: bool = False
+    marketing: bool = False
+    version: str = Field(default=settings.LEGAL_CONSENT_VERSION, max_length=32)
+
+    @field_validator("essential")
+    @classmethod
+    def essential_cookies_required(cls, value: bool) -> bool:
+        if value is not True:
+            raise ValueError("Essential cookies cannot be disabled")
+        return value
+
+
 class UserResponse(BaseModel):
     """Schema for user response"""
 
@@ -65,6 +82,11 @@ class UserResponse(BaseModel):
     marketing_opt_in: bool = False
     marketing_opt_in_at: datetime | None = None
     deleted_at: datetime | None = None
+    cookie_consent_analytics: bool = False
+    cookie_consent_functional: bool = False
+    cookie_consent_marketing: bool = False
+    cookie_consent_version: str | None = None
+    cookie_consent_updated_at: datetime | None = None
     created_at: datetime
 
     class Config:
