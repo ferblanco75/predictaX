@@ -70,6 +70,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/settings/privacy" className="hover:text-gray-900">
+                  Mis datos
+                </Link>
+              </li>
+              <li>
                 <CookieSettingsButton />
               </li>
               <li>

@@ -57,5 +57,4 @@ Each provider must have a reviewed DPA/SCC position before public launch.
 - Formal DPO/contact decision.
 - Production database provider and region.
 - Provider DPA/SCC review.
-- User-facing settings UI for export and deletion.
 - Final legal review before public launch.
