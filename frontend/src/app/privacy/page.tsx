@@ -21,7 +21,7 @@ const sections = [
   {
     title: '1. Datos que recolectamos',
     content:
-      'Podemos recolectar email, nombre de usuario, contraseña hasheada, rol, puntos, predicciones realizadas, mercados consultados, actividad dentro de la API, dirección IP, user-agent, fecha de registro, métricas técnicas y preferencias guardadas en el navegador.',
+      'Podemos recolectar email, nombre de usuario, contraseña hasheada, rol, puntos, predicciones realizadas, mercados consultados, actividad dentro de la API, dirección IP, user-agent, fecha de registro, consentimientos legales aceptados, métricas técnicas y preferencias guardadas en el navegador.',
   },
   {
     title: '2. Waitlist y comunicaciones',

@@ -27,12 +27,18 @@ USER_DATA = {
     "email": "test@predictax.com",
     "username": "testuser",
     "password": "securepass123",
+    "terms_accepted": True,
+    "privacy_accepted": True,
+    "is_adult": True,
 }
 
 ADMIN_DATA = {
     "email": "admin-test@predictax.com",
     "username": "admintest",
     "password": "adminpass123",
+    "terms_accepted": True,
+    "privacy_accepted": True,
+    "is_adult": True,
 }
 
 

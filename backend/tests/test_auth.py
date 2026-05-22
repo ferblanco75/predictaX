@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.core.security import create_access_token, decode_token
 
 REGISTER_URL = "/api/auth/register"
@@ -13,6 +14,9 @@ USER_DATA = {
     "email": "test@predictax.com",
     "username": "testuser",
     "password": "securepass123",
+    "terms_accepted": True,
+    "privacy_accepted": True,
+    "is_adult": True,
 }
 
 
@@ -23,8 +27,32 @@ def test_register(client: TestClient):
     assert data["email"] == USER_DATA["email"]
     assert data["username"] == USER_DATA["username"]
     assert data["points"] == 1000.0
+    assert data["terms_accepted_at"] is not None
+    assert data["privacy_accepted_at"] is not None
+    assert data["age_confirmed_at"] is not None
+    assert data["legal_consent_version"] == settings.LEGAL_CONSENT_VERSION
+    assert data["marketing_opt_in"] is False
+    assert data["marketing_opt_in_at"] is None
     assert "id" in data
     assert "hashed_password" not in data
+
+
+def test_register_records_marketing_opt_in(client: TestClient):
+    response = client.post(
+        REGISTER_URL,
+        json={**USER_DATA, "email": "marketing@predictax.com", "marketing_opt_in": True},
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["marketing_opt_in"] is True
+    assert data["marketing_opt_in_at"] is not None
+
+
+def test_register_requires_legal_consents(client: TestClient):
+    for field in ("terms_accepted", "privacy_accepted", "is_adult"):
+        response = client.post(REGISTER_URL, json={**USER_DATA, field: False})
+        assert response.status_code == 422
 
 
 def test_register_duplicate_email(client: TestClient):
@@ -110,6 +138,9 @@ def test_register_rate_limit_returns_429(client: TestClient):
                 "email": f"rate-limit-{index}@predictax.com",
                 "username": f"ratelimit{index}",
                 "password": "securepass123",
+                "terms_accepted": True,
+                "privacy_accepted": True,
+                "is_adult": True,
             },
         )
         assert response.status_code == 201
@@ -120,6 +151,9 @@ def test_register_rate_limit_returns_429(client: TestClient):
             "email": "rate-limit-3@predictax.com",
             "username": "ratelimit3",
             "password": "securepass123",
+            "terms_accepted": True,
+            "privacy_accepted": True,
+            "is_adult": True,
         },
     )
 

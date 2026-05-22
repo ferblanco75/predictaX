@@ -14,6 +14,11 @@ interface RegisterData {
   username: string;
   email: string;
   password: string;
+  terms_accepted: boolean;
+  privacy_accepted: boolean;
+  is_adult: boolean;
+  marketing_opt_in: boolean;
+  legal_consent_version: string;
 }
 
 interface TokenResponse {
