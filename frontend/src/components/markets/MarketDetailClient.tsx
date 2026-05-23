@@ -149,8 +149,8 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
           {market.status === 'active' && (
             <>
               <PredictionForm
-                marketId={market.id}
                 currentProbability={market.probability}
+                endDate={market.endDate}
                 onSubmit={handlePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
                 requiresAuth={!isLoggedIn}
@@ -188,8 +188,8 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
           {market.status === 'active' && (
             <>
               <MultipleChoicePredictionForm
-                marketId={market.id}
                 options={market.options}
+                endDate={market.endDate}
                 onSubmit={handleMultipleChoicePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
                 requiresAuth={!isLoggedIn}
