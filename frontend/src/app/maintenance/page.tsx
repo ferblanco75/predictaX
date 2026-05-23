@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata: Metadata = {
   title: 'Mantenimiento',
-  description: 'PredictaX está temporalmente en mantenimiento.',
+  description: 'NeuroPredict está temporalmente en mantenimiento.',
   robots: { index: false, follow: false },
 };
 
@@ -26,7 +26,9 @@ export default function MaintenancePage() {
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-blue-600">
             Mantenimiento
           </p>
-          <h1 className="mt-3 text-3xl font-bold text-foreground">Estamos mejorando PredictaX</h1>
+          <h1 className="mt-3 text-3xl font-bold text-foreground">
+            Estamos mejorando NeuroPredict
+          </h1>
           <p className="mt-4 text-muted-foreground">
             Estamos realizando tareas programadas para mejorar la plataforma. Volvemos pronto.
           </p>
@@ -35,10 +37,7 @@ export default function MaintenancePage() {
               <Home className="mr-2 h-4 w-4" />
               Ir al inicio
             </Link>
-            <a
-              href="mailto:soporte@neuropredict.io"
-              className={outlineLinkClass}
-            >
+            <a href="mailto:soporte@neuropredict.io" className={outlineLinkClass}>
               <Mail className="mr-2 h-4 w-4" />
               Contactar soporte
             </a>

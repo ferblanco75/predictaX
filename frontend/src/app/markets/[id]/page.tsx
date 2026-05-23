@@ -18,7 +18,7 @@ export async function generateMetadata({
   const market = getMarketById(id);
 
   if (!market) {
-    return { title: 'Mercado - PredictaX' };
+    return { title: 'Mercado - NeuroPredict' };
   }
 
   const description = market.description.slice(0, 160) + '...';

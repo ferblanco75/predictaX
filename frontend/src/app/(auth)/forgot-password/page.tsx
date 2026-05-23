@@ -7,7 +7,7 @@ import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Recuperar contraseña',
-  description: 'Opciones de recuperación de acceso para PredictaX.',
+  description: 'Opciones de recuperación de acceso para NeuroPredict.',
   alternates: {
     canonical: canonicalUrl('/forgot-password'),
   },

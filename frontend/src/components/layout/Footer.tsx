@@ -10,7 +10,7 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg" />
-              <span className="text-xl font-bold">PredictaX</span>
+              <span className="text-xl font-bold">NeuroPredict</span>
             </div>
             <p className="text-sm text-gray-600 max-w-md">
               Plataforma de mercados de predicción para Mundial 2026, economía, política, deportes y
@@ -88,7 +88,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t mt-8 pt-6 text-center text-sm text-gray-600">
-          <p>&copy; {new Date().getFullYear()} PredictaX. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} NeuroPredict. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

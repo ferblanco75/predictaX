@@ -21,10 +21,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  applicationName: 'PredictaX',
+  applicationName: 'NeuroPredict',
   title: {
-    default: 'PredictaX - Predicciones Mundial 2026 y mercados de América Latina',
-    template: '%s | PredictaX',
+    default: 'NeuroPredict - Predicciones Mundial 2026 y mercados de América Latina',
+    template: '%s | NeuroPredict',
   },
   description:
     'Participa en polls y mercados de predicción del Mundial 2026, fútbol, economía, política, deportes y tecnología en América Latina.',
@@ -41,14 +41,14 @@ export const metadata: Metadata = {
     'deportes',
     'criptomonedas',
   ],
-  authors: [{ name: 'PredictaX' }],
-  creator: 'PredictaX',
+  authors: [{ name: 'NeuroPredict' }],
+  creator: 'NeuroPredict',
   openGraph: {
     type: 'website',
     locale: 'es_LA',
     url: canonicalUrl('/'),
-    siteName: 'PredictaX',
-    title: 'PredictaX - Predicciones Mundial 2026',
+    siteName: 'NeuroPredict',
+    title: 'NeuroPredict - Predicciones Mundial 2026',
     description:
       'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: [
@@ -56,13 +56,13 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PredictaX - Mercados de Predicción',
+        alt: 'NeuroPredict - Mercados de Predicción',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PredictaX - Predicciones Mundial 2026',
+    title: 'NeuroPredict - Predicciones Mundial 2026',
     description:
       'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: ['/og-image.png'],

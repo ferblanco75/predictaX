@@ -42,7 +42,7 @@ export default function PrivacySettingsPage() {
     try {
       const response = await api.get('/users/me/data-export');
       const date = new Date().toISOString().slice(0, 10);
-      downloadJson(response.data, `predictax-data-export-${date}.json`);
+      downloadJson(response.data, `neuropredict-data-export-${date}.json`);
       setExportState('success');
       setMessage('Export JSON descargado correctamente.');
     } catch {

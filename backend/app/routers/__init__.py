@@ -1,5 +1,5 @@
 """
-API routers for PredictaX.
+API routers for NeuroPredict.
 """
 
 from app.routers import admin, auth, markets, predictions, users

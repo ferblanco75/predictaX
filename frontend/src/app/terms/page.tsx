@@ -7,7 +7,7 @@ import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones',
-  description: 'Términos y condiciones de uso de PredictaX.',
+  description: 'Términos y condiciones de uso de NeuroPredict.',
   alternates: {
     canonical: canonicalUrl('/terms'),
   },
@@ -21,22 +21,22 @@ const sections = [
   {
     title: '1. Descripción del servicio',
     content:
-      'PredictaX es una plataforma MVP de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan con puntos virtuales en mercados sobre Mundial 2026, fútbol, economía, política, tecnología, cripto y otros temas disponibles en la plataforma.',
+      'NeuroPredict es una plataforma MVP de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan con puntos virtuales en mercados sobre Mundial 2026, fútbol, economía, política, tecnología, cripto y otros temas disponibles en la plataforma.',
   },
   {
     title: '2. Elegibilidad y cuenta',
     content:
-      'Para usar PredictaX debés tener al menos 18 años o la edad legal requerida en tu jurisdicción. Sos responsable de mantener la confidencialidad de tus credenciales y de toda actividad realizada desde tu cuenta.',
+      'Para usar NeuroPredict debés tener al menos 18 años o la edad legal requerida en tu jurisdicción. Sos responsable de mantener la confidencialidad de tus credenciales y de toda actividad realizada desde tu cuenta.',
   },
   {
     title: '3. Sistema de puntos',
     content:
-      'La plataforma puede asignar puntos virtuales a los usuarios para participar en predicciones. Salvo indicación expresa en contrario, estos puntos no representan dinero, no tienen valor monetario, no son transferibles fuera de PredictaX, no pueden canjearse por efectivo y no constituyen apuestas con dinero real.',
+      'La plataforma puede asignar puntos virtuales a los usuarios para participar en predicciones. Salvo indicación expresa en contrario, estos puntos no representan dinero, no tienen valor monetario, no son transferibles fuera de NeuroPredict, no pueden canjearse por efectivo y no constituyen apuestas con dinero real.',
   },
   {
     title: '4. Predicciones y resolución de mercados',
     content:
-      'Cada mercado informa su pregunta, opciones o tipo de predicción, descripción y fecha de cierre. PredictaX podrá resolver mercados usando fuentes públicas, proveedores de datos deportivos, revisión manual o criterios definidos en cada mercado.',
+      'Cada mercado informa su pregunta, opciones o tipo de predicción, descripción y fecha de cierre. NeuroPredict podrá resolver mercados usando fuentes públicas, proveedores de datos deportivos, revisión manual o criterios definidos en cada mercado.',
   },
   {
     title: '5. Conducta prohibida',
@@ -51,12 +51,12 @@ const sections = [
   {
     title: '7. Cambios y disponibilidad',
     content:
-      'PredictaX puede modificar funcionalidades, reglas, mercados, disponibilidad del servicio o estos términos. Cuando los cambios sean relevantes, se intentará comunicarlo por medios razonables dentro de la plataforma.',
+      'NeuroPredict puede modificar funcionalidades, reglas, mercados, disponibilidad del servicio o estos términos. Cuando los cambios sean relevantes, se intentará comunicarlo por medios razonables dentro de la plataforma.',
   },
   {
     title: '8. Limitación de responsabilidad',
     content:
-      'PredictaX se ofrece en el estado en que se encuentra, especialmente durante la etapa MVP. La plataforma no garantiza disponibilidad continua, exactitud absoluta de datos, continuidad de mercados ni resultados específicos derivados del uso del servicio.',
+      'NeuroPredict se ofrece en el estado en que se encuentra, especialmente durante la etapa MVP. La plataforma no garantiza disponibilidad continua, exactitud absoluta de datos, continuidad de mercados ni resultados específicos derivados del uso del servicio.',
   },
   {
     title: '9. Contacto',
@@ -79,7 +79,7 @@ export default function TermsPage() {
               Términos y Condiciones
             </h1>
             <p className="mt-5 text-lg text-blue-100">
-              Reglas básicas para usar PredictaX durante el lanzamiento Mundial 2026 y futuras
+              Reglas básicas para usar NeuroPredict durante el lanzamiento Mundial 2026 y futuras
               experiencias de mercados de predicción.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-blue-100">

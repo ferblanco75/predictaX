@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
     # App
-    APP_NAME: str = "PredictaX API"
+    APP_NAME: str = "NeuroPredict API"
     DEBUG: bool = False
     METRICS_ENABLED: bool = False
 

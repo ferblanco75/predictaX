@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-blue-500" />
-            <span className="font-bold text-lg">PredictaX Admin</span>
+            <span className="font-bold text-lg">NeuroPredict Admin</span>
           </div>
         </div>
 

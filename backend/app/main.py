@@ -44,7 +44,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # Create FastAPI app — disable Swagger/OpenAPI docs in production
 app = FastAPI(
-    title="PredictaX API",
+    title="NeuroPredict API",
     description="Prediction markets platform for Latin America",
     version="0.1.0",
     docs_url="/api/docs" if settings.DEBUG else None,

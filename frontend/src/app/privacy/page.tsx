@@ -7,7 +7,7 @@ import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad',
-  description: 'Política de privacidad de PredictaX.',
+  description: 'Política de privacidad de NeuroPredict.',
   alternates: {
     canonical: canonicalUrl('/privacy'),
   },
@@ -26,7 +26,7 @@ const sections = [
   {
     title: '2. Waitlist y comunicaciones',
     content:
-      'Si te registrás en la waitlist podemos procesar tu nombre, email y el motivo de interés que compartas. Usamos esa información para administrar el acceso temprano, responder consultas y enviar comunicaciones relacionadas con PredictaX.',
+      'Si te registrás en la waitlist podemos procesar tu nombre, email y el motivo de interés que compartas. Usamos esa información para administrar el acceso temprano, responder consultas y enviar comunicaciones relacionadas con NeuroPredict.',
   },
   {
     title: '3. Uso de la información',
@@ -36,7 +36,7 @@ const sections = [
   {
     title: '4. Cookies, localStorage y analítica',
     content:
-      'PredictaX puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión y parte del estado de usuario pueden almacenarse en el navegador. Analytics, medición de rendimiento y monitoreo client-side no esencial se cargan solo si aceptás esa categoría en el banner o en las preferencias de privacidad del footer.',
+      'NeuroPredict puede usar cookies, localStorage u otras tecnologías similares para sesión, preferencias, analítica y monitoreo. El token de sesión y parte del estado de usuario pueden almacenarse en el navegador. Analytics, medición de rendimiento y monitoreo client-side no esencial se cargan solo si aceptás esa categoría en el banner o en las preferencias de privacidad del footer.',
   },
   {
     title: '5. Inteligencia artificial y proveedores externos',
@@ -61,7 +61,7 @@ const sections = [
   {
     title: '9. Menores de edad',
     content:
-      'PredictaX no está dirigida a menores de 18 años. Si detectamos una cuenta creada por una persona menor de edad, podremos suspenderla o eliminarla.',
+      'NeuroPredict no está dirigida a menores de 18 años. Si detectamos una cuenta creada por una persona menor de edad, podremos suspenderla o eliminarla.',
   },
   {
     title: '10. Contacto',
@@ -84,8 +84,8 @@ export default function PrivacyPage() {
               Política de Privacidad
             </h1>
             <p className="mt-5 text-lg text-blue-100">
-              Información clara sobre qué datos usa PredictaX, para qué los usa y qué derechos tenés
-              sobre tu información.
+              Información clara sobre qué datos usa NeuroPredict, para qué los usa y qué derechos
+              tenés sobre tu información.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-blue-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
 
           <Card>
             <CardContent className="flex flex-col gap-3 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-              <span>El uso de PredictaX también se rige por sus términos de servicio.</span>
+              <span>El uso de NeuroPredict también se rige por sus términos de servicio.</span>
               <Link href="/terms" className="font-medium text-blue-600 hover:text-blue-700">
                 Ver Términos y Condiciones
               </Link>

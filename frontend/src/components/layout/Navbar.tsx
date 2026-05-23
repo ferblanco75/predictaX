@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
@@ -48,12 +47,12 @@ export function Navbar() {
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2" aria-label="PredictaX - Inicio">
+          <Link href="/" className="flex items-center space-x-2" aria-label="NeuroPredict - Inicio">
             <div
               className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg"
               aria-hidden="true"
             />
-            <span className="text-xl font-bold">PredictaX</span>
+            <span className="text-xl font-bold">NeuroPredict</span>
           </Link>
 
           {/* Search bar */}

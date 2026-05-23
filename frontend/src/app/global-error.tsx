@@ -24,8 +24,10 @@ export default function GlobalError({
             <AlertTriangle className="h-10 w-10" />
           </div>
 
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-500">Error crítico</p>
-          <h1 className="mt-3 text-3xl font-bold">No pudimos cargar PredictaX</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-500">
+            Error crítico
+          </p>
+          <h1 className="mt-3 text-3xl font-bold">No pudimos cargar NeuroPredict</h1>
 
           <p className="mt-4 text-muted-foreground">
             La aplicación encontró un problema inesperado. Reintentá cargar la página o volvé al

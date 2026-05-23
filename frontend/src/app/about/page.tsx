@@ -19,12 +19,12 @@ import { canonicalUrl } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Acerca de',
   description:
-    'Conoce más sobre PredictaX, la plataforma de mercados de predicción de América Latina. Descubre cómo funcionan los prediction markets y por qué somos diferentes.',
+    'Conoce más sobre NeuroPredict, la plataforma de mercados de predicción de América Latina. Descubre cómo funcionan los prediction markets y por qué somos diferentes.',
   alternates: {
     canonical: canonicalUrl('/about'),
   },
   openGraph: {
-    title: 'Acerca de PredictaX',
+    title: 'Acerca de NeuroPredict',
     description:
       'Mercados de predicción con IA para América Latina. Toma decisiones informadas con la sabiduría colectiva.',
     type: 'website',

@@ -1,5 +1,5 @@
 """
-SQLAlchemy models for PredictaX.
+SQLAlchemy models for NeuroPredict.
 
 Import all models here so Alembic can detect them for migrations.
 """

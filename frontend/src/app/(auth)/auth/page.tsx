@@ -164,7 +164,7 @@ export default function AuthPage() {
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold">PredictaX</span>
+            <span className="text-2xl font-bold">NeuroPredict</span>
           </Link>
         </div>
 
@@ -372,7 +372,7 @@ export default function AuthPage() {
 
                     <LegalCheckbox
                       id="isAdult"
-                      label="Declaro ser mayor de 18 años y entiendo que PredictaX usa puntos virtuales sin valor monetario."
+                      label="Declaro ser mayor de 18 años y entiendo que NeuroPredict usa puntos virtuales sin valor monetario."
                       error={registerErrors.age}
                       onChange={() => setRegisterErrors((prev) => ({ ...prev, age: undefined }))}
                     />

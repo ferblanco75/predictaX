@@ -7,7 +7,7 @@ import { canonicalUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Security Policy',
-  description: 'Política de reporte responsable de vulnerabilidades de PredictaX.',
+  description: 'Política de reporte responsable de vulnerabilidades de NeuroPredict.',
   alternates: {
     canonical: canonicalUrl('/security-policy'),
   },
@@ -21,7 +21,7 @@ const sections = [
   {
     title: '1. Alcance',
     content:
-      'Esta política aplica a PredictaX, sus páginas públicas bajo neuropredict.io y los servicios backend operados oficialmente para el MVP. No incluye servicios de terceros, cuentas personales, infraestructura no publicada ni sistemas fuera del control directo de PredictaX.',
+      'Esta política aplica a NeuroPredict, sus páginas públicas bajo neuropredict.io y los servicios backend operados oficialmente para el MVP. No incluye servicios de terceros, cuentas personales, infraestructura no publicada ni sistemas fuera del control directo de NeuroPredict.',
   },
   {
     title: '2. Cómo reportar',
@@ -41,7 +41,7 @@ const sections = [
   {
     title: '5. Recompensas',
     content:
-      'PredictaX todavía no opera un programa formal de bug bounty ni garantiza recompensas económicas. Los reportes válidos pueden recibir reconocimiento público si la persona investigadora lo solicita y si no compromete la seguridad del servicio.',
+      'NeuroPredict todavía no opera un programa formal de bug bounty ni garantiza recompensas económicas. Los reportes válidos pueden recibir reconocimiento público si la persona investigadora lo solicita y si no compromete la seguridad del servicio.',
   },
   {
     title: '6. Coordinación de divulgación',
@@ -62,8 +62,8 @@ export default function SecurityPolicyPage() {
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Security Policy</h1>
             <p className="mt-5 text-lg text-emerald-100">
-              Canal oficial para reportar vulnerabilidades de seguridad en PredictaX durante el MVP
-              Mundial 2026.
+              Canal oficial para reportar vulnerabilidades de seguridad en NeuroPredict durante el
+              MVP Mundial 2026.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-emerald-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">

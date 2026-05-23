@@ -139,8 +139,8 @@ export function WaitlistForm() {
           <CardHeader>
             <CardTitle className="text-3xl">Únete a la lista de espera</CardTitle>
             <CardDescription className="text-lg">
-              Sé de los primeros en acceder a PredictaX y recibe actualizaciones exclusivas sobre el
-              lanzamiento de nuevas funcionalidades
+              Sé de los primeros en acceder a NeuroPredict y recibe actualizaciones exclusivas sobre
+              el lanzamiento de nuevas funcionalidades
             </CardDescription>
           </CardHeader>
 
@@ -219,7 +219,7 @@ export function WaitlistForm() {
                 {/* Razon Field */}
                 <div className="space-y-2">
                   <Label htmlFor="razon">
-                    ¿Por qué te interesa PredictaX?{' '}
+                    ¿Por qué te interesa NeuroPredict?{' '}
                     <span className="text-muted-foreground text-sm">(Opcional)</span>
                   </Label>
                   <textarea
@@ -274,8 +274,8 @@ export function WaitlistForm() {
         <div className="mt-8 text-center text-muted-foreground">
           <p className="text-sm">
             ¿Preguntas? Contáctanos en{' '}
-            <a href="mailto:hola@predictax.com" className="text-primary hover:underline">
-              hola@predictax.com
+            <a href="mailto:hola@neuropredict.io" className="text-primary hover:underline">
+              hola@neuropredict.io
             </a>
           </p>
         </div>

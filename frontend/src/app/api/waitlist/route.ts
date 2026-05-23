@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Send email notification using Resend
     const { data, error } = await resend.emails.send({
-      from: 'PredictaX Waitlist <onboarding@resend.dev>',
+      from: 'NeuroPredict Waitlist <onboarding@resend.dev>',
       to: recipientEmail,
       subject: `Nueva inscripción waitlist: ${nombre.trim()}`,
       html: `
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
               <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Nueva Inscripción</h1>
-              <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Lista de Espera PredictaX</p>
+              <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Lista de Espera NeuroPredict</p>
             </div>
 
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">Este email fue generado automáticamente por PredictaX</p>
-              <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} PredictaX - Todos los derechos reservados</p>
+              <p style="margin: 0;">Este email fue generado automáticamente por NeuroPredict</p>
+              <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} NeuroPredict - Todos los derechos reservados</p>
             </div>
           </body>
         </html>

@@ -16,7 +16,7 @@ export function generateMarketStructuredData(market: Market) {
     answerCount: market.participants,
     author: {
       '@type': 'Organization',
-      name: 'PredictaX',
+      name: 'NeuroPredict',
     },
     about: {
       '@type': 'Thing',
@@ -32,7 +32,7 @@ export function generateOrganizationStructuredData() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'PredictaX',
+    name: 'NeuroPredict',
     url: canonicalUrl('/'),
     logo: canonicalUrl('/logo.png'),
     description:
