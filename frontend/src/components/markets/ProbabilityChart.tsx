@@ -20,8 +20,23 @@ interface ProbabilityChartProps {
   categoryColor: string;
 }
 
+function ChartEmptyState({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="flex h-80 min-h-80 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center dark:border-gray-700 dark:bg-gray-900/40">
+      <div className="max-w-sm px-6">
+        <p className="font-medium text-gray-700 dark:text-gray-200">{title}</p>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export function ProbabilityChart({ data, categoryColor }: ProbabilityChartProps) {
   const [mounted, setMounted] = useState(false);
+  const chartData = data.filter((point) => {
+    const date = new Date(point.date);
+    return Number.isFinite(point.probability) && !Number.isNaN(date.getTime());
+  });
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -30,32 +45,39 @@ export function ProbabilityChart({ data, categoryColor }: ProbabilityChartProps)
 
   if (!mounted) {
     return (
-      <div className="h-80 flex items-center justify-center text-gray-400">Cargando gráfico...</div>
+      <div className="flex h-80 min-h-80 items-center justify-center text-gray-400">
+        Cargando gráfico...
+      </div>
     );
   }
 
-  if (data.length === 0) {
+  if (chartData.length === 0) {
     return (
-      <div className="flex h-80 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="max-w-sm px-6">
-          <p className="font-medium text-gray-700 dark:text-gray-200">Sin historial suficiente</p>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            El gráfico aparecerá cuando el mercado tenga snapshots de probabilidad disponibles.
-          </p>
-        </div>
-      </div>
+      <ChartEmptyState
+        title="Sin historial disponible"
+        message="El gráfico aparecerá cuando el mercado tenga snapshots de probabilidad válidos."
+      />
+    );
+  }
+
+  if (chartData.length === 1) {
+    return (
+      <ChartEmptyState
+        title="Historial insuficiente"
+        message="Necesitamos al menos dos puntos de historial para mostrar una tendencia confiable."
+      />
     );
   }
 
   return (
     <motion.div
-      className="h-80"
+      className="h-80 min-h-80 min-w-0"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"
