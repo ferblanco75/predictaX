@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -6,7 +7,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.prediction import PredictionCreate, PredictionResponse
+from app.schemas.prediction import (
+    PredictionCreate,
+    PredictionResponse,
+    PublicMarketPredictionResponse,
+)
 from app.services import prediction_service
 
 router = APIRouter()
@@ -67,8 +72,8 @@ def get_user_predictions(
     return predictions
 
 
-@router.get("/market/{market_id}", response_model=List[PredictionResponse])
-def get_market_predictions(market_id: int, db: Session = Depends(get_db)):
+@router.get("/market/{market_id}", response_model=List[PublicMarketPredictionResponse])
+def get_market_predictions(market_id: UUID, db: Session = Depends(get_db)):
     """
     Get all predictions for a specific market.
 

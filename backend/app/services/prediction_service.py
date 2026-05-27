@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -67,7 +68,7 @@ def create_prediction(
     market = market_service.get_market_by_id(db, prediction_data.market_id)
 
     # Store old probability for snapshot comparison
-    old_probability = market.probability_market
+    old_probability = float(market.probability_market)
 
     # Create prediction
     prediction = Prediction(
@@ -75,9 +76,12 @@ def create_prediction(
         market_id=prediction_data.market_id,
         probability=prediction_data.probability,
         points_wagered=prediction_data.points_wagered,
+        potential_gain=((100 - prediction_data.probability) / 100)
+        * prediction_data.points_wagered,
     )
 
     db.add(prediction)
+    db.flush()
 
     # Deduct points from user
     user.points -= prediction_data.points_wagered
@@ -88,7 +92,6 @@ def create_prediction(
         .filter(Prediction.market_id == prediction_data.market_id)
         .all()
     )
-    all_predictions.append(prediction)  # Include the new one
 
     new_probability = calculate_market_probability(all_predictions)
     market.probability_market = new_probability
@@ -107,7 +110,7 @@ def create_prediction(
     return prediction
 
 
-def get_user_predictions(db: Session, user_id: int) -> List[Prediction]:
+def get_user_predictions(db: Session, user_id: UUID) -> List[Prediction]:
     """
     Get all predictions for a user.
 
@@ -126,7 +129,7 @@ def get_user_predictions(db: Session, user_id: int) -> List[Prediction]:
     )
 
 
-def get_market_predictions(db: Session, market_id: int) -> List[Prediction]:
+def get_market_predictions(db: Session, market_id: UUID) -> List[Prediction]:
     """
     Get all predictions for a market.
 

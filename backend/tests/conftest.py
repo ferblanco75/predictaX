@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
+from app.core.rate_limit import clear_rate_limits
 from app.main import app
 
 TEST_DATABASE_URL = os.environ.get(
@@ -26,12 +27,18 @@ USER_DATA = {
     "email": "test@predictax.com",
     "username": "testuser",
     "password": "securepass123",
+    "terms_accepted": True,
+    "privacy_accepted": True,
+    "is_adult": True,
 }
 
 ADMIN_DATA = {
     "email": "admin-test@predictax.com",
     "username": "admintest",
     "password": "adminpass123",
+    "terms_accepted": True,
+    "privacy_accepted": True,
+    "is_adult": True,
 }
 
 
@@ -41,6 +48,14 @@ def create_test_db():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def isolate_auth_rate_limits():
+    """Isolate auth rate limit counters between tests."""
+    clear_rate_limits("rate_limit:auth:")
+    yield
+    clear_rate_limits("rate_limit:auth:")
 
 
 @pytest.fixture()

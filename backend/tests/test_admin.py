@@ -137,6 +137,7 @@ def test_admin_ai_usage_summary(client: TestClient, admin_headers):
     assert "today" in data
     assert "quota" in data
     assert data["quota"]["daily_limit"] == 250
+    assert "rate_limited" in data["today"]
 
 
 def test_admin_ai_usage_history(client: TestClient, admin_headers):

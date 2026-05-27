@@ -1,16 +1,18 @@
+# ruff: noqa: E501
 """
 Seed script — Mundial 2026 polls (14 mercados de predicción)
 
 Usage:
     docker compose exec backend python scripts/seed_mundial_2026.py
 """
-import sys
 import os
-from datetime import datetime, timezone, timedelta
+import sys
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.orm import Session
+
 from app.core.database import SessionLocal
 from app.models.market import Market, MarketCategory, MarketStatus, MarketType
 from app.models.market_snapshot import MarketSnapshot
@@ -224,6 +226,8 @@ MUNDIAL_POLLS = [
         "description": (
             "El partido del Grupo A entre Argentina (campeona 2022) y España (campeona 2010). "
             "Se juega el 25 de junio en el Hard Rock Stadium de Miami.\n\n"
+            "Dato estadístico: en Mundiales, el antecedente competitivo más citado entre ambos es Argentina 2-1 España en Inglaterra 1966. "
+            "En amistosos recientes, España ganó 6-1 en 2018 y Argentina ganó 4-1 en 2010, señal de un historial cruzado con partidos de alto margen.\n\n"
             "Este mercado se resolverá como SÍ si Argentina gana este partido (90 minutos)."
         ),
         "category": MarketCategory.MUNDIAL,
@@ -235,19 +239,21 @@ MUNDIAL_POLLS = [
         "status": MarketStatus.ACTIVE,
         "stats_data": {
             "head_to_head": [
-                {"fecha": "Jun 2023", "resultado": "Argentina 1-0 España", "tipo": "Amistoso"},
-                {"fecha": "Jun 2022", "resultado": "Argentina 0-0 España", "tipo": "Amistoso"},
+                {
+                    "fecha": "Jul 1966",
+                    "resultado": "Argentina 2-1 España",
+                    "tipo": "Mundial 1966 — Fase de grupos",
+                },
                 {"fecha": "Mar 2018", "resultado": "España 6-1 Argentina", "tipo": "Amistoso"},
-                {"fecha": "Nov 2009", "resultado": "Argentina 2-1 España", "tipo": "Amistoso"},
-                {"fecha": "Jun 2008", "resultado": "España 1-0 Argentina", "tipo": "Amistoso"},
+                {"fecha": "Sep 2010", "resultado": "Argentina 4-1 España", "tipo": "Amistoso"},
             ],
             "forma_reciente": {
                 "Argentina": ["W", "W", "W", "D", "W"],
                 "España": ["W", "W", "W", "W", "W"],
             },
             "probabilidad_ia": 38.0,
-            "balance_h2h": {"Argentina": 2, "Empates": 1, "España": 2},
-            "dato_clave": "Argentina ganó el último enfrentamiento (jun 2023). España viene en racha invicta de 15 partidos.",
+            "balance_h2h": {"Argentina": 2, "España": 1},
+            "dato_clave": "Argentina ganó el único antecedente mundialista registrado en este mercado: 2-1 vs España en 1966. En amistosos recientes hubo goleadas para ambos lados.",
         },
     },
     # ── ELIMINACIÓN DIRECTA ──────────────────────────────────────────────────
@@ -434,6 +440,8 @@ MUNDIAL_POLLS = [
         "description": (
             "El primer partido de Argentina es contra Arabia Saudita el 14 de junio en el SoFi Stadium de Los Ángeles. "
             "En Qatar 2022, Arabia Saudita ganó 2-1 en la mayor sorpresa del torneo.\n\n"
+            "Dato estadístico: ese 2-1 fue el único cruce entre ambos en una Copa del Mundo y la única derrota argentina en Qatar 2022. "
+            "Argentina ganó los seis partidos restantes del torneo hasta levantar la copa.\n\n"
             "Este mercado se resolverá como SÍ si Argentina gana el partido del 14 de junio (resultado a 90 minutos)."
         ),
         "category": MarketCategory.MUNDIAL,

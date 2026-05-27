@@ -1,14 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Users, Calendar, DollarSign, ArrowLeft } from 'lucide-react';
+import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getCategoryColor } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
-import { EmptyPredictions } from '@/components/ui/EmptyState';
 import { generateMarketStructuredData } from '@/lib/utils/structured-data';
 import { useMarket } from '@/lib/hooks/useMarkets';
 import { getRelatedMarkets } from '@/lib/api/markets';
@@ -27,6 +27,7 @@ function formatEndDate(endDate: string): string {
 }
 
 export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
+  const [copied, setCopied] = useState(false);
   const { data: fetchedMarket, isLoading, isError } = useMarket(id, { enabled: !initialMarket });
   const market = initialMarket ?? fetchedMarket;
 
@@ -71,6 +72,34 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const endDate = formatEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
   const isLoggedIn = false;
+  const statusConfig = {
+    active: {
+      label: 'Activo',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    },
+    resolved: {
+      label: 'Resuelto',
+      className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
+    },
+    cancelled: {
+      label: 'Cancelado',
+      className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+    },
+  }[market.status] ?? {
+    label: market.status,
+    className: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300',
+  };
+
+  const handleCopyLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <>
@@ -102,9 +131,21 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                     >
                       {market.category}
                     </Badge>
-                    {market.status === 'resolved' && <Badge variant="outline">Resuelto</Badge>}
+                    <Badge variant="secondary" className={statusConfig.className}>
+                      {statusConfig.label}
+                    </Badge>
                   </div>
-                  <CardTitle className="text-3xl">{market.title}</CardTitle>
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <CardTitle className="text-3xl">{market.title}</CardTitle>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                      {copied ? 'Link copiado' : 'Compartir'}
+                    </button>
+                  </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mt-4">
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
@@ -115,8 +156,8 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                       <span>{market.participants} participantes</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span>{market.volume} volumen</span>
+                      <Coins className="h-4 w-4" />
+                      <span>Volumen: {market.volume}</span>
                     </div>
                   </div>
                 </CardHeader>
@@ -145,7 +186,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen total</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen virtual</span>
                     <span className="font-semibold">{market.volume}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -153,13 +194,15 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                     <span className="font-semibold">{market.participants}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Fecha de cierre</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Fecha de cierre
+                    </span>
                     <span className="font-semibold">{endDate}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Estado</span>
-                    <Badge variant={market.status === 'active' ? 'default' : 'secondary'}>
-                      {market.status === 'active' ? 'Activo' : 'Resuelto'}
+                    <Badge variant="secondary" className={statusConfig.className}>
+                      {statusConfig.label}
                     </Badge>
                   </div>
                 </CardContent>
@@ -169,8 +212,24 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                 <CardHeader>
                   <CardTitle className="text-lg">Predicciones recientes</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <EmptyPredictions />
+                <CardContent className="space-y-4">
+                  <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
+                    <Clock3 className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+                    <p className="font-medium">Feed público en preparación</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      En esta versión MVP todavía no mostramos predicciones recientes individuales.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
+                      <p className="text-gray-500 dark:text-gray-400">Participantes</p>
+                      <p className="mt-1 font-semibold">{market.participants}</p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
+                      <p className="text-gray-500 dark:text-gray-400">Volumen</p>
+                      <p className="mt-1 font-semibold">{market.volume}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 

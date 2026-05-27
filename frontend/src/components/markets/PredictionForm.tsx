@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,17 +9,34 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 
 interface PredictionFormProps {
-  marketId: string;
   currentProbability: number;
+  endDate: string;
   onSubmit: (prediction: number, betAmount: number) => void;
   disabled?: boolean;
+  requiresAuth?: boolean;
+}
+
+function formatCloseDate(endDate: string) {
+  const date = new Date(endDate);
+  if (Number.isNaN(date.getTime())) return 'Fecha por confirmar';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(date);
+}
+
+function formatPoints(points: number) {
+  return points.toLocaleString('es-AR', { maximumFractionDigits: 0 });
 }
 
 export function PredictionForm({
-  marketId,
   currentProbability,
+  endDate,
   onSubmit,
   disabled = false,
+  requiresAuth = false,
 }: PredictionFormProps) {
   const [prediction, setPrediction] = useState(50);
   const [betAmount, setBetAmount] = useState(100);
@@ -26,7 +44,7 @@ export function PredictionForm({
 
   const handleSubmit = () => {
     if (betAmount < 1) {
-      setPredictionError('Debes apostar al menos 1 punto');
+      setPredictionError('Debes usar al menos 1 punto');
       return;
     }
     if (betAmount > 10000) {
@@ -37,8 +55,10 @@ export function PredictionForm({
     onSubmit(prediction, betAmount);
   };
 
-  // Potential gain calculation (simplified)
-  const potentialGain = ((100 - prediction) / 100) * betAmount;
+  const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
+  const potentialGain = ((100 - prediction) / 100) * safeBetAmount;
+  const maxLoss = safeBetAmount;
+  const closeDate = formatCloseDate(endDate);
 
   return (
     <Card>
@@ -70,9 +90,9 @@ export function PredictionForm({
           </div>
         </div>
 
-        {/* Bet amount */}
+        {/* Points amount */}
         <div>
-          <label className="text-sm font-medium mb-2 block">Puntos a apostar</label>
+          <label className="text-sm font-medium mb-2 block">Puntos a usar</label>
           <Input
             type="number"
             value={betAmount}
@@ -93,19 +113,62 @@ export function PredictionForm({
           )}
         </div>
 
-        {/* Potential gain */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Ganancia potencial</span>
-            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              +{potentialGain.toFixed(0)} puntos
-            </span>
+        {/* Outcome summary */}
+        <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Si acertás
+              </span>
+              <div className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                +{formatPoints(potentialGain)} pts
+              </div>
+            </div>
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Si fallás
+              </span>
+              <div className="mt-1 text-xl font-bold text-red-600 dark:text-red-400">
+                -{formatPoints(maxLoss)} pts
+              </div>
+            </div>
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Cierre
+              </span>
+              <div className="mt-1 text-sm font-semibold text-blue-700 dark:text-blue-300">
+                {closeDate}
+              </div>
+            </div>
           </div>
+          <p className="mt-2 text-xs text-blue-700/70 dark:text-blue-300/70">
+            Estimación MVP sobre probabilidad actual {currentProbability}%. La ganancia final puede
+            cambiar según reglas y resolución del mercado.
+          </p>
         </div>
+
+        {requiresAuth && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="font-medium">Iniciá sesión para participar</p>
+            <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
+              Necesitás una cuenta para registrar predicciones y usar tus puntos virtuales.
+            </p>
+            <Link
+              href="/auth"
+              className="mt-3 inline-flex rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+            >
+              Iniciar sesión o registrarme
+            </Link>
+          </div>
+        )}
 
         {/* CTA Button */}
         <Button size="lg" className="w-full" onClick={handleSubmit} disabled={disabled}>
-          {disabled ? 'Inicia sesión para predecir' : 'Confirmar predicción'}
+          {requiresAuth
+            ? 'Iniciá sesión para predecir'
+            : disabled
+              ? 'Procesando...'
+              : 'Confirmar predicción'}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">

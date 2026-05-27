@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CookieSettingsButton } from '@/components/privacy/CookieConsentManager';
 
 export function Footer() {
   return (
@@ -12,8 +13,8 @@ export function Footer() {
               <span className="text-xl font-bold">NeuroPredict</span>
             </div>
             <p className="text-sm text-gray-600 max-w-md">
-              Plataforma de predicción de mercados financieros, políticos y deportivos de América
-              Latina. Toma decisiones informadas con modelos de inteligencia artificial.
+              Plataforma de mercados de predicción para Mundial 2026, economía, política, deportes y
+              tecnología en América Latina.
             </p>
           </div>
 
@@ -32,13 +33,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/markets/category/deportes" className="hover:text-gray-900">
-                  Deportes
+                <Link href="/markets/category/mundial" className="hover:text-gray-900">
+                  Mundial 2026
                 </Link>
               </li>
               <li>
-                <Link href="/markets/category/tecnologia" className="hover:text-gray-900">
-                  Tecnología
+                <Link href="/markets/category/deportes" className="hover:text-gray-900">
+                  Deportes
                 </Link>
               </li>
             </ul>
@@ -54,8 +55,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/how-it-works" className="hover:text-gray-900">
-                  Cómo funciona
+                <Link href="/waitlist" className="hover:text-gray-900">
+                  Lista de espera
                 </Link>
               </li>
               <li>
@@ -66,6 +67,19 @@ export function Footer() {
               <li>
                 <Link href="/privacy" className="hover:text-gray-900">
                   Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link href="/settings/privacy" className="hover:text-gray-900">
+                  Mis datos
+                </Link>
+              </li>
+              <li>
+                <CookieSettingsButton />
+              </li>
+              <li>
+                <Link href="/security-policy" className="hover:text-gray-900">
+                  Seguridad
                 </Link>
               </li>
             </ul>

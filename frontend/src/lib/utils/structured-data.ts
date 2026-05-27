@@ -1,4 +1,5 @@
 import type { Market } from '@/lib/types';
+import { canonicalUrl } from '@/lib/site';
 
 /**
  * Generate JSON-LD structured data for a market
@@ -15,7 +16,7 @@ export function generateMarketStructuredData(market: Market) {
     answerCount: market.participants,
     author: {
       '@type': 'Organization',
-      name: 'PredictaX',
+      name: 'NeuroPredict',
     },
     about: {
       '@type': 'Thing',
@@ -31,9 +32,9 @@ export function generateOrganizationStructuredData() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'PredictaX',
-    url: 'https://predictax.com',
-    logo: 'https://predictax.com/logo.png',
+    name: 'NeuroPredict',
+    url: canonicalUrl('/'),
+    logo: canonicalUrl('/logo.png'),
     description:
       'Plataforma de mercados de predicción de América Latina sobre economía, política, deportes y tecnología.',
     sameAs: [

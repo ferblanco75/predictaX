@@ -1,16 +1,18 @@
 'use client';
 
+import type { FormEvent } from 'react';
 import Link from 'next/link';
-import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
 import type { MarketCategory } from '@/lib/types';
 
 const categories = [
+  { id: 'mundial', name: 'Mundial 2026', icon: Trophy, color: 'bg-green-600' },
   { id: 'economia', name: 'Economía', icon: TrendingUp, color: 'bg-green-500' },
   { id: 'politica', name: 'Política', icon: Users, color: 'bg-blue-500' },
   { id: 'deportes', name: 'Deportes', icon: Trophy, color: 'bg-amber-500' },
@@ -19,8 +21,21 @@ const categories = [
 ];
 
 export function Navbar() {
+  const router = useRouter();
   const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } =
     useAppStore();
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    setCategory('all');
+    router.push(query ? `/markets?q=${encodeURIComponent(query)}` : '/markets');
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    router.push('/markets');
+  };
 
   return (
     <nav
@@ -32,16 +47,16 @@ export function Navbar() {
         {/* Top bar */}
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2" aria-label="PredictaX - Inicio">
+          <Link href="/" className="flex items-center space-x-2" aria-label="NeuroPredict - Inicio">
             <div
               className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg"
               aria-hidden="true"
             />
-            <span className="text-xl font-bold">PredictaX</span>
+            <span className="text-xl font-bold">NeuroPredict</span>
           </Link>
 
           {/* Search bar */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4"
@@ -55,8 +70,18 @@ export function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="Buscar mercados"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
-          </div>
+          </form>
 
           {/* Auth buttons */}
           <div className="flex items-center space-x-3">

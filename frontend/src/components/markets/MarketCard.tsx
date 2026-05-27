@@ -25,11 +25,32 @@ export function MarketCard({ market }: MarketCardProps) {
 
   const isPositiveTrend = trend > 0;
   const categoryColor = getCategoryColor(market.category);
+  const topOptions = market.options
+    ? [...market.options].sort((a, b) => b.probability - a.probability).slice(0, 3)
+    : [];
+  const statusConfig = {
+    active: {
+      label: 'Activo',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    },
+    resolved: {
+      label: 'Resuelto',
+      className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
+    },
+    cancelled: {
+      label: 'Cancelado',
+      className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+    },
+  }[market.status];
 
   const endDate = market.endDate
     ? (() => {
         const d = new Date(market.endDate);
-        return format(new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()), 'dd MMM yyyy', { locale: es });
+        return format(
+          new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+          'dd MMM yyyy',
+          { locale: es }
+        );
       })()
     : '';
 
@@ -47,11 +68,9 @@ export function MarketCard({ market }: MarketCardProps) {
               >
                 {market.category}
               </Badge>
-              {market.status === 'resolved' && (
-                <Badge variant="outline" className="text-xs">
-                  Resuelto
-                </Badge>
-              )}
+              <Badge variant="secondary" className={`text-xs ${statusConfig.className}`}>
+                {statusConfig.label}
+              </Badge>
             </div>
 
             {/* Title */}
@@ -100,20 +119,17 @@ export function MarketCard({ market }: MarketCardProps) {
               <>
                 {/* Multiple Choice: Top options with bars */}
                 <div className="space-y-3">
-                  {market.options
-                    .sort((a, b) => b.probability - a.probability)
-                    .slice(0, 3)
-                    .map((option) => (
-                      <div key={option.id} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium truncate flex-1 mr-2">{option.label}</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">
-                            {option.probability}%
-                          </span>
-                        </div>
-                        <Progress value={option.probability} className="h-2" />
+                  {topOptions.map((option) => (
+                    <div key={option.id} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate flex-1 mr-2">{option.label}</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          {option.probability}%
+                        </span>
                       </div>
-                    ))}
+                      <Progress value={option.probability} className="h-2" />
+                    </div>
+                  ))}
                   {market.options.length > 3 && (
                     <p className="text-xs text-gray-500 text-center mt-2">
                       +{market.options.length - 3} opciones más
@@ -131,7 +147,7 @@ export function MarketCard({ market }: MarketCardProps) {
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <TrendingUp className="h-4 w-4" />
-                <span>{market.volume} volumen</span>
+                <span>Volumen: {market.volume}</span>
               </div>
             </div>
           </CardContent>

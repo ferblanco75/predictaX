@@ -6,8 +6,8 @@ import { Footer } from '@/components/layout/Footer';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
-import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
-import { Analytics } from '@vercel/analytics/react';
+import { CookieConsentManager } from '@/components/privacy/CookieConsentManager';
+import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,14 +20,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'NeuroPredict',
   title: {
-    default: 'PredictaX - Mercados de Predicción de América Latina',
-    template: '%s | PredictaX',
+    default: 'NeuroPredict - Predicciones Mundial 2026 y mercados de América Latina',
+    template: '%s | NeuroPredict',
   },
   description:
-    'Participa en mercados de predicción sobre economía, política, deportes y tecnología en América Latina. Decisiones informadas con inteligencia artificial.',
+    'Participa en polls y mercados de predicción del Mundial 2026, fútbol, economía, política, deportes y tecnología en América Latina.',
   keywords: [
+    'Mundial 2026',
+    'predicciones Mundial 2026',
+    'polls Mundial 2026',
+    'predicciones fútbol',
     'mercados de predicción',
     'pronósticos',
     'América Latina',
@@ -36,30 +41,30 @@ export const metadata: Metadata = {
     'deportes',
     'criptomonedas',
   ],
-  authors: [{ name: 'PredictaX' }],
-  creator: 'PredictaX',
+  authors: [{ name: 'NeuroPredict' }],
+  creator: 'NeuroPredict',
   openGraph: {
     type: 'website',
     locale: 'es_LA',
-    url: 'https://predictax.com',
-    siteName: 'PredictaX',
-    title: 'PredictaX - Mercados de Predicción de América Latina',
+    url: canonicalUrl('/'),
+    siteName: 'NeuroPredict',
+    title: 'NeuroPredict - Predicciones Mundial 2026',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PredictaX - Mercados de Predicción',
+        alt: 'NeuroPredict - Mercados de Predicción',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PredictaX - Mercados de Predicción',
+    title: 'NeuroPredict - Predicciones Mundial 2026',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -103,8 +108,7 @@ export default function RootLayout({
             <Footer />
           </ThemeProvider>
         </QueryProvider>
-        <GoogleAnalytics />
-        <Analytics />
+        <CookieConsentManager />
       </body>
     </html>
   );

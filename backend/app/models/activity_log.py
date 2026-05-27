@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -11,6 +11,11 @@ class ActivityLog(Base):
     """Track all user actions for analytics and engagement metrics"""
 
     __tablename__ = "activity_log"
+    __table_args__ = (
+        Index("ix_activity_log_action_created_at", "action", "created_at"),
+        Index("ix_activity_log_endpoint_created_at", "endpoint", "created_at"),
+        Index("ix_activity_log_status_code_created_at", "status_code", "created_at"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

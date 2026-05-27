@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import { AdminEmptyState, AdminErrorState } from '@/components/admin/AdminState';
 import { getAIUsageSummary, getAIUsageHistory } from '@/lib/api/admin';
 import { Bot, Zap, Clock, AlertTriangle, Database } from 'lucide-react';
 
@@ -12,8 +13,9 @@ interface AISummary {
     tokens: number;
     avg_latency_ms: number;
     errors: number;
+    rate_limited: number;
   };
-  this_week: { requests: number; tokens: number };
+  this_week: { requests: number; tokens: number; rate_limited: number };
   quota: { daily_limit: number; used_today: number; remaining: number; usage_percent: number };
   cache_hit_rate: number;
   top_markets_analyzed: { market_id: string; title: string; analysis_count: number }[];
@@ -23,6 +25,7 @@ interface DailyAI {
   date: string;
   requests: number;
   cache_hits: number;
+  rate_limited: number;
   tokens: number;
 }
 
@@ -83,25 +86,40 @@ export default function AdminAIPage() {
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [history, setHistory] = useState<DailyAI[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadAIData = async () => {
+    if (!user?.token) return;
+    setLoading(true);
+    setError('');
+    try {
+      const [s, h] = await Promise.all([
+        getAIUsageSummary(user.token),
+        getAIUsageHistory(user.token, 30),
+      ]);
+      setSummary(s);
+      setHistory(h);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar AI usage.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!user?.token) return;
-    Promise.all([getAIUsageSummary(user.token), getAIUsageHistory(user.token, 30)])
-      .then(([s, h]) => {
-        setSummary(s);
-        setHistory(h);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    void loadAIData();
 
     const interval = setInterval(() => {
       if (user?.token) {
         getAIUsageSummary(user.token)
           .then(setSummary)
-          .catch(() => {});
+          .catch(() => {
+            setError('No se pudo refrescar el resumen de AI.');
+          });
       }
     }, 15000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.token]);
 
   if (loading) {
@@ -117,7 +135,26 @@ export default function AdminAIPage() {
     );
   }
 
-  if (!summary) return null;
+  if (error && !summary) {
+    return (
+      <AdminErrorState
+        title="No se pudieron cargar métricas de AI"
+        message={error}
+        onAction={loadAIData}
+      />
+    );
+  }
+
+  if (!summary) {
+    return (
+      <AdminEmptyState
+        title="Sin métricas de AI"
+        message="Todavía no hay datos disponibles para mostrar en esta sección."
+        actionLabel="Reintentar"
+        onAction={loadAIData}
+      />
+    );
+  }
 
   const maxRequests = Math.max(...history.map((d) => d.requests + d.cache_hits), 1);
 
@@ -127,6 +164,10 @@ export default function AdminAIPage() {
         <h1 className="text-2xl font-bold">AI / LLM</h1>
         <p className="text-gray-500 text-sm">Monitoreo de uso de Google Gemini Flash 2.5</p>
       </div>
+
+      {error && (
+        <AdminErrorState title="Auto-refresh falló" message={error} onAction={loadAIData} />
+      )}
 
       {/* Top row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -176,6 +217,14 @@ export default function AdminAIPage() {
                 <span className="font-medium">{summary.today.errors}</span>
               </div>
             )}
+            {summary.today.rate_limited > 0 && (
+              <div className="flex justify-between text-amber-500">
+                <span className="text-sm flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Rate limits
+                </span>
+                <span className="font-medium">{summary.today.rate_limited}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -193,6 +242,10 @@ export default function AdminAIPage() {
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Tokens consumidos</span>
               <span className="font-medium">{summary.this_week.tokens.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-500">Rate limits</span>
+              <span className="font-medium">{summary.this_week.rate_limited}</span>
             </div>
           </div>
 
@@ -252,7 +305,8 @@ export default function AdminAIPage() {
                     })}
                   </span>
                   <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                    {d.requests} API / {d.cache_hits} cache / {d.tokens.toLocaleString()} tokens
+                    {d.requests} API / {d.cache_hits} cache / {d.rate_limited} limits /{' '}
+                    {d.tokens.toLocaleString()} tokens
                   </div>
                 </div>
               );

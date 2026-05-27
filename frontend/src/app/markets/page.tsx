@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, X } from 'lucide-react';
 import { MarketList } from '@/components/markets/MarketList';
 import { MundialHero } from '@/components/markets/MundialHero';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,39 +17,82 @@ const MARKETS_PER_PAGE = 12;
 function MarketsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { selectedCategory, selectedStatus, setCategory, setStatus, resetFilters } = useAppStore();
+  const {
+    selectedCategory,
+    selectedStatus,
+    searchQuery,
+    setCategory,
+    setStatus,
+    setSearchQuery,
+    resetFilters,
+  } = useAppStore();
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState('');
 
-  // Sync category from URL param (?categoria=mundial)
+  // Sync category from URL param (?categoria=mundial) only for known categories.
+  useEffect(() => {
+    const q = searchParams.get('q') ?? '';
+    setSearchQuery(q);
+    setCurrentPage(1);
+  }, [searchParams, setSearchQuery]);
+
   useEffect(() => {
     const cat = searchParams.get('categoria');
-    if (cat) setCategory(cat as MarketCategory);
-  }, [searchParams, setCategory]);
+    if (!cat) return;
 
-  // Reset page on filter change
-  useEffect(() => { setCurrentPage(1); }, [selectedCategory, selectedStatus, search]);
+    const validCategory = categories.some((category) => category.id === cat);
+    if (validCategory) {
+      setCategory(cat as MarketCategory);
+      return;
+    }
+
+    const cleanParams = new URLSearchParams(searchParams.toString());
+    cleanParams.delete('categoria');
+    setCategory('all');
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  }, [router, searchParams, setCategory]);
 
   const { data: allMarkets = [], isLoading } = useMarkets({
-    status: selectedStatus === 'all' ? undefined : selectedStatus as 'active' | 'resolved',
+    status: selectedStatus === 'all' ? undefined : (selectedStatus as 'active' | 'resolved'),
     limit: 100,
   });
 
-  const { data: mundialPolls = [] } = useMarkets({ category: 'mundial' as MarketCategory, limit: 3 });
+  const { data: mundialPolls = [] } = useMarkets({
+    category: 'mundial' as MarketCategory,
+    limit: 3,
+  });
 
   const filtered = allMarkets.filter((m) => {
     const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
-    const searchMatch = !search || m.title.toLowerCase().includes(search.toLowerCase());
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const searchMatch =
+      !normalizedSearch ||
+      m.title.toLowerCase().includes(normalizedSearch) ||
+      m.description.toLowerCase().includes(normalizedSearch);
     return catMatch && searchMatch;
   });
 
+  const clearSearch = () => {
+    const cleanParams = new URLSearchParams(searchParams.toString());
+    cleanParams.delete('q');
+    setSearchQuery('');
+    setCurrentPage(1);
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  };
+
   const totalPages = Math.ceil(filtered.length / MARKETS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * MARKETS_PER_PAGE, currentPage * MARKETS_PER_PAGE);
+  const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
+  const paginated = filtered.slice(
+    (safeCurrentPage - 1) * MARKETS_PER_PAGE,
+    safeCurrentPage * MARKETS_PER_PAGE
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-
         <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
 
         <div className="mb-6">
@@ -72,12 +115,25 @@ function MarketsContent() {
                 <div className="relative mb-5">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                   <input
-                    type="text"
+                    type="search"
                     placeholder="Buscar..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-8 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="mb-5">
@@ -86,7 +142,11 @@ function MarketsContent() {
                   </h3>
                   <div className="space-y-1">
                     <button
-                      onClick={() => { setCategory('all'); router.push('/markets'); }}
+                      onClick={() => {
+                        setCategory('all');
+                        setCurrentPage(1);
+                        router.push('/markets');
+                      }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                         selectedCategory === 'all'
                           ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
@@ -98,15 +158,19 @@ function MarketsContent() {
                     {categories.map((cat) => (
                       <button
                         key={cat.id}
-                        onClick={() => { setCategory(cat.id as MarketCategory); router.push('/markets'); }}
+                        onClick={() => {
+                          setCategory(cat.id as MarketCategory);
+                          setCurrentPage(1);
+                          router.push('/markets');
+                        }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 ${
                           cat.id === 'mundial'
                             ? selectedCategory === 'mundial'
                               ? 'bg-green-600 text-white'
                               : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 border border-green-200 dark:border-green-800'
                             : selectedCategory === cat.id
-                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                              ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                         }`}
                       >
                         {cat.id === 'mundial' && <span>⚽</span>}
@@ -128,7 +192,10 @@ function MarketsContent() {
                     ].map((s) => (
                       <button
                         key={s.value}
-                        onClick={() => setStatus(s.value as 'all' | 'active' | 'resolved')}
+                        onClick={() => {
+                          setStatus(s.value as 'all' | 'active' | 'resolved');
+                          setCurrentPage(1);
+                        }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                           selectedStatus === s.value
                             ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
@@ -141,9 +208,13 @@ function MarketsContent() {
                   </div>
                 </div>
 
-                {(selectedCategory !== 'all' || selectedStatus !== 'all' || search) && (
+                {(selectedCategory !== 'all' || selectedStatus !== 'all' || searchQuery) && (
                   <button
-                    onClick={() => { resetFilters(); setSearch(''); router.push('/markets'); }}
+                    onClick={() => {
+                      resetFilters();
+                      setCurrentPage(1);
+                      router.push('/markets');
+                    }}
                     className="mt-4 w-full text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
                   >
                     Limpiar filtros
@@ -157,21 +228,37 @@ function MarketsContent() {
           <div className="flex-1">
             <div className="mb-4 text-sm text-gray-500">
               {filtered.length} {filtered.length === 1 ? 'poll' : 'polls'}
+              {searchQuery && (
+                <span>
+                  {' '}
+                  para <strong>&quot;{searchQuery}&quot;</strong>
+                </span>
+              )}
               {selectedCategory !== 'all' && (
-                <span> en <strong>{categories.find(c => c.id === selectedCategory)?.name ?? selectedCategory}</strong></span>
+                <span>
+                  {' '}
+                  en{' '}
+                  <strong>
+                    {categories.find((c) => c.id === selectedCategory)?.name ?? selectedCategory}
+                  </strong>
+                </span>
               )}
             </div>
 
             <MarketList
               markets={paginated}
               isLoading={isLoading}
-              onClearFilters={() => { resetFilters(); setSearch(''); }}
+              onClearFilters={() => {
+                resetFilters();
+                setCurrentPage(1);
+                router.push('/markets');
+              }}
             />
 
             {!isLoading && totalPages > 1 && (
               <div className="mt-8">
                 <Pagination
-                  currentPage={currentPage}
+                  currentPage={safeCurrentPage}
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
                 />
@@ -186,14 +273,16 @@ function MarketsContent() {
 
 export default function MarketsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="h-64 bg-green-100 dark:bg-green-950 rounded-2xl animate-pulse mb-8" />
-          <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-64 animate-pulse mb-8" />
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-8">
+            <div className="h-64 bg-green-100 dark:bg-green-950 rounded-2xl animate-pulse mb-8" />
+            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-64 animate-pulse mb-8" />
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <MarketsContent />
     </Suspense>
   );

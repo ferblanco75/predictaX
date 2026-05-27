@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 
+from app.services import ai_service
+from app.services.market_service import format_volume
+
 
 def test_list_markets(client: TestClient, sample_markets):
     """List all markets returns data."""
@@ -66,3 +69,23 @@ def test_market_response_format(client: TestClient, sample_market):
                        "volume", "participants", "endDate", "status", "history"]
     for field in required_fields:
         assert field in data, f"Missing field: {field}"
+
+
+def test_format_volume_uses_virtual_points_label():
+    """Market volume should not look like real-money currency."""
+    assert format_volume(500) == "500 pts"
+    assert format_volume(15_100) == "15.1K pts"
+    assert format_volume(1_500_000) == "1.5M pts"
+
+
+def test_ai_rate_limit_returns_429(client: TestClient, sample_market, monkeypatch):
+    """AI endpoint should expose throttling as a retryable client limit."""
+    def raise_rate_limit(*_args, **_kwargs):
+        raise ai_service.AIRateLimitError("Demasiadas solicitudes de IA")
+
+    monkeypatch.setattr(ai_service, "get_or_create_analysis", raise_rate_limit)
+
+    response = client.post(f"/api/markets/{sample_market.id}/ai-analysis")
+
+    assert response.status_code == 429
+    assert response.json()["detail"] == "Demasiadas solicitudes de IA"

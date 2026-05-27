@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
 import {
+  AdminConfirmModal,
+  AdminEmptyState,
+  AdminErrorState,
+  AdminNotice,
+} from '@/components/admin/AdminState';
+import {
   getUsers,
   getTopActiveUsers,
   getInactiveUsers,
@@ -69,6 +75,24 @@ interface PointsModalState {
   currentPoints: number;
 }
 
+interface NoticeState {
+  variant: 'success' | 'error' | 'info';
+  title: string;
+  message?: string;
+}
+
+interface ConfirmActionState {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => Promise<void>;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
+}
+
 export default function AdminUsersPage() {
   const { user } = useAppStore();
   const [tab, setTab] = useState<Tab>('all');
@@ -79,6 +103,9 @@ export default function AdminUsersPage() {
   const [engagement, setEngagement] = useState<Engagement | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [pointsModal, setPointsModal] = useState<PointsModalState>({
@@ -89,66 +116,129 @@ export default function AdminUsersPage() {
   });
   const [pointsInput, setPointsInput] = useState('');
 
-  useEffect(() => {
+  const loadUsersData = async () => {
     if (!user?.token) return;
     setLoading(true);
-    Promise.all([
-      getUsers(user.token, { limit: 50 }),
-      getTopActiveUsers(user.token, 30, 10),
-      getInactiveUsers(user.token, 30),
-      getUserEngagement(user.token, 30),
-    ])
-      .then(([u, top, inactive, eng]) => {
-        setUsers(u.data);
-        setTotal(u.total);
-        setTopUsers(top);
-        setInactiveUsers(inactive);
-        setEngagement(eng);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setLoadError('');
+    try {
+      const [u, top, inactive, eng] = await Promise.all([
+        getUsers(user.token, { limit: 50 }),
+        getTopActiveUsers(user.token, 30, 10),
+        getInactiveUsers(user.token, 30),
+        getUserEngagement(user.token, 30),
+      ]);
+      setUsers(u.data);
+      setTotal(u.total);
+      setTopUsers(top);
+      setInactiveUsers(inactive);
+      setEngagement(eng);
+    } catch (error) {
+      setLoadError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadUsersData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.token]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.token) return;
+    setLoadError('');
     getUsers(user.token, { search, limit: 50 })
       .then((res) => {
         setUsers(res.data);
         setTotal(res.total);
       })
-      .catch(() => {});
+      .catch((error) => {
+        setNotice({
+          variant: 'error',
+          title: 'No se pudo buscar usuarios',
+          message: getErrorMessage(error),
+        });
+      });
   };
 
-  const handleToggleActive = async (userId: string) => {
+  const handleToggleActive = async (userId: string, username: string, currentActive: boolean) => {
     if (!user?.token) return;
     setActionLoading(userId);
     setOpenMenu(null);
+    setConfirmAction(null);
     try {
       const updated = await toggleUserActive(user.token, userId);
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, is_active: updated.is_active } : u))
       );
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: updated.is_active ? 'Usuario reactivado' : 'Usuario baneado',
+        message: `${username} ahora está ${updated.is_active ? 'activo' : 'baneado'}.`,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: `No se pudo ${currentActive ? 'banear' : 'reactivar'} el usuario`,
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleToggleRole = async (userId: string, currentRole: string) => {
+  const handleToggleRole = async (userId: string, username: string, currentRole: string) => {
     if (!user?.token) return;
     setActionLoading(userId);
     setOpenMenu(null);
+    setConfirmAction(null);
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     try {
       const updated = await updateUserRole(user.token, userId, newRole);
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: 'Rol actualizado',
+        message: `${username} ahora tiene rol ${updated.role}.`,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo actualizar el rol',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const requestToggleActive = (u: UserData) => {
+    setOpenMenu(null);
+    setConfirmAction({
+      title: u.is_active ? 'Banear usuario' : 'Reactivar usuario',
+      description: u.is_active
+        ? `Vas a bloquear el acceso de ${u.username}. Esta acción afecta su capacidad de operar en la plataforma.`
+        : `Vas a reactivar el acceso de ${u.username}. El usuario podrá volver a usar la plataforma.`,
+      confirmLabel: u.is_active ? 'Banear' : 'Reactivar',
+      danger: u.is_active,
+      onConfirm: () => handleToggleActive(u.id, u.username, u.is_active),
+    });
+  };
+
+  const requestToggleRole = (u: UserData) => {
+    const newRole = u.role === 'admin' ? 'user' : 'admin';
+    setOpenMenu(null);
+    setConfirmAction({
+      title: newRole === 'admin' ? 'Hacer admin' : 'Quitar rol admin',
+      description:
+        newRole === 'admin'
+          ? `${u.username} tendrá acceso al panel admin y a acciones sensibles.`
+          : `${u.username} perderá acceso al panel admin.`,
+      confirmLabel: newRole === 'admin' ? 'Hacer admin' : 'Quitar admin',
+      danger: newRole === 'admin',
+      onConfirm: () => handleToggleRole(u.id, u.username, u.role),
+    });
   };
 
   const openPointsModal = (u: UserData) => {
@@ -160,7 +250,14 @@ export default function AdminUsersPage() {
   const handleSavePoints = async () => {
     if (!user?.token) return;
     const newPoints = parseFloat(pointsInput);
-    if (isNaN(newPoints) || newPoints < 0) return;
+    if (isNaN(newPoints) || newPoints < 0) {
+      setNotice({
+        variant: 'error',
+        title: 'Puntos inválidos',
+        message: 'Ingresá un número mayor o igual a 0.',
+      });
+      return;
+    }
     setActionLoading(pointsModal.userId);
     try {
       const updated = await updateUserPoints(user.token, pointsModal.userId, newPoints);
@@ -168,8 +265,17 @@ export default function AdminUsersPage() {
         prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
       );
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
-    } catch {
-      /* silent */
+      setNotice({
+        variant: 'success',
+        title: 'Puntos actualizados',
+        message: `${pointsModal.username} ahora tiene ${updated.points.toLocaleString()} puntos.`,
+      });
+    } catch (error) {
+      setNotice({
+        variant: 'error',
+        title: 'No se pudieron actualizar los puntos',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -209,8 +315,25 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
+      {notice && (
+        <AdminNotice
+          variant={notice.variant}
+          title={notice.title}
+          message={notice.message}
+          onDismiss={() => setNotice(null)}
+        />
+      )}
+
+      {loadError && !loading && (
+        <AdminErrorState
+          title="No se pudo cargar usuarios"
+          message={loadError}
+          onAction={loadUsersData}
+        />
+      )}
+
       {/* All Users Tab */}
-      {tab === 'all' && (
+      {!loadError && tab === 'all' && (
         <>
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative">
@@ -224,8 +347,8 @@ export default function AdminUsersPage() {
               />
             </div>
           </form>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
+            <table className="w-full min-w-[920px] text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
@@ -315,7 +438,7 @@ export default function AdminUsersPage() {
                               className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
                             >
                               <button
-                                onClick={() => handleToggleActive(u.id)}
+                                onClick={() => requestToggleActive(u)}
                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                               >
                                 {u.is_active ? (
@@ -331,7 +454,7 @@ export default function AdminUsersPage() {
                                 )}
                               </button>
                               <button
-                                onClick={() => handleToggleRole(u.id, u.role)}
+                                onClick={() => requestToggleRole(u)}
                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                               >
                                 {u.role === 'admin' ? (
@@ -360,24 +483,36 @@ export default function AdminUsersPage() {
                     ))}
               </tbody>
             </table>
+            {!loading && users.length === 0 && (
+              <div className="p-6">
+                <AdminEmptyState
+                  title="Sin usuarios para mostrar"
+                  message={
+                    search
+                      ? 'No encontramos usuarios que coincidan con la búsqueda.'
+                      : 'Todavía no hay usuarios registrados en la plataforma.'
+                  }
+                />
+              </div>
+            )}
           </div>
         </>
       )}
 
       {/* Top Active Users Tab */}
-      {tab === 'top' && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      {!loadError && tab === 'top' && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h3 className="font-medium">Usuarios más activos (últimos 30 días)</h3>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
                 <th className="text-left px-4 py-3 font-medium text-gray-500">#</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">Total Apostado</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos usados</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos</th>
               </tr>
             </thead>
@@ -405,7 +540,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3 font-medium">{u.username}</td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
                   <td className="px-4 py-3 text-right font-medium">{u.predictions_count}</td>
-                  <td className="px-4 py-3 text-right">${u.total_wagered.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">{u.total_wagered.toLocaleString()} pts</td>
                   <td className="px-4 py-3 text-right">{u.points.toLocaleString()}</td>
                 </tr>
               ))}
@@ -418,13 +553,13 @@ export default function AdminUsersPage() {
       )}
 
       {/* Inactive Users Tab */}
-      {tab === 'inactive' && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      {!loadError && tab === 'inactive' && (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h3 className="font-medium">Usuarios sin predicciones en 30 días</h3>
             <p className="text-xs text-gray-400 mt-1">{inactiveUsers.length} usuarios inactivos</p>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
@@ -463,7 +598,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* Engagement Tab */}
-      {tab === 'engagement' && engagement && (
+      {!loadError && tab === 'engagement' && engagement && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <h3 className="text-sm font-medium mb-4">Actividad por Hora del Día</h3>
@@ -518,6 +653,19 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      <AdminConfirmModal
+        open={!!confirmAction}
+        title={confirmAction?.title ?? ''}
+        description={confirmAction?.description ?? ''}
+        confirmLabel={confirmAction?.confirmLabel ?? 'Confirmar'}
+        danger={confirmAction?.danger}
+        loading={!!actionLoading}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          void confirmAction?.onConfirm();
+        }}
+      />
 
       {/* Points Modal */}
       {pointsModal.open && (

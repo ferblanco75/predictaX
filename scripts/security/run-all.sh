@@ -1,9 +1,9 @@
 #!/bin/bash
-# Run ALL security scans sequentially
+# Run local security scans sequentially.
 # Usage: ./scripts/security/run-all.sh
-# Requires: Docker, all services running (docker compose up -d)
+# Requires: Docker and running app services: docker compose up -d
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -45,4 +45,5 @@ echo "Next steps:"
 echo "  1. Review reports in reports/security/"
 echo "  2. For each HIGH/CRITICAL finding, create a GitHub issue"
 echo "  3. Use label 'security-finding' + severity label"
-echo "  4. For full active scan: ./scripts/security/run-zap-full.sh"
+echo "  4. To fail on dependency/static findings: FAIL_ON_FINDINGS=true ./scripts/security/run-all.sh"
+echo "  5. For full active scan: ./scripts/security/run-zap-full.sh"

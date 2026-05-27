@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,17 @@ interface FormErrors {
   name?: string;
   passwordConfirm?: string;
   terms?: string;
+  privacy?: string;
+  age?: string;
 }
 
+const LEGAL_CONSENT_VERSION = '2026-05-21';
+
 function validateEmail(email: string): string | undefined {
-  if (!email) return 'El email es requerido';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Email inválido';
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail) return 'El email es requerido';
+  if (normalizedEmail.length > 255) return 'El email es demasiado largo';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return 'Email inválido';
 }
 
 function validatePassword(password: string): string | undefined {
@@ -28,8 +34,52 @@ function validatePassword(password: string): string | undefined {
 }
 
 function validateName(name: string): string | undefined {
-  if (!name) return 'El nombre es requerido';
-  if (name.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+  const normalizedName = name.trim().toLowerCase();
+  if (!normalizedName) return 'El nombre es requerido';
+  if (normalizedName.length < 3) return 'El nombre debe tener al menos 3 caracteres';
+  if (normalizedName.length > 30) return 'El nombre debe tener máximo 30 caracteres';
+  if (!/^[a-z0-9_-]+$/.test(normalizedName)) {
+    return 'Usá solo letras, números, guion bajo o guion medio';
+  }
+}
+
+function LegalCheckbox({
+  id,
+  label,
+  error,
+  optional = false,
+  onChange,
+}: {
+  id: string;
+  label: ReactNode;
+  error?: string;
+  optional?: boolean;
+  onChange?: () => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-start space-x-2">
+        <input
+          type="checkbox"
+          id={id}
+          name={id}
+          className="mt-1 rounded border-gray-300"
+          aria-invalid={!!error}
+          aria-required={!optional}
+          onChange={onChange}
+        />
+        <label htmlFor={id} className="text-sm leading-5 text-gray-600">
+          {label}
+        </label>
+      </div>
+      {error && (
+        <div className="flex items-center space-x-1 text-sm text-red-600">
+          <AlertCircle className="h-4 w-4" />
+          <span>{error}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AuthPage() {
@@ -38,7 +88,7 @@ export default function AuthPage() {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
-  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
@@ -58,14 +108,21 @@ export default function AuthPage() {
     loginMutation.mutate({ email, password });
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
+    const name = String(formData.get('name') ?? '')
+      .trim()
+      .toLowerCase();
+    const email = String(formData.get('email') ?? '')
+      .trim()
+      .toLowerCase();
     const password = formData.get('password') as string;
     const passwordConfirm = formData.get('passwordConfirm') as string;
-    const terms = formData.get('terms') as string;
+    const termsAccepted = formData.get('termsAccepted') === 'on';
+    const privacyAccepted = formData.get('privacyAccepted') === 'on';
+    const isAdult = formData.get('isAdult') === 'on';
+    const marketingOptIn = formData.get('marketingOptIn') === 'on';
 
     const errors: FormErrors = {};
     const nameError = validateName(name);
@@ -75,14 +132,25 @@ export default function AuthPage() {
     if (emailError) errors.email = emailError;
     if (passwordError) errors.password = passwordError;
     if (password !== passwordConfirm) errors.passwordConfirm = 'Las contraseñas no coinciden';
-    if (!terms) errors.terms = 'Debes aceptar los términos y condiciones';
+    if (!termsAccepted) errors.terms = 'Debes aceptar los términos y condiciones';
+    if (!privacyAccepted) errors.privacy = 'Debes aceptar la política de privacidad';
+    if (!isAdult) errors.age = 'Debes declarar que sos mayor de 18 años';
     if (Object.keys(errors).length > 0) {
       setRegisterErrors(errors);
       return;
     }
 
     setRegisterErrors({});
-    registerMutation.mutate({ username: name, email, password });
+    registerMutation.mutate({
+      username: name,
+      email,
+      password,
+      terms_accepted: termsAccepted,
+      privacy_accepted: privacyAccepted,
+      is_adult: isAdult,
+      marketing_opt_in: marketingOptIn,
+      legal_consent_version: LEGAL_CONSENT_VERSION,
+    });
   };
 
   const loginError = loginMutation.error?.message;
@@ -96,7 +164,7 @@ export default function AuthPage() {
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
               <TrendingUp className="h-6 w-6 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold">PredictaX</span>
+            <span className="text-2xl font-bold">NeuroPredict</span>
           </Link>
         </div>
 
@@ -271,34 +339,49 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <input
-                        type="checkbox"
-                        id="terms"
-                        name="terms"
-                        className="rounded border-gray-300 mt-1"
-                        onChange={() =>
-                          setRegisterErrors((prev) => ({ ...prev, terms: undefined }))
-                        }
-                      />
-                      <label htmlFor="terms" className="text-sm text-gray-600">
-                        Acepto los{' '}
-                        <Link href="/terms" className="text-blue-600 hover:underline">
-                          términos y condiciones
-                        </Link>{' '}
-                        y la{' '}
-                        <Link href="/privacy" className="text-blue-600 hover:underline">
-                          política de privacidad
-                        </Link>
-                      </label>
-                    </div>
-                    {registerErrors.terms && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.terms}</span>
-                      </div>
-                    )}
+                  <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <LegalCheckbox
+                      id="termsAccepted"
+                      label={
+                        <>
+                          Acepto los{' '}
+                          <Link href="/terms" className="text-blue-600 hover:underline">
+                            términos y condiciones
+                          </Link>
+                        </>
+                      }
+                      error={registerErrors.terms}
+                      onChange={() => setRegisterErrors((prev) => ({ ...prev, terms: undefined }))}
+                    />
+
+                    <LegalCheckbox
+                      id="privacyAccepted"
+                      label={
+                        <>
+                          Acepto la{' '}
+                          <Link href="/privacy" className="text-blue-600 hover:underline">
+                            política de privacidad
+                          </Link>
+                        </>
+                      }
+                      error={registerErrors.privacy}
+                      onChange={() =>
+                        setRegisterErrors((prev) => ({ ...prev, privacy: undefined }))
+                      }
+                    />
+
+                    <LegalCheckbox
+                      id="isAdult"
+                      label="Declaro ser mayor de 18 años y entiendo que NeuroPredict usa puntos virtuales sin valor monetario."
+                      error={registerErrors.age}
+                      onChange={() => setRegisterErrors((prev) => ({ ...prev, age: undefined }))}
+                    />
+
+                    <LegalCheckbox
+                      id="marketingOptIn"
+                      label="Quiero recibir novedades del MVP y mercados del Mundial 2026 por email."
+                      optional
+                    />
                   </div>
 
                   {registerError && (
