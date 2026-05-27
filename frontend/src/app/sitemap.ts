@@ -16,6 +16,7 @@ async function getSitemapMarkets(): Promise<Market[]> {
   try {
     const response = await fetch(`${API_URL}/markets?status=active&limit=100`, {
       next: { revalidate },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
