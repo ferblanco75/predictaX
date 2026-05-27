@@ -3,7 +3,7 @@
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X } from 'lucide-react';
+import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X, Coins } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -88,8 +88,15 @@ export function Navbar() {
             <ThemeToggle />
             {isLoggedIn && user ? (
               <>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
+                    {user.points.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-xs text-amber-600 dark:text-amber-500">pts</span>
+                </div>
                 <span className="hidden sm:block text-sm font-medium text-muted-foreground">
-                  Bienvenido, <span className="text-foreground font-semibold">{user.username}</span>
+                  {user.username}
                 </span>
                 <Button
                   variant="outline"
@@ -99,7 +106,7 @@ export function Navbar() {
                     localStorage.removeItem('token');
                   }}
                 >
-                  Cerrar sesión
+                  Salir
                 </Button>
               </>
             ) : (

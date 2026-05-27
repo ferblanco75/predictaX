@@ -8,9 +8,9 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
 import { Button } from '@/components/ui/button';
 
-const CONSENT_STORAGE_KEY = 'predictax_cookie_consent';
+const CONSENT_STORAGE_KEY = 'neuropredict_cookie_consent';
 const CONSENT_VERSION = '2026-05-21';
-const OPEN_SETTINGS_EVENT = 'predictax-open-cookie-settings';
+const OPEN_SETTINGS_EVENT = 'neuropredict-open-cookie-settings';
 
 type CookieConsent = {
   essential: true;
@@ -65,7 +65,7 @@ function readConsent(): CookieConsent | null {
 
 function saveConsent(consent: CookieConsent) {
   window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent));
-  window.dispatchEvent(new Event('predictax-cookie-consent-change'));
+  window.dispatchEvent(new Event('neuropredict-cookie-consent-change'));
 }
 
 async function syncConsentToBackend(consent: CookieConsent) {
@@ -98,11 +98,11 @@ async function syncConsentToBackend(consent: CookieConsent) {
 
 function subscribeToConsent(onStoreChange: () => void) {
   window.addEventListener('storage', onStoreChange);
-  window.addEventListener('predictax-cookie-consent-change', onStoreChange);
+  window.addEventListener('neuropredict-cookie-consent-change', onStoreChange);
 
   return () => {
     window.removeEventListener('storage', onStoreChange);
-    window.removeEventListener('predictax-cookie-consent-change', onStoreChange);
+    window.removeEventListener('neuropredict-cookie-consent-change', onStoreChange);
   };
 }
 

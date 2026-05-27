@@ -60,7 +60,7 @@ export const useAppStore = create<AppState>()(
         })),
     }),
     {
-      name: 'predictax-storage', // localStorage key
+      name: 'neuropredict-storage', // localStorage key
       partialize: (state) => ({
         user: state.user,
         isLoggedIn: state.isLoggedIn,

@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 
-const CONSENT_STORAGE_KEY = 'predictax_cookie_consent';
+const CONSENT_STORAGE_KEY = 'neuropredict_cookie_consent';
 const CONSENT_VERSION = '2026-05-21';
 
 function hasAnalyticsConsent() {
