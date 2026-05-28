@@ -1,7 +1,7 @@
 """add otp_codes table
 
 Revision ID: a7b8c9d0e1f2
-Revises: f6a7b8c9d0e1
+Revises: 0a1b2c3d4e5f
 Create Date: 2026-05-27
 
 """
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
 revision = 'a7b8c9d0e1f2'
-down_revision = 'f6a7b8c9d0e1'
+down_revision = '0a1b2c3d4e5f'
 branch_labels = None
 depends_on = None
 
