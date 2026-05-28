@@ -10,6 +10,12 @@ interface LoginCredentials {
   password: string;
 }
 
+interface OTPRequestResponse {
+  email: string;
+  email_sent: boolean;
+  expires_in_minutes: number;
+}
+
 interface RegisterData {
   username: string;
   email: string;
@@ -62,6 +68,41 @@ export function useLogin() {
       } else {
         router.push('/markets');
       }
+    },
+  });
+}
+
+export function useRequestOTP() {
+  return useMutation<OTPRequestResponse, Error, { email: string }>({
+    mutationFn: async ({ email }) => {
+      const res = await api.post<OTPRequestResponse>('/auth/otp/request', { email });
+      return res.data;
+    },
+  });
+}
+
+export function useVerifyOTP() {
+  const { login } = useAppStore();
+  const router = useRouter();
+
+  return useMutation<void, Error, { email: string; code: string }>({
+    mutationFn: async ({ email, code }) => {
+      const tokenRes = await api.post<TokenResponse>('/auth/otp/verify', { email, code });
+      const { access_token } = tokenRes.data;
+      localStorage.setItem('token', access_token);
+
+      const meRes = await api.get<UserResponse>('/auth/me');
+      login({
+        id: String(meRes.data.id),
+        username: meRes.data.username,
+        email: meRes.data.email,
+        points: meRes.data.points,
+        role: meRes.data.role || 'user',
+        token: access_token,
+      });
+    },
+    onSuccess: () => {
+      router.push('/markets');
     },
   });
 }

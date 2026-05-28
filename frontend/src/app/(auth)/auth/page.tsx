@@ -1,13 +1,13 @@
 'use client';
 
-import { type FormEvent, type ReactNode, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, AlertCircle } from 'lucide-react';
-import { useLogin, useRegister } from '@/lib/hooks/useAuth';
+import { TrendingUp, AlertCircle, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
+import { useRequestOTP, useVerifyOTP, useRegister } from '@/lib/hooks/useAuth';
 
 interface FormErrors {
   email?: string;
@@ -82,31 +82,178 @@ function LegalCheckbox({
   );
 }
 
-export default function AuthPage() {
-  const [loginErrors, setLoginErrors] = useState<FormErrors>({});
-  const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
-  const loginMutation = useLogin();
-  const registerMutation = useRegister();
+// ── OTP Login (2-step: email → code) ─────────────────────────────────────────
 
-  const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
+type OTPStep = 'email' | 'code';
+
+function OTPLoginForm() {
+  const [step, setStep] = useState<OTPStep>('email');
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState<string>();
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState<string>();
+  const [countdown, setCountdown] = useState(0);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  const requestOTP = useRequestOTP();
+  const verifyOTP = useVerifyOTP();
+
+  // Countdown timer after code is sent
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [countdown]);
+
+  const handleEmailSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    const errors: FormErrors = {};
-    const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
-    if (emailError) errors.email = emailError;
-    if (passwordError) errors.password = passwordError;
-    if (Object.keys(errors).length > 0) {
-      setLoginErrors(errors);
-      return;
-    }
-
-    setLoginErrors({});
-    loginMutation.mutate({ email, password });
+    const err = validateEmail(email);
+    if (err) { setEmailError(err); return; }
+    setEmailError(undefined);
+    requestOTP.mutate(
+      { email },
+      {
+        onSuccess: () => {
+          setStep('code');
+          setCountdown(600); // 10 min in seconds
+          setTimeout(() => codeInputRef.current?.focus(), 100);
+        },
+        onError: (err) => setEmailError(err.message),
+      }
+    );
   };
+
+  const handleCodeSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (code.length !== 6) { setCodeError('El código debe tener 6 dígitos'); return; }
+    setCodeError(undefined);
+    verifyOTP.mutate(
+      { email, code },
+      { onError: (err) => setCodeError(err.message) }
+    );
+  };
+
+  const handleResend = () => {
+    setCode('');
+    setCodeError(undefined);
+    requestOTP.mutate(
+      { email },
+      {
+        onSuccess: () => setCountdown(600),
+        onError: (err) => setCodeError(err.message),
+      }
+    );
+  };
+
+  const minutes = Math.floor(countdown / 60);
+  const seconds = countdown % 60;
+  const countdownStr = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+  if (step === 'email') {
+    return (
+      <form onSubmit={handleEmailSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="otp-email" className="text-sm font-medium">Tu email</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="otp-email"
+              type="email"
+              placeholder="tu@email.com"
+              autoComplete="email"
+              className="pl-9"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailError(undefined); }}
+              aria-invalid={!!emailError}
+              disabled={requestOTP.isPending}
+            />
+          </div>
+          {emailError && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4" /><span>{emailError}</span>
+            </div>
+          )}
+        </div>
+
+        <Button type="submit" className="w-full" disabled={requestOTP.isPending}>
+          {requestOTP.isPending ? 'Enviando código...' : 'Enviar código →'}
+        </Button>
+
+        <p className="text-xs text-center text-gray-500">
+          Te enviamos un código de 6 dígitos. Sin contraseña.
+        </p>
+      </form>
+    );
+  }
+
+  return (
+    <form onSubmit={handleCodeSubmit} className="space-y-4">
+      <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 px-4 py-3 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Código enviado a</p>
+          <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">{email}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setStep('email'); setCode(''); setCodeError(undefined); }}
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+          aria-label="Cambiar email"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="otp-code" className="text-sm font-medium">Código de 6 dígitos</label>
+          {countdown > 0 && (
+            <span className="text-xs text-gray-500">Expira en {countdownStr}</span>
+          )}
+        </div>
+        <Input
+          id="otp-code"
+          ref={codeInputRef}
+          type="text"
+          inputMode="numeric"
+          pattern="\d{6}"
+          maxLength={6}
+          placeholder="123456"
+          autoComplete="one-time-code"
+          className="text-center text-2xl font-bold tracking-[0.5em] h-14"
+          value={code}
+          onChange={(e) => { setCode(e.target.value.replace(/\D/g, '')); setCodeError(undefined); }}
+          aria-invalid={!!codeError}
+          disabled={verifyOTP.isPending}
+        />
+        {codeError && (
+          <div className="flex items-center gap-1 text-sm text-red-600">
+            <AlertCircle className="h-4 w-4" /><span>{codeError}</span>
+          </div>
+        )}
+      </div>
+
+      <Button type="submit" className="w-full" disabled={verifyOTP.isPending || code.length !== 6}>
+        {verifyOTP.isPending ? 'Verificando...' : 'Ingresar'}
+      </Button>
+
+      <button
+        type="button"
+        onClick={handleResend}
+        disabled={requestOTP.isPending || countdown > 570}
+        className="w-full flex items-center justify-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <RefreshCw className="h-3.5 w-3.5" />
+        {requestOTP.isPending ? 'Enviando...' : 'Reenviar código'}
+      </button>
+    </form>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function AuthPage() {
+  const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
+  const registerMutation = useRegister();
 
   const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -153,7 +300,6 @@ export default function AuthPage() {
     });
   };
 
-  const loginError = loginMutation.error?.message;
   const registerError = registerMutation.error?.message;
 
   return (
@@ -182,70 +328,9 @@ export default function AuthPage() {
                 <TabsTrigger value="register">Registrarse</TabsTrigger>
               </TabsList>
 
-              {/* Login Tab */}
+              {/* Login Tab — OTP flow */}
               <TabsContent value="login">
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="email-login" className="text-sm font-medium">
-                      Email
-                    </label>
-                    <Input
-                      id="email-login"
-                      name="email"
-                      type="email"
-                      placeholder="tu@email.com"
-                      autoComplete="email"
-                      aria-invalid={!!loginErrors.email}
-                      onChange={() => setLoginErrors((prev) => ({ ...prev, email: undefined }))}
-                    />
-                    {loginErrors.email && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{loginErrors.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="password-login" className="text-sm font-medium">
-                        Contraseña
-                      </label>
-                      <Link
-                        href="/forgot-password"
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        ¿Olvidaste tu contraseña?
-                      </Link>
-                    </div>
-                    <Input
-                      id="password-login"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      aria-invalid={!!loginErrors.password}
-                      onChange={() => setLoginErrors((prev) => ({ ...prev, password: undefined }))}
-                    />
-                    {loginErrors.password && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{loginErrors.password}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {loginError && (
-                    <div className="flex items-center space-x-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>{loginError}</span>
-                    </div>
-                  )}
-
-                  <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                    {loginMutation.isPending ? 'Iniciando sesión...' : 'Iniciar sesión'}
-                  </Button>
-                </form>
+                <OTPLoginForm />
               </TabsContent>
 
               {/* Register Tab */}

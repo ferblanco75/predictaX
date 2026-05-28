@@ -6,8 +6,8 @@ from app.core.database import get_db
 from app.core.rate_limit import enforce_rate_limit
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.user import Token, UserCreate, UserLogin, UserResponse
-from app.services import auth_service
+from app.schemas.user import OTPRequest, OTPRequestResponse, OTPVerify, Token, UserCreate, UserLogin, UserResponse
+from app.services import auth_service, otp_service
 
 router = APIRouter()
 
@@ -78,6 +78,32 @@ def logout(current_user: User = Depends(get_current_user)):
         Confirmation message
     """
     return {"message": "Successfully logged out"}
+
+
+@router.post("/otp/request", response_model=OTPRequestResponse)
+def request_otp(body: OTPRequest, request: Request, db: Session = Depends(get_db)):
+    """
+    Request an OTP code sent to the given email address.
+    Rate limited to 3 requests per email per hour.
+    """
+    enforce_rate_limit(
+        f"otp:request:{body.email}",
+        settings.OTP_RATE_LIMIT_MAX,
+        settings.OTP_RATE_LIMIT_WINDOW_SECONDS,
+    )
+    result = otp_service.request_otp(db, body.email)
+    return result
+
+
+@router.post("/otp/verify", response_model=Token)
+def verify_otp(body: OTPVerify, db: Session = Depends(get_db)):
+    """
+    Verify an OTP code and return a JWT token.
+    Creates the user automatically if the email is new.
+    """
+    user = otp_service.verify_otp(db, body.email, body.code)
+    access_token = auth_service.create_user_token(user)
+    return Token(access_token=access_token)
 
 
 @router.get("/me", response_model=UserResponse)

@@ -114,3 +114,28 @@ class TokenData(BaseModel):
     """Schema for decoded token data"""
 
     user_id: str
+
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower() if isinstance(v, str) else v
+
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return v.strip().lower() if isinstance(v, str) else v
+
+
+class OTPRequestResponse(BaseModel):
+    email: str
+    email_sent: bool
+    expires_in_minutes: int

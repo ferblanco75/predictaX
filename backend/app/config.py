@@ -36,6 +36,16 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # Email - Resend
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "noreply@neuropredict.io"
+
+    # OTP
+    OTP_EXPIRE_MINUTES: int = 10
+    OTP_MAX_ATTEMPTS: int = 3
+    OTP_RATE_LIMIT_MAX: int = 3  # max OTP requests per email per window
+    OTP_RATE_LIMIT_WINDOW_SECONDS: int = 3600  # 1 hour
+
     # Render.com detection
     RENDER: bool = False
 
