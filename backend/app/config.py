@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 
     # Email - Resend
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "noreply@neuropredict.io"
+    RESEND_FROM_EMAIL: str = "ferblanco@gmail.com"
 
     # OTP
     OTP_EXPIRE_MINUTES: int = 10

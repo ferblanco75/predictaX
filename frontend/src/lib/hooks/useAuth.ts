@@ -85,10 +85,10 @@ export function useVerifyOTP() {
   const { login } = useAppStore();
   const router = useRouter();
 
-  return useMutation<void, Error, { email: string; code: string }>({
+  return useMutation<{ isNewUser: boolean }, Error, { email: string; code: string }>({
     mutationFn: async ({ email, code }) => {
-      const tokenRes = await api.post<TokenResponse>('/auth/otp/verify', { email, code });
-      const { access_token } = tokenRes.data;
+      const tokenRes = await api.post<TokenResponse & { is_new_user: boolean }>('/auth/otp/verify', { email, code });
+      const { access_token, is_new_user } = tokenRes.data;
       localStorage.setItem('token', access_token);
 
       const meRes = await api.get<UserResponse>('/auth/me');
@@ -100,9 +100,10 @@ export function useVerifyOTP() {
         role: meRes.data.role || 'user',
         token: access_token,
       });
+      return { isNewUser: is_new_user };
     },
-    onSuccess: () => {
-      router.push('/markets');
+    onSuccess: ({ isNewUser }) => {
+      router.push(isNewUser ? '/markets?welcome=1' : '/markets');
     },
   });
 }

@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Coins } from 'lucide-react';
+import { useAppStore } from '@/lib/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,8 +50,12 @@ export function MultipleChoicePredictionForm({
     return initial;
   });
 
+  const { user } = useAppStore();
   const [betAmount, setBetAmount] = useState(100);
   const [error, setError] = useState<string>();
+
+  const availablePoints = user?.points ?? 0;
+  const maxBet = Math.min(10000, Math.floor(availablePoints));
 
   // Calculate total probability
   const totalProbability = Object.values(predictions).reduce((sum, val) => sum + val, 0);
@@ -89,6 +94,10 @@ export function MultipleChoicePredictionForm({
       setError('Debes usar al menos 1 punto');
       return;
     }
+    if (betAmount > availablePoints) {
+      setError(`No tenés suficientes puntos (disponible: ${formatPoints(availablePoints)} pts)`);
+      return;
+    }
     if (betAmount > 10000) {
       setError('El máximo de puntos es 10,000');
       return;
@@ -108,7 +117,9 @@ export function MultipleChoicePredictionForm({
   const selectedProbability = predictionValues.length > 0 ? Math.max(...predictionValues) : 0;
   const selectedOption = options.find((option) => predictions[option.id] === selectedProbability);
   const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
-  const potentialGain = ((100 - selectedProbability) / 100) * safeBetAmount;
+  // Payout formula: stake / (probability / 100), net gain = payout - stake
+  const prob = selectedProbability > 0 ? selectedProbability : 50;
+  const potentialGain = safeBetAmount / (prob / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
   const closeDate = formatCloseDate(endDate);
 
@@ -176,7 +187,23 @@ export function MultipleChoicePredictionForm({
 
         {/* Points amount */}
         <div>
-          <label className="text-sm font-medium mb-2 block">Puntos a usar</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium">Puntos a usar</label>
+            {user && (
+              <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                <Coins className="h-3.5 w-3.5" />
+                <span>{formatPoints(availablePoints)} disponibles</span>
+                <button
+                  type="button"
+                  className="ml-1 text-blue-600 hover:underline"
+                  onClick={() => { setBetAmount(maxBet); setError(undefined); }}
+                  disabled={disabled}
+                >
+                  Máx
+                </button>
+              </div>
+            )}
+          </div>
           <Input
             type="number"
             value={betAmount}
@@ -185,7 +212,7 @@ export function MultipleChoicePredictionForm({
               setError(undefined);
             }}
             min={1}
-            max={10000}
+            max={maxBet}
             disabled={disabled}
           />
         </div>

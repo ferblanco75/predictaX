@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.rate_limit import enforce_rate_limit
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.user import OTPRequest, OTPRequestResponse, OTPVerify, Token, UserCreate, UserLogin, UserResponse
+from app.schemas.user import OTPRequest, OTPRequestResponse, OTPVerify, OTPVerifyResponse, Token, UserCreate, UserLogin, UserResponse
 from app.services import auth_service, otp_service
 
 router = APIRouter()
@@ -95,15 +95,15 @@ def request_otp(body: OTPRequest, request: Request, db: Session = Depends(get_db
     return result
 
 
-@router.post("/otp/verify", response_model=Token)
+@router.post("/otp/verify", response_model=OTPVerifyResponse)
 def verify_otp(body: OTPVerify, db: Session = Depends(get_db)):
     """
     Verify an OTP code and return a JWT token.
     Creates the user automatically if the email is new.
     """
-    user = otp_service.verify_otp(db, body.email, body.code)
+    user, is_new_user = otp_service.verify_otp(db, body.email, body.code)
     access_token = auth_service.create_user_token(user)
-    return Token(access_token=access_token)
+    return OTPVerifyResponse(access_token=access_token, is_new_user=is_new_user)
 
 
 @router.get("/me", response_model=UserResponse)

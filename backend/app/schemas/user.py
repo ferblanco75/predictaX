@@ -139,3 +139,9 @@ class OTPRequestResponse(BaseModel):
     email: str
     email_sent: bool
     expires_in_minutes: int
+
+
+class OTPVerifyResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    is_new_user: bool

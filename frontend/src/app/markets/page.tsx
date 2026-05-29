@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Filter, Search, X } from 'lucide-react';
+import { Filter, Search, X, Coins, PartyPopper } from 'lucide-react';
 import { MarketList } from '@/components/markets/MarketList';
 import { MundialHero } from '@/components/markets/MundialHero';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,6 +27,18 @@ function MarketsContent() {
     resetFilters,
   } = useAppStore();
   const [currentPage, setCurrentPage] = useState(1);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const { user } = useAppStore();
+
+  // Show welcome banner for new users (?welcome=1) and clear the param
+  useEffect(() => {
+    if (searchParams.get('welcome') === '1') {
+      setShowWelcome(true);
+      const clean = new URLSearchParams(searchParams.toString());
+      clean.delete('welcome');
+      router.replace(clean.size > 0 ? `/markets?${clean.toString()}` : '/markets', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Sync category from URL param (?categoria=mundial) only for known categories.
   useEffect(() => {
@@ -93,6 +105,33 @@ function MarketsContent() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+
+        {/* Welcome banner for new users */}
+        {showWelcome && user && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border border-green-200 dark:border-green-800 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-100">
+                  ¡Bienvenido, {user.username}!
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
+                  Recibiste
+                  <Coins className="h-3.5 w-3.5 inline mx-0.5" />
+                  <strong>1.000 puntos</strong> para empezar a predecir.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 text-xl leading-none"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
 
         <div className="mb-6">

@@ -784,15 +784,52 @@ def update_user_points(user_id: str, body: UserPointsUpdate, db: Session = Depen
 
 @router.post("/markets/{market_id}/resolve")
 def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Depends(get_db)):
-    """Resolve a market with YES (True) or NO (False)."""
+    """
+    Resolve a market with YES (True) or NO (False).
+
+    Payout logic (fee=0 MVP):
+      - winner prediction: user receives points_wagered / (probability_at_bet / 100)
+        i.e. they get back their stake plus the gain
+      - loser prediction: points were already deducted at bet time, nothing extra
+      - predictions without probability_at_bet (legacy): refunded at 1:1
+    """
     market = db.query(Market).filter(Market.id == market_id).first()
     if not market:
         raise HTTPException(status_code=404, detail="Mercado no encontrado")
     if market.status != MarketStatus.ACTIVE:
         raise HTTPException(status_code=400, detail="Solo se pueden resolver mercados activos")
+
     market.status = MarketStatus.RESOLVED
     market.resolution_value = body.resolution_value
     market.resolved_at = datetime.utcnow()
+
+    # Pay out winners
+    predictions = db.query(Prediction).filter(
+        Prediction.market_id == market.id,
+        Prediction.status == "pending",
+    ).all()
+
+    winners = 0
+    losers = 0
+    total_paid = 0.0
+
+    for pred in predictions:
+        # A prediction is "correct" if the user predicted > 50% and result is YES,
+        # or predicted <= 50% and result is NO.
+        user_said_yes = pred.probability > 50
+        outcome_yes = body.resolution_value
+
+        if user_said_yes == outcome_yes:
+            pred.status = "won"
+            prob = pred.probability_at_bet if pred.probability_at_bet and pred.probability_at_bet > 0 else 50.0
+            payout = pred.points_wagered / (prob / 100.0)
+            pred.user.points += payout
+            total_paid += payout
+            winners += 1
+        else:
+            pred.status = "lost"
+            losers += 1
+
     db.commit()
     db.refresh(market)
     return {
@@ -800,6 +837,9 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
         "status": market.status,
         "resolution_value": market.resolution_value,
         "resolved_at": market.resolved_at.isoformat(),
+        "winners": winners,
+        "losers": losers,
+        "total_paid_pts": round(total_paid, 2),
     }
 
 

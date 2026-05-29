@@ -148,7 +148,8 @@ def verify_otp(db: Session, email: str, code: str) -> User:
 
     # Get or create user
     user = db.query(User).filter(User.email == email).first()
-    if not user:
+    is_new_user = user is None
+    if is_new_user:
         username = _derive_username(db, email)
         user = User(
             email=email,
@@ -160,7 +161,7 @@ def verify_otp(db: Session, email: str, code: str) -> User:
         db.commit()
         db.refresh(user)
 
-    return user
+    return user, is_new_user
 
 
 def _derive_username(db: Session, email: str) -> str:

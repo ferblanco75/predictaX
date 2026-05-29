@@ -70,14 +70,25 @@ def create_prediction(
     # Store old probability for snapshot comparison
     old_probability = float(market.probability_market)
 
+    # Capture market probability at bet time (used for payout calculation on resolve)
+    prob_at_bet = float(market.probability_market)
+
+    # potential_gain = payout if winner - amount wagered
+    # payout = points_wagered / (probability_at_bet / 100)
+    # Using fee=0 for MVP
+    if prob_at_bet > 0:
+        potential_gain = (prediction_data.points_wagered / (prob_at_bet / 100)) - prediction_data.points_wagered
+    else:
+        potential_gain = 0.0
+
     # Create prediction
     prediction = Prediction(
         user_id=user.id,
         market_id=prediction_data.market_id,
         probability=prediction_data.probability,
+        probability_at_bet=prob_at_bet,
         points_wagered=prediction_data.points_wagered,
-        potential_gain=((100 - prediction_data.probability) / 100)
-        * prediction_data.points_wagered,
+        potential_gain=round(potential_gain, 2),
     )
 
     db.add(prediction)
