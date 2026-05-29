@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAppStore } from '@/lib/stores/app-store';
 import Link from 'next/link';
 import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ function formatEndDate(endDate: string): string {
 
 export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const [copied, setCopied] = useState(false);
+  const { isLoggedIn } = useAppStore();
   const { data: fetchedMarket, isLoading, isError } = useMarket(id, { enabled: !initialMarket });
   const market = initialMarket ?? fetchedMarket;
 
@@ -71,7 +73,6 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const categoryColor = getCategoryColor(market.category);
   const endDate = formatEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
-  const isLoggedIn = false;
   const statusConfig = {
     active: {
       label: 'Activo',
