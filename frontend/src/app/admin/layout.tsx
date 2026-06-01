@@ -29,26 +29,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoggedIn, logout } = useAppStore();
-  const [authorized, setAuthorized] = useState(false);
+  // hydrated guards against redirecting before Zustand reads localStorage
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (!isLoggedIn || !user) {
       router.push('/auth');
       return;
     }
-
     if (user.role !== 'admin') {
       router.push('/403');
-      return;
     }
+  }, [hydrated, isLoggedIn, user, router]);
 
-    if (!authorized) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAuthorized(true);
-    }
-  }, [authorized, isLoggedIn, user, router]);
+  // Show nothing while Zustand hydrates to avoid flash redirect
+  if (!hydrated) return null;
 
-  if (!authorized) {
+  if (!isLoggedIn || !user) return null;
+
+  if (user.role !== 'admin') {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
