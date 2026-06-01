@@ -120,3 +120,21 @@ export async function editMarket(
 ) {
   return adminMutate(`/markets/${marketId}`, token, 'PATCH', data);
 }
+
+export async function createMarket(
+  token: string,
+  data: {
+    title: string;
+    description: string;
+    category: string;
+    type: string;
+    end_date: string;
+    probability?: number;
+  }
+) {
+  return adminMutate('/markets', token, 'POST', data);
+}
+
+export async function deleteMarket(token: string, marketId: string) {
+  return adminMutate(`/markets/${marketId}`, token, 'DELETE');
+}

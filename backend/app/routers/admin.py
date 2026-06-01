@@ -37,6 +37,14 @@ class MarketEditRequest(BaseModel):
     description: Optional[str] = None
     end_date: Optional[datetime] = None
 
+class MarketCreateRequest(BaseModel):
+    title: str
+    description: str
+    category: str
+    type: str = "binary"
+    end_date: datetime
+    probability: float = 50.0
+
 router = APIRouter(
     prefix="/api/admin",
     tags=["Admin"],
@@ -877,6 +885,55 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
         "description": market.description,
         "end_date": market.end_date.isoformat(),
     }
+
+
+@router.post("/markets")
+def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
+    """Create a new market/poll."""
+    try:
+        category = MarketCategory(body.category.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Categoría inválida: {body.category}")
+
+    from app.models.market import MarketType as MT
+    try:
+        market_type = MT(body.type.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Tipo inválido: {body.type}")
+
+    market = Market(
+        title=body.title,
+        description=body.description,
+        category=category,
+        type=market_type,
+        end_date=body.end_date,
+        probability_market=body.probability,
+        status=MarketStatus.ACTIVE,
+    )
+    db.add(market)
+    db.commit()
+    db.refresh(market)
+    return {
+        "id": str(market.id),
+        "title": market.title,
+        "category": market.category,
+        "type": market.type,
+        "status": market.status,
+        "end_date": market.end_date.isoformat(),
+        "probability": float(market.probability_market),
+    }
+
+
+@router.delete("/markets/{market_id}")
+def delete_market(market_id: str, db: Session = Depends(get_db)):
+    """Delete a market and all its predictions (CASCADE)."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    predictions_count = db.query(Prediction).filter(Prediction.market_id == market.id).count()
+    db.delete(market)
+    db.commit()
+    return {"id": market_id, "deleted": True, "predictions_deleted": predictions_count}
 
 
 # --------------- Seed Actions ---------------

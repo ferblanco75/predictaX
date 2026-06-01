@@ -8,7 +8,7 @@ import {
   AdminErrorState,
   AdminNotice,
 } from '@/components/admin/AdminState';
-import { getMarketsRanking, resolveMarket, cancelMarket, editMarket } from '@/lib/api/admin';
+import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket } from '@/lib/api/admin';
 import {
   Flame,
   Snowflake,
@@ -18,6 +18,8 @@ import {
   CheckCircle,
   XCircle,
   Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface MarketRanking {
@@ -43,6 +45,26 @@ interface EditModalState {
   title: string;
   description: string;
 }
+
+interface CreateModalState {
+  open: boolean;
+  title: string;
+  description: string;
+  category: string;
+  type: string;
+  end_date: string;
+  probability: number;
+}
+
+const EMPTY_CREATE: CreateModalState = {
+  open: false,
+  title: '',
+  description: '',
+  category: 'mundial',
+  type: 'binary',
+  end_date: '',
+  probability: 50,
+};
 
 interface NoticeState {
   variant: 'success' | 'error' | 'info';
@@ -88,6 +110,7 @@ export default function AdminMarketsPage() {
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'cancelled'>('all');
   const [resolveModal, setResolveModal] = useState<ResolveModalState>({
     open: false,
     marketId: '',
@@ -99,6 +122,8 @@ export default function AdminMarketsPage() {
     title: '',
     description: '',
   });
+  const [createModal, setCreateModal] = useState<CreateModalState>(EMPTY_CREATE);
+  const [resolveResult, setResolveResult] = useState<{ winners: number; losers: number; total_paid_pts: number } | null>(null);
 
   const loadMarkets = async () => {
     if (!user?.token) return;
@@ -128,17 +153,65 @@ export default function AdminMarketsPage() {
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
+      if (updated.winners !== undefined) {
+        setResolveResult({ winners: updated.winners, losers: updated.losers, total_paid_pts: updated.total_paid_pts });
+      }
       setNotice({
         variant: 'success',
         title: 'Mercado resuelto',
-        message: `Resultado guardado como ${resolutionValue ? 'SÍ' : 'NO'}.`,
+        message: `${resolutionValue ? 'SÍ' : 'NO'} · ${updated.winners ?? 0} ganadores · ${updated.total_paid_pts?.toLocaleString() ?? 0} pts pagados`,
       });
     } catch (error) {
-      setNotice({
-        variant: 'error',
-        title: 'No se pudo resolver el mercado',
-        message: getErrorMessage(error),
+      setNotice({ variant: 'error', title: 'No se pudo resolver el mercado', message: getErrorMessage(error) });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (marketId: string, title: string, predictionsCount: number) => {
+    if (!user?.token) return;
+    setActionLoading(marketId);
+    setOpenMenu(null);
+    setConfirmAction(null);
+    try {
+      await deleteMarket(user.token, marketId);
+      setMarkets((prev) => prev.filter((m) => m.id !== marketId));
+      setNotice({ variant: 'success', title: 'Mercado eliminado', message: `"${title}" y ${predictionsCount} predicciones eliminadas.` });
+    } catch (error) {
+      setNotice({ variant: 'error', title: 'No se pudo eliminar', message: getErrorMessage(error) });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const requestDelete = (market: MarketRanking) => {
+    setOpenMenu(null);
+    setConfirmAction({
+      title: 'Eliminar mercado',
+      description: `Vas a eliminar "${market.title}" y todas sus predicciones. Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+      onConfirm: () => handleDelete(market.id, market.title, market.predictions_count),
+    });
+  };
+
+  const handleCreateSave = async () => {
+    if (!user?.token || !createModal.title || !createModal.end_date) return;
+    setActionLoading('creating');
+    try {
+      const created = await createMarket(user.token, {
+        title: createModal.title,
+        description: createModal.description,
+        category: createModal.category,
+        type: createModal.type,
+        end_date: new Date(createModal.end_date).toISOString(),
+        probability: createModal.probability,
       });
+      setMarkets((prev) => [{ id: created.id, title: created.title, category: created.category, probability: created.probability, predictions_count: 0, volume: 0, participants: 0, end_date: created.end_date, status: 'active' }, ...prev]);
+      setCreateModal(EMPTY_CREATE);
+      setNotice({ variant: 'success', title: 'Poll creado', message: created.title });
+    } catch (error) {
+      setNotice({ variant: 'error', title: 'No se pudo crear el mercado', message: getErrorMessage(error) });
     } finally {
       setActionLoading(null);
     }
@@ -209,11 +282,24 @@ export default function AdminMarketsPage() {
     }
   };
 
+  const filteredMarkets = statusFilter === 'all'
+    ? markets
+    : markets.filter((m) => (m.status || 'active') === statusFilter);
+
   return (
     <div className="space-y-6" onClick={() => setOpenMenu(null)}>
-      <div>
-        <h1 className="text-2xl font-bold">Mercados</h1>
-        <p className="text-gray-500 text-sm">Ranking y gestión de mercados</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Mercados</h1>
+          <p className="text-gray-500 text-sm">Ranking y gestión de polls</p>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Crear poll
+        </button>
       </div>
 
       {notice && (
@@ -225,22 +311,39 @@ export default function AdminMarketsPage() {
         />
       )}
 
-      {/* Sort buttons */}
-      <div className="flex gap-2 flex-wrap">
-        {sortOptions.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => setSort(opt.value)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              sort === opt.value
-                ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-950'
-            }`}
-          >
-            <opt.icon className="h-4 w-4" />
-            {opt.label}
-          </button>
-        ))}
+      {/* Sort + status filters */}
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          {sortOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSort(opt.value)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                sort === opt.value
+                  ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+                  : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-950'
+              }`}
+            >
+              <opt.icon className="h-4 w-4" />
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {(['all', 'active', 'resolved', 'cancelled'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                statusFilter === s
+                  ? 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900'
+                  : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              {{ all: 'Todos', active: 'Activos', resolved: 'Resueltos', cancelled: 'Cancelados' }[s]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loadError && !loading ? (
@@ -277,7 +380,7 @@ export default function AdminMarketsPage() {
                       ))}
                     </tr>
                   ))
-                : markets.map((m, i) => {
+                : filteredMarkets.map((m, i) => {
                     const isActive = !m.status || m.status === 'active';
                     return (
                       <tr
@@ -358,11 +461,7 @@ export default function AdminMarketsPage() {
                                 <>
                                   <button
                                     onClick={() => {
-                                      setResolveModal({
-                                        open: true,
-                                        marketId: m.id,
-                                        title: m.title,
-                                      });
+                                      setResolveModal({ open: true, marketId: m.id, title: m.title });
                                       setOpenMenu(null);
                                     }}
                                     className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -379,6 +478,14 @@ export default function AdminMarketsPage() {
                                   </button>
                                 </>
                               )}
+                              <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
+                              <button
+                                onClick={() => requestDelete(m)}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-red-600 dark:text-red-400"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Eliminar
+                              </button>
                             </div>
                           )}
                         </td>
@@ -482,6 +589,109 @@ export default function AdminMarketsPage() {
                 className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {actionLoading === editModal.marketId ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {createModal.open && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setCreateModal(EMPTY_CREATE)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-lg shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-lg">Crear nuevo poll</h3>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Título</label>
+              <input
+                type="text"
+                value={createModal.title}
+                onChange={(e) => setCreateModal((p) => ({ ...p, title: e.target.value }))}
+                placeholder="¿Ganará Argentina el Mundial 2026?"
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Descripción</label>
+              <textarea
+                value={createModal.description}
+                onChange={(e) => setCreateModal((p) => ({ ...p, description: e.target.value }))}
+                placeholder="Descripción y reglas de resolución..."
+                rows={3}
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <select
+                  value={createModal.category}
+                  onChange={(e) => setCreateModal((p) => ({ ...p, category: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                >
+                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo</label>
+                <select
+                  value={createModal.type}
+                  onChange={(e) => setCreateModal((p) => ({ ...p, type: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                >
+                  <option value="binary">Binario (Sí/No)</option>
+                  <option value="multiple_choice">Múltiple opción</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Fecha de cierre</label>
+                <input
+                  type="datetime-local"
+                  value={createModal.end_date}
+                  onChange={(e) => setCreateModal((p) => ({ ...p, end_date: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Probabilidad inicial (%)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={createModal.probability}
+                  onChange={(e) => setCreateModal((p) => ({ ...p, probability: Number(e.target.value) }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                onClick={() => setCreateModal(EMPTY_CREATE)}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateSave}
+                disabled={!createModal.title || !createModal.end_date || actionLoading === 'creating'}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {actionLoading === 'creating' ? 'Creando...' : 'Crear poll'}
               </button>
             </div>
           </div>

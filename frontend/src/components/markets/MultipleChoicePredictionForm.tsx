@@ -278,7 +278,7 @@ export function MultipleChoicePredictionForm({
         {/* CTA Button */}
         <Button
           size="lg"
-          className="w-full"
+          className="w-full active:scale-95 transition-transform"
           onClick={handleSubmit}
           disabled={disabled || Math.abs(totalProbability - 100) > 0.5}
         >

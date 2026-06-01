@@ -163,13 +163,13 @@ export function MarketStats({ statsData }: MarketStatsProps) {
               {(favoritos || competidores || []).slice(0, 5).map((item, i) => {
                 const nombre = 'pais' in item ? item.pais : item.jugador || '';
                 return (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <span className="text-xs text-gray-400 w-4">{i + 1}</span>
                     <span className="text-sm flex-1">{String(nombre)}</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-green-500 rounded-full"
+                          className="h-full bg-green-500 rounded-full transition-all duration-300"
                           style={{ width: `${item.prob}%` }}
                         />
                       </div>

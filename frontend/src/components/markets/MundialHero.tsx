@@ -133,7 +133,7 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
                   transition={{ delay: i * 0.1 }}
                 >
                   <Link href={`/markets/${poll.id}`}>
-                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 hover:bg-white/20 transition-colors cursor-pointer">
+                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-3 hover:bg-white/25 hover:border-white/35 hover:scale-[1.02] transition-all duration-150 cursor-pointer">
                       <p className="text-white text-sm font-medium line-clamp-1 mb-2">
                         {poll.title}
                       </p>
