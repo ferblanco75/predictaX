@@ -114,6 +114,7 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
 
             <Link
               href="/markets/category/mundial"
+              scroll={true}
               className="inline-flex items-center gap-2 bg-white text-green-800 font-semibold px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
             >
               Ver todos los polls
