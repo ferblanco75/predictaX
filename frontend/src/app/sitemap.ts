@@ -53,10 +53,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
-      url: `${CANONICAL_BASE_URL}/waitlist`,
+      url: `${CANONICAL_BASE_URL}/auth`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.6,
+      priority: 0.7,
     },
   ];
 

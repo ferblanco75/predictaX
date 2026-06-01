@@ -111,12 +111,6 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  href="/waitlist"
-                  className={cn(buttonVariants({ variant: 'outline' }), 'hidden sm:flex')}
-                >
-                  Lista de espera
-                </Link>
                 <Link href="/auth" className={cn(buttonVariants({ variant: 'ghost' }))}>
                   Iniciar sesión
                 </Link>

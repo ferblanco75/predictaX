@@ -28,11 +28,6 @@ function validateEmail(email: string): string | undefined {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return 'Email inválido';
 }
 
-function validatePassword(password: string): string | undefined {
-  if (!password) return 'La contraseña es requerida';
-  if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres';
-}
-
 function validateName(name: string): string | undefined {
   const normalizedName = name.trim().toLowerCase();
   if (!normalizedName) return 'El nombre es requerido';
@@ -86,13 +81,13 @@ function LegalCheckbox({
 
 type OTPStep = 'email' | 'code';
 
-function OTPLoginForm() {
-  const [step, setStep] = useState<OTPStep>('email');
-  const [email, setEmail] = useState('');
+function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; initialStep?: OTPStep } = {}) {
+  const [step, setStep] = useState<OTPStep>(initialStep ?? 'email');
+  const [email, setEmail] = useState(initialEmail ?? '');
   const [emailError, setEmailError] = useState<string>();
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string>();
-  const [countdown, setCountdown] = useState(0);
+  const [countdown, setCountdown] = useState(initialStep === 'code' ? 600 : 0);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   const requestOTP = useRequestOTP();
@@ -253,19 +248,15 @@ function OTPLoginForm() {
 
 export default function AuthPage() {
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
+  // After successful register, show OTP code step for this email
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const registerMutation = useRegister();
 
   const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get('name') ?? '')
-      .trim()
-      .toLowerCase();
-    const email = String(formData.get('email') ?? '')
-      .trim()
-      .toLowerCase();
-    const password = formData.get('password') as string;
-    const passwordConfirm = formData.get('passwordConfirm') as string;
+    const name = String(formData.get('name') ?? '').trim().toLowerCase();
+    const email = String(formData.get('email') ?? '').trim().toLowerCase();
     const termsAccepted = formData.get('termsAccepted') === 'on';
     const privacyAccepted = formData.get('privacyAccepted') === 'on';
     const isAdult = formData.get('isAdult') === 'on';
@@ -274,11 +265,8 @@ export default function AuthPage() {
     const errors: FormErrors = {};
     const nameError = validateName(name);
     const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
     if (nameError) errors.name = nameError;
     if (emailError) errors.email = emailError;
-    if (passwordError) errors.password = passwordError;
-    if (password !== passwordConfirm) errors.passwordConfirm = 'Las contraseñas no coinciden';
     if (!termsAccepted) errors.terms = 'Debes aceptar los términos y condiciones';
     if (!privacyAccepted) errors.privacy = 'Debes aceptar la política de privacidad';
     if (!isAdult) errors.age = 'Debes declarar que sos mayor de 18 años';
@@ -288,19 +276,26 @@ export default function AuthPage() {
     }
 
     setRegisterErrors({});
-    registerMutation.mutate({
-      username: name,
-      email,
-      password,
-      terms_accepted: termsAccepted,
-      privacy_accepted: privacyAccepted,
-      is_adult: isAdult,
-      marketing_opt_in: marketingOptIn,
-      legal_consent_version: LEGAL_CONSENT_VERSION,
-    });
+    registerMutation.mutate(
+      {
+        username: name,
+        email,
+        terms_accepted: termsAccepted,
+        privacy_accepted: privacyAccepted,
+        is_adult: isAdult,
+        marketing_opt_in: marketingOptIn,
+        legal_consent_version: LEGAL_CONSENT_VERSION,
+      },
+      { onSuccess: ({ email: e }) => setRegisteredEmail(e) }
+    );
   };
 
-  const registerError = registerMutation.error?.message;
+  // Map API error to the specific field that caused it
+  const rawRegisterError = registerMutation.error?.message ?? '';
+  const registerError = (rawRegisterError && !rawRegisterError.toLowerCase().includes('email') && !rawRegisterError.toLowerCase().includes('usuario'))
+    ? rawRegisterError : null;
+  const registerEmailError = rawRegisterError.toLowerCase().includes('email') ? rawRegisterError : undefined;
+  const registerNameError = rawRegisterError.toLowerCase().includes('usuario') ? rawRegisterError : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 flex items-center justify-center p-4">
@@ -335,6 +330,14 @@ export default function AuthPage() {
 
               {/* Register Tab */}
               <TabsContent value="register">
+                {registeredEmail && (
+                  <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-800 dark:text-green-200">
+                    ✅ Cuenta creada. Ingresá el código que enviamos a <strong>{registeredEmail}</strong>
+                  </div>
+                )}
+                {registeredEmail ? (
+                  <OTPLoginForm initialEmail={registeredEmail} initialStep="code" />
+                ) : (
                 <form onSubmit={handleRegisterSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <label htmlFor="name" className="text-sm font-medium">
@@ -346,13 +349,13 @@ export default function AuthPage() {
                       type="text"
                       placeholder="juanperez"
                       autoComplete="username"
-                      aria-invalid={!!registerErrors.name}
+                      aria-invalid={!!(registerErrors.name || registerNameError)}
                       onChange={() => setRegisterErrors((prev) => ({ ...prev, name: undefined }))}
                     />
-                    {registerErrors.name && (
+                    {(registerErrors.name || registerNameError) && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
                         <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.name}</span>
+                        <span>{registerErrors.name ?? registerNameError}</span>
                       </div>
                     )}
                   </div>
@@ -367,59 +370,25 @@ export default function AuthPage() {
                       type="email"
                       placeholder="tu@email.com"
                       autoComplete="email"
-                      aria-invalid={!!registerErrors.email}
+                      aria-invalid={!!(registerErrors.email || registerEmailError)}
                       onChange={() => setRegisterErrors((prev) => ({ ...prev, email: undefined }))}
                     />
-                    {registerErrors.email && (
+                    {(registerErrors.email || registerEmailError) && (
                       <div className="flex items-center space-x-1 text-sm text-red-600">
                         <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="password-register" className="text-sm font-medium">
-                      Contraseña
-                    </label>
-                    <Input
-                      id="password-register"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      aria-invalid={!!registerErrors.password}
-                      onChange={() =>
-                        setRegisterErrors((prev) => ({ ...prev, password: undefined }))
-                      }
-                    />
-                    {registerErrors.password && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.password}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="password-confirm" className="text-sm font-medium">
-                      Confirmar contraseña
-                    </label>
-                    <Input
-                      id="password-confirm"
-                      name="passwordConfirm"
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      aria-invalid={!!registerErrors.passwordConfirm}
-                      onChange={() =>
-                        setRegisterErrors((prev) => ({ ...prev, passwordConfirm: undefined }))
-                      }
-                    />
-                    {registerErrors.passwordConfirm && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.passwordConfirm}</span>
+                        <span>{registerErrors.email ?? registerEmailError}</span>
+                        {registerEmailError && (
+                          <button
+                            type="button"
+                            className="ml-1 underline text-blue-600 hover:text-blue-800"
+                            onClick={() => {
+                              const tab = document.querySelector('[data-value="login"]') as HTMLElement;
+                              tab?.click();
+                            }}
+                          >
+                            Iniciá sesión
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -480,6 +449,7 @@ export default function AuthPage() {
                     {registerMutation.isPending ? 'Creando cuenta...' : 'Crear cuenta'}
                   </Button>
                 </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -11,7 +11,7 @@ class UserCreate(BaseModel):
 
     email: EmailStr = Field(max_length=255)
     username: str = Field(min_length=3, max_length=30, pattern=r"^[a-z0-9_-]+$")
-    password: str = Field(min_length=8, max_length=100)
+    password: str | None = Field(default=None, min_length=8, max_length=100)
     terms_accepted: bool
     privacy_accepted: bool
     is_adult: bool

@@ -55,8 +55,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/waitlist" className="hover:text-gray-900">
-                  Lista de espera
+                <Link href="/auth" className="hover:text-gray-900">
+                  Registrarse
                 </Link>
               </li>
               <li>

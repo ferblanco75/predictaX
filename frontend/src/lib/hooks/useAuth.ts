@@ -19,7 +19,7 @@ interface OTPRequestResponse {
 interface RegisterData {
   username: string;
   email: string;
-  password: string;
+  password?: string;
   terms_accepted: boolean;
   privacy_accepted: boolean;
   is_adult: boolean;
@@ -109,33 +109,12 @@ export function useVerifyOTP() {
 }
 
 export function useRegister() {
-  const { login } = useAppStore();
-  const router = useRouter();
-
-  return useMutation({
+  return useMutation<{ email: string }, Error, RegisterData>({
     mutationFn: async (data: RegisterData) => {
       await api.post('/auth/register', data);
-      // Auto-login after register
-      const tokenRes = await api.post<TokenResponse>('/auth/login', {
-        email: data.email,
-        password: data.password,
-      });
-      const { access_token } = tokenRes.data;
-      localStorage.setItem('token', access_token);
-
-      const meRes = await api.get<UserResponse>('/auth/me');
-      return { token: access_token, user: meRes.data };
-    },
-    onSuccess: ({ token, user }) => {
-      login({
-        id: String(user.id),
-        username: user.username,
-        email: user.email,
-        points: user.points,
-        role: user.role || 'user',
-        token,
-      });
-      router.push('/markets');
+      // Send OTP after register so user completes login via code
+      await api.post('/auth/otp/request', { email: data.email });
+      return { email: data.email };
     },
   });
 }
