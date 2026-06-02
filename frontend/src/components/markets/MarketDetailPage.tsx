@@ -12,6 +12,7 @@ import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
 import { generateMarketStructuredData } from '@/lib/utils/structured-data';
 import { useMarket } from '@/lib/hooks/useMarkets';
+import { useUserPredictions } from '@/lib/hooks/useUserPredictions';
 import { getRelatedMarkets } from '@/lib/api/markets';
 import type { Market } from '@/lib/types';
 
@@ -31,7 +32,9 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const [copied, setCopied] = useState(false);
   const { isLoggedIn } = useAppStore();
   const { data: fetchedMarket, isLoading, isError } = useMarket(id, { enabled: !initialMarket });
+  const { data: allPredictions = [] } = useUserPredictions();
   const market = initialMarket ?? fetchedMarket;
+  const myPredictions = allPredictions.filter((p) => p.market_id === id);
 
   if (!initialMarket && isLoading) {
     return (
@@ -211,16 +214,65 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Predicciones recientes</CardTitle>
+                  <CardTitle className="text-lg">
+                    {isLoggedIn ? 'Mis predicciones' : 'Predicciones'}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
-                    <Clock3 className="mx-auto mb-3 h-8 w-8 text-gray-400" />
-                    <p className="font-medium">Feed público en preparación</p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      En esta versión MVP todavía no mostramos predicciones recientes individuales.
-                    </p>
-                  </div>
+                  {isLoggedIn && myPredictions.length > 0 ? (
+                    <div className="space-y-2">
+                      {myPredictions.map((pred) => (
+                        <div
+                          key={pred.id}
+                          className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-800 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 rounded-full ${
+                                pred.status === 'won' ? 'bg-green-500' :
+                                pred.status === 'lost' ? 'bg-red-500' : 'bg-amber-400'
+                              }`}
+                            />
+                            <span className="font-medium">{pred.probability}%</span>
+                            <span className="text-gray-500">·</span>
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {pred.points_wagered} pts apostados
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            {pred.status === 'won' && (
+                              <span className="text-green-600 dark:text-green-400 font-semibold">
+                                +{Math.round((pred.potential_gain ?? 0))} pts
+                              </span>
+                            )}
+                            {pred.status === 'lost' && (
+                              <span className="text-red-500 font-semibold">
+                                -{pred.points_wagered} pts
+                              </span>
+                            )}
+                            {pred.status === 'pending' && pred.potential_gain && (
+                              <span className="text-amber-600 dark:text-amber-400">
+                                ≈ +{Math.round(pred.potential_gain)} pts si ganás
+                              </span>
+                            )}
+                            <span className="text-gray-400">
+                              {new Date(pred.created_at).toLocaleDateString('es-AR')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : isLoggedIn ? (
+                    <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
+                      <Clock3 className="mx-auto mb-2 h-7 w-7 text-gray-400" />
+                      <p className="text-sm text-gray-500">Todavía no participaste en este poll.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
+                      <Clock3 className="mx-auto mb-2 h-7 w-7 text-gray-400" />
+                      <p className="text-sm text-gray-500">Iniciá sesión para ver tus predicciones.</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                       <p className="text-gray-500 dark:text-gray-400">Participantes</p>

@@ -116,7 +116,7 @@ export async function cancelMarket(token: string, marketId: string) {
 export async function editMarket(
   token: string,
   marketId: string,
-  data: { title?: string; description?: string; end_date?: string }
+  data: { title?: string; description?: string; end_date?: string; category?: string }
 ) {
   return adminMutate(`/markets/${marketId}`, token, 'PATCH', data);
 }
@@ -137,4 +137,8 @@ export async function createMarket(
 
 export async function deleteMarket(token: string, marketId: string) {
   return adminMutate(`/markets/${marketId}`, token, 'DELETE');
+}
+
+export async function expirePastMarkets(token: string) {
+  return adminMutate('/markets/expire-past', token, 'POST');
 }

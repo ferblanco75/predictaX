@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProbabilityChart } from './ProbabilityChart';
 import { TimeframeSelector, type Timeframe } from './TimeframeSelector';
@@ -88,6 +88,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
 
   const marketType = market.type || 'binary';
   const chartHistory = filterHistoryByTimeframe(market.history, timeframe);
+  const isExpired = market.status === 'active' && new Date(market.endDate) < new Date();
 
   return (
     <>
@@ -145,8 +146,19 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
             <MarketStats statsData={market.statsData as Record<string, unknown>} />
           )}
 
+          {/* Expired banner */}
+          {isExpired && (
+            <div className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+              <Clock className="h-5 w-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="font-semibold">Este mercado cerró — pendiente de resolución</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Ya no se aceptan nuevas predicciones.</p>
+              </div>
+            </div>
+          )}
+
           {/* Prediction Form */}
-          {market.status === 'active' && (
+          {market.status === 'active' && !isExpired && (
             <>
               <PredictionForm
                 currentProbability={market.probability}
@@ -185,7 +197,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
           </Card>
 
           {/* Prediction Form */}
-          {market.status === 'active' && (
+          {market.status === 'active' && !isExpired && (
             <>
               <MultipleChoicePredictionForm
                 options={market.options}

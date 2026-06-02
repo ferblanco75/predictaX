@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
 from typing import List
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InsufficientPointsException
+from app.core.exceptions import BadRequestException, InsufficientPointsException
+from app.models.market import MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
 from app.schemas.prediction import PredictionCreate
@@ -66,6 +68,13 @@ def create_prediction(
 
     # Get market
     market = market_service.get_market_by_id(db, prediction_data.market_id)
+
+    # Validate market is still open
+    if market.status != MarketStatus.ACTIVE:
+        raise BadRequestException("Este mercado ya no está activo")
+
+    if market.end_date and market.end_date.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        raise BadRequestException("Este mercado ya cerró")
 
     # Store old probability for snapshot comparison
     old_probability = float(market.probability_market)

@@ -36,6 +36,7 @@ class MarketEditRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     end_date: Optional[datetime] = None
+    category: Optional[str] = None
 
 class MarketCreateRequest(BaseModel):
     title: str
@@ -876,13 +877,21 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
     if body.description is not None:
         market.description = body.description
     if body.end_date is not None:
+        if body.end_date <= datetime.utcnow():
+            raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
         market.end_date = body.end_date
+    if body.category is not None:
+        try:
+            market.category = MarketCategory(body.category.lower())
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Categoría inválida: {body.category}")
     db.commit()
     db.refresh(market)
     return {
         "id": str(market.id),
         "title": market.title,
         "description": market.description,
+        "category": market.category,
         "end_date": market.end_date.isoformat(),
     }
 
@@ -890,6 +899,12 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
 @router.post("/markets")
 def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
     """Create a new market/poll."""
+    if not (1 <= body.probability <= 99):
+        raise HTTPException(status_code=400, detail="La probabilidad debe estar entre 1% y 99%")
+
+    if body.end_date <= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
+
     try:
         category = MarketCategory(body.category.lower())
     except ValueError:
@@ -934,6 +949,23 @@ def delete_market(market_id: str, db: Session = Depends(get_db)):
     db.delete(market)
     db.commit()
     return {"id": market_id, "deleted": True, "predictions_deleted": predictions_count}
+
+
+@router.post("/markets/expire-past")
+def expire_past_markets(db: Session = Depends(get_db)):
+    """Cancel all active markets whose end_date has already passed."""
+    now = datetime.utcnow()
+    expired = db.query(Market).filter(
+        Market.status == MarketStatus.ACTIVE,
+        Market.end_date < now,
+    ).all()
+
+    count = len(expired)
+    for market in expired:
+        market.status = MarketStatus.CANCELLED
+
+    db.commit()
+    return {"expired": count, "message": f"{count} mercado(s) expirado(s) cancelados"}
 
 
 # --------------- Seed Actions ---------------

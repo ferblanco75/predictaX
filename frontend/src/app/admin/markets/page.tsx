@@ -8,7 +8,7 @@ import {
   AdminErrorState,
   AdminNotice,
 } from '@/components/admin/AdminState';
-import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket } from '@/lib/api/admin';
+import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket, expirePastMarkets } from '@/lib/api/admin';
 import {
   Flame,
   Snowflake,
@@ -20,6 +20,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Clock,
 } from 'lucide-react';
 
 interface MarketRanking {
@@ -44,6 +45,8 @@ interface EditModalState {
   marketId: string;
   title: string;
   description: string;
+  category: string;
+  end_date: string;
 }
 
 interface CreateModalState {
@@ -121,9 +124,10 @@ export default function AdminMarketsPage() {
     marketId: '',
     title: '',
     description: '',
+    category: '',
+    end_date: '',
   });
   const [createModal, setCreateModal] = useState<CreateModalState>(EMPTY_CREATE);
-  const [resolveResult, setResolveResult] = useState<{ winners: number; losers: number; total_paid_pts: number } | null>(null);
 
   const loadMarkets = async () => {
     if (!user?.token) return;
@@ -153,9 +157,6 @@ export default function AdminMarketsPage() {
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
-      if (updated.winners !== undefined) {
-        setResolveResult({ winners: updated.winners, losers: updated.losers, total_paid_pts: updated.total_paid_pts });
-      }
       setNotice({
         variant: 'success',
         title: 'Mercado resuelto',
@@ -196,7 +197,16 @@ export default function AdminMarketsPage() {
   };
 
   const handleCreateSave = async () => {
-    if (!user?.token || !createModal.title || !createModal.end_date) return;
+    if (!user?.token) return;
+    if (!createModal.title.trim()) {
+      setNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
+    }
+    if (!createModal.end_date || new Date(createModal.end_date) <= new Date()) {
+      setNotice({ variant: 'error', title: 'Fecha inválida', message: 'La fecha de cierre debe ser posterior a ahora' }); return;
+    }
+    if (createModal.probability < 1 || createModal.probability > 99) {
+      setNotice({ variant: 'error', title: 'Probabilidad inválida', message: 'Debe estar entre 1% y 99%' }); return;
+    }
     setActionLoading('creating');
     try {
       const created = await createMarket(user.token, {
@@ -261,11 +271,17 @@ export default function AdminMarketsPage() {
       const updated = await editMarket(user.token, editModal.marketId, {
         title: editModal.title,
         description: editModal.description,
+        category: editModal.category || undefined,
+        end_date: editModal.end_date ? new Date(editModal.end_date).toISOString() : undefined,
       });
       setMarkets((prev) =>
-        prev.map((m) => (m.id === updated.id ? { ...m, title: updated.title } : m))
+        prev.map((m) =>
+          m.id === updated.id
+            ? { ...m, title: updated.title, category: updated.category ?? m.category, end_date: updated.end_date ?? m.end_date }
+            : m
+        )
       );
-      setEditModal({ open: false, marketId: '', title: '', description: '' });
+      setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' });
       setNotice({
         variant: 'success',
         title: 'Mercado actualizado',
@@ -293,13 +309,32 @@ export default function AdminMarketsPage() {
           <h1 className="text-2xl font-bold">Mercados</h1>
           <p className="text-gray-500 text-sm">Ranking y gestión de polls</p>
         </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Crear poll
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!user?.token) return;
+              try {
+                const res = await expirePastMarkets(user.token);
+                setNotice({ variant: 'success', title: 'Vencidos expirados', message: res.message });
+                void loadMarkets();
+              } catch (error) {
+                setNotice({ variant: 'error', title: 'Error', message: getErrorMessage(error) });
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+          >
+            <Clock className="h-4 w-4" />
+            Expirar vencidos
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Crear poll
+          </button>
+        </div>
       </div>
 
       {notice && (
@@ -449,6 +484,10 @@ export default function AdminMarketsPage() {
                                     marketId: m.id,
                                     title: m.title,
                                     description: '',
+                                    category: m.category,
+                                    end_date: m.end_date
+                                      ? new Date(m.end_date).toISOString().slice(0, 16)
+                                      : '',
                                   });
                                   setOpenMenu(null);
                                 }}
@@ -559,25 +598,51 @@ export default function AdminMarketsPage() {
       {editModal.open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setEditModal({ open: false, marketId: '', title: '', description: '' })}
+          onClick={() => setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' })}
         >
           <div
             className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-96 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold mb-4">Editar mercado</h3>
-            <label className="block text-sm font-medium mb-1">Título</label>
-            <input
-              type="text"
-              value={editModal.title}
-              onChange={(e) => setEditModal((prev) => ({ ...prev, title: e.target.value }))}
-              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 mb-4"
-              autoFocus
-            />
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Título</label>
+                <input
+                  type="text"
+                  value={editModal.title}
+                  onChange={(e) => setEditModal((prev) => ({ ...prev, title: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <select
+                  value={editModal.category}
+                  onChange={(e) => setEditModal((prev) => ({ ...prev, category: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                >
+                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fecha de cierre</label>
+                <input
+                  type="datetime-local"
+                  value={editModal.end_date}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  onChange={(e) => setEditModal((prev) => ({ ...prev, end_date: e.target.value }))}
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
+                />
+              </div>
+            </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() =>
-                  setEditModal({ open: false, marketId: '', title: '', description: '' })
+                  setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' })
                 }
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -662,6 +727,7 @@ export default function AdminMarketsPage() {
                 <input
                   type="datetime-local"
                   value={createModal.end_date}
+                  min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
                   onChange={(e) => setCreateModal((p) => ({ ...p, end_date: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
