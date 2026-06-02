@@ -59,9 +59,9 @@ def create_prediction(
         NotFoundException: If market not found
     """
     # Validate user has enough points
-    if user.points < prediction_data.points_wagered:
+    if user.points + 0.01 < prediction_data.points_wagered:
         raise InsufficientPointsException(
-            f"Insufficient points. You have {user.points}, need {prediction_data.points_wagered}"
+            f"Puntos insuficientes. Tenés {int(user.points)} pts, necesitás {int(prediction_data.points_wagered)} pts"
         )
 
     # Get market

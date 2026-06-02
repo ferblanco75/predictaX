@@ -830,8 +830,8 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
         if user_said_yes == outcome_yes:
             pred.status = "won"
             prob = pred.probability_at_bet if pred.probability_at_bet and pred.probability_at_bet > 0 else 50.0
-            payout = pred.points_wagered / (prob / 100.0)
-            pred.user.points += payout
+            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            pred.user.points = round(pred.user.points + payout, 2)
             total_paid += payout
             winners += 1
         else:

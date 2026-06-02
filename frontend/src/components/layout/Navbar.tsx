@@ -3,7 +3,7 @@
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X, Coins } from 'lucide-react';
+import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X, Coins, Shield } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -95,6 +95,16 @@ export function Navbar() {
                   </span>
                   <span className="text-xs text-amber-600 dark:text-amber-500">pts</span>
                 </div>
+                {user.role === 'admin' && (
+                  <Link
+                    href="/admin/markets"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                    title="Panel de administración"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span className="hidden sm:inline text-xs font-semibold">Admin</span>
+                  </Link>
+                )}
                 <span className="hidden sm:block text-sm font-medium text-muted-foreground">
                   {user.username}
                 </span>

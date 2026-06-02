@@ -149,6 +149,12 @@ def verify_otp(db: Session, email: str, code: str) -> User:
     # Get or create user
     user = db.query(User).filter(User.email == email).first()
     is_new_user = user is None
+
+    if user and (not user.is_active or user.deleted_at is not None):
+        raise BadRequestException(
+            "Tu cuenta está suspendida. Contactá a soporte: soporte@neuropredict.io"
+        )
+
     if is_new_user:
         username = _derive_username(db, email)
         user = User(

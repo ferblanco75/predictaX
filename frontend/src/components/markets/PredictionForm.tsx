@@ -52,8 +52,8 @@ export function PredictionForm({
       setPredictionError('Debes usar al menos 1 punto');
       return;
     }
-    if (betAmount > availablePoints) {
-      setPredictionError(`No tenés suficientes puntos (disponible: ${formatPoints(availablePoints)} pts)`);
+    if (betAmount > Math.floor(availablePoints)) {
+      setPredictionError(`No tenés suficientes puntos (disponible: ${formatPoints(Math.floor(availablePoints))} pts)`);
       return;
     }
     if (betAmount > 10000) {

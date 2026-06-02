@@ -242,7 +242,7 @@ export default function AdminUsersPage() {
   };
 
   const openPointsModal = (u: UserData) => {
-    setPointsInput(String(u.points));
+    setPointsInput(String(Math.round(u.points)));
     setPointsModal({ open: true, userId: u.id, username: u.username, currentPoints: u.points });
     setOpenMenu(null);
   };
@@ -268,7 +268,7 @@ export default function AdminUsersPage() {
       setNotice({
         variant: 'success',
         title: 'Puntos actualizados',
-        message: `${pointsModal.username} ahora tiene ${updated.points.toLocaleString()} puntos.`,
+        message: `${pointsModal.username} ahora tiene ${Math.round(updated.points).toLocaleString()} puntos.`,
       });
     } catch (error) {
       setNotice({
@@ -411,7 +411,7 @@ export default function AdminUsersPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right font-medium">
-                          {u.points.toLocaleString()}
+                          {Math.round(u.points).toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-right">{u.predictions_count}</td>
                         <td className="px-4 py-3 text-gray-500">
@@ -541,7 +541,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
                   <td className="px-4 py-3 text-right font-medium">{u.predictions_count}</td>
                   <td className="px-4 py-3 text-right">{u.total_wagered.toLocaleString()} pts</td>
-                  <td className="px-4 py-3 text-right">{u.points.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">{Math.round(u.points).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -582,7 +582,7 @@ export default function AdminUsersPage() {
                     {u.username}
                   </td>
                   <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                  <td className="px-4 py-3 text-right">{u.points.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right">{Math.round(u.points).toLocaleString()}</td>
                   <td className="px-4 py-3 text-right">{u.total_predictions}</td>
                   <td className="px-4 py-3 text-gray-500">
                     {new Date(u.created_at).toLocaleDateString('es-AR')}
