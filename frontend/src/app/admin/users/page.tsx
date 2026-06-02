@@ -13,6 +13,7 @@ import {
   getTopActiveUsers,
   getInactiveUsers,
   getUserEngagement,
+  getUserStats,
   toggleUserActive,
   updateUserRole,
   updateUserPoints,
@@ -115,6 +116,30 @@ export default function AdminUsersPage() {
     currentPoints: 0,
   });
   const [pointsInput, setPointsInput] = useState('');
+  const [sortBy, setSortBy] = useState<'created_at' | 'points' | 'username'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<Record<string, {
+    total_predictions: number; won: number; lost: number; pending: number;
+    points_won: number; points_lost: number; net: number; favorite_category: string | null;
+  }>>({});
+
+  const handleSort = (col: 'created_at' | 'points' | 'username') => {
+    if (sortBy === col) {
+      setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortBy(col);
+      setSortOrder('desc');
+    }
+  };
+
+  const fetchUserStats = async (userId: string) => {
+    if (!user?.token || userStats[userId]) return;
+    try {
+      const stats = await getUserStats(user.token, userId);
+      setUserStats((prev) => ({ ...prev, [userId]: stats }));
+    } catch { /* silent */ }
+  };
 
   const loadUsersData = async () => {
     if (!user?.token) return;
@@ -122,7 +147,7 @@ export default function AdminUsersPage() {
     setLoadError('');
     try {
       const [u, top, inactive, eng] = await Promise.all([
-        getUsers(user.token, { limit: 50 }),
+        getUsers(user.token, { limit: 50, sort_by: sortBy, order: sortOrder }),
         getTopActiveUsers(user.token, 30, 10),
         getInactiveUsers(user.token, 30),
         getUserEngagement(user.token, 30),
@@ -142,7 +167,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     void loadUsersData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token]);
+  }, [user?.token, sortBy, sortOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,13 +376,37 @@ export default function AdminUsersPage() {
             <table className="w-full min-w-[920px] text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Usuario</th>
+                  <th
+                    className="text-left px-4 py-3 font-medium text-gray-500 cursor-pointer hover:text-gray-700 select-none"
+                    onClick={() => handleSort('username')}
+                  >
+                    <span className="flex items-center gap-1">
+                      Usuario
+                      {sortBy === 'username' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                    </span>
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Rol</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">Puntos</th>
+                  <th
+                    className="text-right px-4 py-3 font-medium text-gray-500 cursor-pointer hover:text-gray-700 select-none"
+                    onClick={() => handleSort('points')}
+                  >
+                    <span className="flex items-center justify-end gap-1">
+                      Puntos
+                      {sortBy === 'points' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                    </span>
+                  </th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Registro</th>
+                  <th
+                    className="text-left px-4 py-3 font-medium text-gray-500 cursor-pointer hover:text-gray-700 select-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    <span className="flex items-center gap-1">
+                      Registro
+                      {sortBy === 'created_at' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                    </span>
+                  </th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -372,10 +421,14 @@ export default function AdminUsersPage() {
                         ))}
                       </tr>
                     ))
-                  : users.map((u) => (
+                  : users.flatMap((u) => [
                       <tr
                         key={u.id}
-                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!u.is_active ? 'opacity-50' : ''}`}
+                        onClick={() => {
+                          setExpandedUser(expandedUser === u.id ? null : u.id);
+                          fetchUserStats(u.id);
+                        }}
+                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors cursor-pointer ${!u.is_active ? 'opacity-50' : ''}`}
                       >
                         <td className="px-4 py-3 font-medium">
                           <div className="flex items-center gap-2">
@@ -479,8 +532,32 @@ export default function AdminUsersPage() {
                             </div>
                           )}
                         </td>
-                      </tr>
-                    ))}
+                      </tr>,
+                      ...(expandedUser === u.id ? [
+                        <tr key={`${u.id}-stats`} className="bg-blue-50/50 dark:bg-blue-950/20">
+                          <td colSpan={8} className="px-6 py-3">
+                            {userStats[u.id] ? (
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <span className="text-gray-500">Predicciones: <strong>{userStats[u.id].total_predictions}</strong></span>
+                                <span className="text-green-600">Ganadas: <strong>{userStats[u.id].won}</strong></span>
+                                <span className="text-red-500">Perdidas: <strong>{userStats[u.id].lost}</strong></span>
+                                <span className="text-amber-500">Pendientes: <strong>{userStats[u.id].pending}</strong></span>
+                                <span className="text-green-600">+{Math.round(userStats[u.id].points_won).toLocaleString()} pts ganados</span>
+                                <span className="text-red-500">-{Math.round(userStats[u.id].points_lost).toLocaleString()} pts perdidos</span>
+                                <span className={userStats[u.id].net >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'}>
+                                  Neto: {userStats[u.id].net >= 0 ? '+' : ''}{Math.round(userStats[u.id].net).toLocaleString()} pts
+                                </span>
+                                {userStats[u.id].favorite_category && (
+                                  <span className="text-gray-500">Fav: <strong>{userStats[u.id].favorite_category}</strong></span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 animate-pulse">Cargando stats...</span>
+                            )}
+                          </td>
+                        </tr>
+                      ] : []),
+                    ])}
               </tbody>
             </table>
             {!loading && users.length === 0 && (

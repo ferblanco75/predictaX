@@ -161,11 +161,13 @@ def get_overview(db: Session = Depends(get_db)):
 def list_users(
     search: str = Query("", description="Search by email or username"),
     role: str = Query("", description="Filter by role"),
+    sort_by: str = Query("created_at", description="Sort field: created_at, points, predictions_count, username"),
+    order: str = Query("desc", description="asc or desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """List all users with search and filters."""
+    """List all users with search, filters, and sorting."""
     query = db.query(User)
 
     if search:
@@ -176,7 +178,19 @@ def list_users(
         query = query.filter(User.role == role)
 
     total = query.count()
-    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+
+    sort_col = {
+        "points": User.points,
+        "username": User.username,
+        "created_at": User.created_at,
+    }.get(sort_by, User.created_at)
+
+    if order == "asc":
+        query = query.order_by(sort_col.asc())
+    else:
+        query = query.order_by(sort_col.desc())
+
+    users = query.offset(offset).limit(limit).all()
 
     return {
         "data": [
@@ -232,6 +246,48 @@ def get_user_detail(user_id: str, db: Session = Depends(get_db)):
             }
             for p in predictions
         ],
+    }
+
+
+@router.get("/users/{user_id}/stats")
+def get_user_stats(user_id: str, db: Session = Depends(get_db)):
+    """Prediction stats for a specific user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    preds = db.query(Prediction).filter(Prediction.user_id == user_id).all()
+
+    won = [p for p in preds if p.status == "won"]
+    lost = [p for p in preds if p.status == "lost"]
+    pending = [p for p in preds if p.status == "pending"]
+
+    points_won = sum(
+        round(p.points_wagered / ((p.probability_at_bet or 50) / 100), 2) - p.points_wagered
+        for p in won
+    )
+    points_lost = sum(p.points_wagered for p in lost)
+
+    from collections import Counter
+    if preds:
+        markets = db.query(Market).filter(
+            Market.id.in_([p.market_id for p in preds])
+        ).all()
+        market_cats = {str(m.id): m.category.value for m in markets}
+        cat_counts = Counter(market_cats.get(str(p.market_id), "unknown") for p in preds)
+        favorite_category = cat_counts.most_common(1)[0][0] if cat_counts else None
+    else:
+        favorite_category = None
+
+    return {
+        "total_predictions": len(preds),
+        "won": len(won),
+        "lost": len(lost),
+        "pending": len(pending),
+        "points_won": round(points_won, 2),
+        "points_lost": round(points_lost, 2),
+        "net": round(points_won - points_lost, 2),
+        "favorite_category": favorite_category,
     }
 
 
@@ -849,6 +905,43 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
         "winners": winners,
         "losers": losers,
         "total_paid_pts": round(total_paid, 2),
+    }
+
+
+@router.post("/markets/{market_id}/unresolve")
+def unresolve_market(market_id: str, db: Session = Depends(get_db)):
+    """Revert a resolved market back to active, undoing payouts to winners."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    if market.status != MarketStatus.RESOLVED:
+        raise HTTPException(status_code=400, detail="Solo se pueden revertir mercados resueltos")
+
+    reverted = 0
+    points_adjusted = 0.0
+
+    predictions = db.query(Prediction).filter(Prediction.market_id == market.id).all()
+    for pred in predictions:
+        if pred.status == "won":
+            prob = pred.probability_at_bet if pred.probability_at_bet and pred.probability_at_bet > 0 else 50.0
+            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            pred.user.points = round(pred.user.points - payout, 2)
+            points_adjusted += payout
+            pred.status = "pending"
+            reverted += 1
+        elif pred.status == "lost":
+            pred.status = "pending"
+
+    market.status = MarketStatus.ACTIVE
+    market.resolution_value = None
+    market.resolved_at = None
+    db.commit()
+
+    return {
+        "id": str(market.id),
+        "status": market.status,
+        "reverted_predictions": reverted,
+        "points_adjusted": round(points_adjusted, 2),
     }
 
 

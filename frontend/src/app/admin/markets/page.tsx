@@ -8,7 +8,7 @@ import {
   AdminErrorState,
   AdminNotice,
 } from '@/components/admin/AdminState';
-import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket, expirePastMarkets } from '@/lib/api/admin';
+import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket, expirePastMarkets, unresolveMarket } from '@/lib/api/admin';
 import {
   Flame,
   Snowflake,
@@ -183,6 +183,37 @@ export default function AdminMarketsPage() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleUnresolve = async (marketId: string, title: string) => {
+    if (!user?.token) return;
+    setActionLoading(marketId);
+    setOpenMenu(null);
+    setConfirmAction(null);
+    try {
+      const res = await unresolveMarket(user.token, marketId);
+      setMarkets((prev) => prev.map((m) => m.id === marketId ? { ...m, status: 'active' } : m));
+      setNotice({
+        variant: 'success',
+        title: 'Resolución revertida',
+        message: `"${title}" vuelve a activo · ${res.reverted_predictions} predicciones revertidas · ${res.points_adjusted?.toLocaleString() ?? 0} pts ajustados`,
+      });
+    } catch (error) {
+      setNotice({ variant: 'error', title: 'No se pudo revertir', message: getErrorMessage(error) });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const requestUnresolve = (market: MarketRanking) => {
+    setOpenMenu(null);
+    setConfirmAction({
+      title: 'Revertir resolución',
+      description: `Vas a revertir "${market.title}". Los puntos pagados a ganadores serán descontados y todas las predicciones vuelven a "pendiente".`,
+      confirmLabel: 'Revertir',
+      danger: true,
+      onConfirm: () => handleUnresolve(market.id, market.title),
+    });
   };
 
   const requestDelete = (market: MarketRanking) => {
@@ -496,6 +527,15 @@ export default function AdminMarketsPage() {
                                 <Pencil className="h-4 w-4 text-gray-500" />
                                 <span>Editar título</span>
                               </button>
+                              {m.status === 'resolved' && (
+                                <button
+                                  onClick={() => requestUnresolve(m)}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-amber-600 dark:text-amber-400"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Revertir resolución
+                                </button>
+                              )}
                               {isActive && (
                                 <>
                                   <button

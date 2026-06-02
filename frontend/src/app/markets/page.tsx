@@ -26,9 +26,20 @@ function MarketsContent() {
     setSearchQuery,
     resetFilters,
   } = useAppStore();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('page') ?? '1' : '1');
+    return isNaN(p) || p < 1 ? 1 : p;
+  });
   const [showWelcome, setShowWelcome] = useState(false);
   const { user } = useAppStore();
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) params.delete('page');
+    else params.set('page', String(page));
+    router.replace(params.size > 0 ? `/markets?${params.toString()}` : '/markets', { scroll: false });
+  };
 
   // Show welcome banner for new users (?welcome=1) and clear the param
   useEffect(() => {
@@ -294,13 +305,18 @@ function MarketsContent() {
               }}
             />
 
-            {!isLoading && totalPages > 1 && (
-              <div className="mt-8">
-                <Pagination
-                  currentPage={safeCurrentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+            {!isLoading && filtered.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-center text-sm text-gray-500">
+                  Mostrando {(safeCurrentPage - 1) * MARKETS_PER_PAGE + 1}–{Math.min(safeCurrentPage * MARKETS_PER_PAGE, filtered.length)} de {filtered.length} mercados
+                </p>
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
+                )}
               </div>
             )}
           </div>

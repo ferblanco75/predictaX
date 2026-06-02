@@ -37,14 +37,24 @@ export async function getOverview(token: string) {
 
 export async function getUsers(
   token: string,
-  params?: { search?: string; limit?: number; offset?: number }
+  params?: { search?: string; limit?: number; offset?: number; sort_by?: string; order?: string }
 ) {
   const query = new URLSearchParams();
   if (params?.search) query.set('search', params.search);
   if (params?.limit) query.set('limit', String(params.limit));
   if (params?.offset) query.set('offset', String(params.offset));
+  if (params?.sort_by) query.set('sort_by', params.sort_by);
+  if (params?.order) query.set('order', params.order);
   const qs = query.toString();
   return adminFetch(`/users${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getUserStats(token: string, userId: string) {
+  return adminFetch(`/users/${userId}/stats`, token);
+}
+
+export async function unresolveMarket(token: string, marketId: string) {
+  return adminMutate(`/markets/${marketId}/unresolve`, token, 'POST');
 }
 
 export async function getMarketsRanking(token: string, sort = 'most_active', limit = 20) {
