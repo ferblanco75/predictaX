@@ -139,7 +139,7 @@ def get_fixture(match_id: int) -> Optional[dict]:
 
 def get_standings(season: int = 2026) -> Optional[list]:
     """Return group standings for the WC."""
-    cache_key = f"football:standings:{season}"
+    cache_key = f"football:standings:v2:{season}"
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
