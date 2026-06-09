@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 import { useAppStore } from '@/lib/stores/app-store';
 
@@ -28,6 +28,27 @@ interface UserResponse {
   role: string;
 }
 
+interface UserPrediction {
+  id: string;
+  market_id: string;
+  probability: number;
+  points_wagered: number;
+  status: string;
+}
+
+export function useUserMarketPrediction(marketId: string) {
+  const { isLoggedIn } = useAppStore();
+  return useQuery<UserPrediction | null>({
+    queryKey: ['user-prediction', marketId],
+    queryFn: async () => {
+      const res = await api.get<UserPrediction[]>('/predictions');
+      return res.data.find((p) => p.market_id === marketId && p.status === 'pending') ?? null;
+    },
+    enabled: isLoggedIn,
+    staleTime: 30_000,
+  });
+}
+
 export function useMakePrediction(marketId: string) {
   const queryClient = useQueryClient();
   const { login, user } = useAppStore();
@@ -43,6 +64,7 @@ export function useMakePrediction(marketId: string) {
     },
     onSuccess: async (_, { amount }) => {
       queryClient.invalidateQueries({ queryKey: ['market', marketId] });
+      queryClient.invalidateQueries({ queryKey: ['user-prediction', marketId] });
 
       // Sync real balance from backend; fall back to optimistic deduct if fetch fails
       try {

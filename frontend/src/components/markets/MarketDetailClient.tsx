@@ -9,7 +9,7 @@ import { PredictionForm } from './PredictionForm';
 import { MultipleChoiceBarChart } from './MultipleChoiceBarChart';
 import { MultipleChoicePredictionForm } from './MultipleChoicePredictionForm';
 import { ProbabilityGauge } from './ProbabilityGauge';
-import { useMakePrediction } from '@/lib/hooks/useMakePrediction';
+import { useMakePrediction, useUserMarketPrediction } from '@/lib/hooks/useMakePrediction';
 import { MarketStats } from './MarketStats';
 import type { Market } from '@/lib/types';
 
@@ -46,6 +46,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
     null
   );
   const prediction = useMakePrediction(market.id);
+  const { data: existingPrediction } = useUserMarketPrediction(market.id);
 
   const handlePredictionSubmit = (predictionValue: number, amount: number) => {
     setFeedback(null);
@@ -166,6 +167,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
                 onSubmit={handlePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
                 requiresAuth={!isLoggedIn}
+                existingPrediction={existingPrediction}
               />
               {feedback && (
                 <div

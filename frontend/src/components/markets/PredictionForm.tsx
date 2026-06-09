@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Coins } from 'lucide-react';
+import { AlertCircle, Coins, RefreshCw } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ interface PredictionFormProps {
   onSubmit: (prediction: number, betAmount: number) => void;
   disabled?: boolean;
   requiresAuth?: boolean;
+  existingPrediction?: { probability: number; points_wagered: number } | null;
 }
 
 function formatCloseDate(endDate: string) {
@@ -38,11 +39,13 @@ export function PredictionForm({
   onSubmit,
   disabled = false,
   requiresAuth = false,
+  existingPrediction = null,
 }: PredictionFormProps) {
   const { user } = useAppStore();
   const [prediction, setPrediction] = useState(50);
   const [betAmount, setBetAmount] = useState(100);
   const [predictionError, setPredictionError] = useState<string>();
+  const [confirmingOverride, setConfirmingOverride] = useState(false);
 
   const availablePoints = user?.points ?? 0;
   const maxBet = Math.min(10000, Math.floor(availablePoints));
@@ -60,7 +63,12 @@ export function PredictionForm({
       setPredictionError('El máximo de puntos es 10,000');
       return;
     }
+    if (existingPrediction && !confirmingOverride) {
+      setConfirmingOverride(true);
+      return;
+    }
     setPredictionError(undefined);
+    setConfirmingOverride(false);
     onSubmit(prediction, betAmount);
   };
 
@@ -174,7 +182,7 @@ export function PredictionForm({
           </p>
         </div>
 
-        {requiresAuth && (
+        {requiresAuth ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
             <p className="font-medium">Iniciá sesión para participar</p>
             <p className="mt-1 text-amber-900/80 dark:text-amber-100/80">
@@ -187,20 +195,48 @@ export function PredictionForm({
               Iniciar sesión o registrarme
             </Link>
           </div>
+        ) : (
+          <>
+            {existingPrediction && !confirmingOverride && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 px-4 py-3 text-sm text-blue-800 dark:text-blue-200 flex items-start gap-2">
+                <RefreshCw className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
+                <div>
+                  <p className="font-medium">Ya tenés una predicción en este mercado</p>
+                  <p className="text-xs mt-0.5 text-blue-700/80 dark:text-blue-300/80">
+                    Tu apuesta anterior: {existingPrediction.probability}% con {formatPoints(existingPrediction.points_wagered)} pts. Confirmar agregará una nueva apuesta.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {confirmingOverride && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium">¿Confirmar nueva apuesta?</p>
+                <p className="text-xs mt-0.5 text-amber-700/80 dark:text-amber-300/80">
+                  Se descontarán {formatPoints(betAmount)} pts adicionales. Tus apuestas anteriores en este mercado siguen activas.
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={handleSubmit} disabled={disabled}>
+                    {disabled ? 'Procesando...' : 'Sí, apostar de nuevo'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmingOverride(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!confirmingOverride && (
+              <Button size="lg" className="w-full active:scale-95 transition-transform" onClick={handleSubmit} disabled={disabled}>
+                {disabled ? 'Procesando...' : 'Confirmar predicción'}
+              </Button>
+            )}
+
+            <p className="text-xs text-gray-500 text-center">
+              Las predicciones no se pueden modificar después de confirmar.
+            </p>
+          </>
         )}
-
-        {/* CTA Button */}
-        <Button size="lg" className="w-full active:scale-95 transition-transform" onClick={handleSubmit} disabled={disabled}>
-          {requiresAuth
-            ? 'Iniciá sesión para predecir'
-            : disabled
-              ? 'Procesando...'
-              : 'Confirmar predicción'}
-        </Button>
-
-        <p className="text-xs text-gray-500 text-center">
-          * Requiere iniciar sesión. Las predicciones no se pueden modificar después de confirmar.
-        </p>
       </CardContent>
     </Card>
   );
