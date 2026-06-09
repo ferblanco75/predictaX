@@ -17,7 +17,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      // Clear Zustand store so isLoggedIn becomes false immediately
+      import('@/lib/stores/app-store').then(({ useAppStore }) => {
+        useAppStore.getState().logout();
+      });
       window.location.href = '/auth';
+    }
+    // Surface backend detail message as the error message
+    const detail = error.response?.data?.detail;
+    if (detail && typeof detail === 'string') {
+      return Promise.reject(new Error(detail));
     }
     return Promise.reject(error);
   }

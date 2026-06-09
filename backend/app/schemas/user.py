@@ -26,6 +26,15 @@ class UserCreate(BaseModel):
     def normalize_email(cls, value: str) -> str:
         return value.strip().lower() if isinstance(value, str) else value
 
+    @field_validator("email", mode="after")
+    @classmethod
+    def validate_email_domain(cls, value: str) -> str:
+        domain = value.split("@")[-1]
+        tld = domain.rsplit(".", 1)[-1]
+        if len(tld) < 2:
+            raise ValueError("El dominio del email no parece válido")
+        return value
+
     @field_validator("username", mode="before")
     @classmethod
     def normalize_username(cls, value: str) -> str:
@@ -123,6 +132,15 @@ class OTPRequest(BaseModel):
     @classmethod
     def normalize_email(cls, v: str) -> str:
         return v.strip().lower() if isinstance(v, str) else v
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def validate_email_domain(cls, v: str) -> str:
+        domain = v.split("@")[-1]
+        tld = domain.rsplit(".", 1)[-1]
+        if len(tld) < 2:
+            raise ValueError("El dominio del email no parece válido")
+        return v
 
 
 class OTPVerify(BaseModel):

@@ -25,7 +25,8 @@ function validateEmail(email: string): string | undefined {
   const normalizedEmail = email.trim();
   if (!normalizedEmail) return 'El email es requerido';
   if (normalizedEmail.length > 255) return 'El email es demasiado largo';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return 'Email inválido';
+  // local@domain.tld — TLD must be at least 2 chars
+  if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(normalizedEmail)) return 'Email inválido';
 }
 
 function validateName(name: string): string | undefined {
