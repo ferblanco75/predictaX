@@ -1,6 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X, Coins, Shield } from 'lucide-react';
@@ -10,6 +11,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
 import type { MarketCategory } from '@/lib/types';
+import api from '@/lib/api/client';
 
 const categories = [
   { id: 'mundial', name: 'Mundial 2026', icon: Trophy, color: 'bg-green-600' },
@@ -22,8 +24,17 @@ const categories = [
 
 export function Navbar() {
   const router = useRouter();
-  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout } =
+  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout, login } =
     useAppStore();
+
+  // Refresh user data from DB on mount so points/role stay in sync after admin edits
+  useEffect(() => {
+    if (!isLoggedIn || !user?.token) return;
+    api.get<{ points: number; role: string }>('/auth/me').then((res) => {
+      login({ ...user, points: res.data.points, role: res.data.role });
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

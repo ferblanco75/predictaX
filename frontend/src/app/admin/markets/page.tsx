@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
 import {
   AdminConfirmModal,
@@ -113,6 +113,8 @@ export default function AdminMarketsPage() {
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'cancelled'>('all');
   const [resolveModal, setResolveModal] = useState<ResolveModalState>({
     open: false,
@@ -231,6 +233,12 @@ export default function AdminMarketsPage() {
     if (!user?.token) return;
     if (!createModal.title.trim()) {
       setNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
+    }
+    if (createModal.title.trim().length < 10) {
+      setNotice({ variant: 'error', title: 'Título muy corto', message: 'El título debe tener al menos 10 caracteres.' }); return;
+    }
+    if (!createModal.description.trim() || createModal.description.trim().length < 50) {
+      setNotice({ variant: 'error', title: 'Descripción muy corta', message: 'La descripción debe tener al menos 50 caracteres.' }); return;
     }
     if (!createModal.end_date || new Date(createModal.end_date) <= new Date()) {
       setNotice({ variant: 'error', title: 'Fecha inválida', message: 'La fecha de cierre debe ser posterior a ahora' }); return;
@@ -451,7 +459,7 @@ export default function AdminMarketsPage() {
                     return (
                       <tr
                         key={m.id}
-                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!isActive ? 'opacity-60' : ''}`}
+                        className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors ${!isActive ? 'text-gray-400 dark:text-gray-500' : ''}`}
                       >
                         <td className="px-4 py-3 text-gray-400 font-medium">{i + 1}</td>
                         <td className="px-4 py-3 font-medium max-w-xs">
@@ -488,12 +496,19 @@ export default function AdminMarketsPage() {
                         <td className="px-4 py-3 text-gray-500">
                           {new Date(m.end_date).toLocaleDateString('es-AR')}
                         </td>
-                        <td className="px-4 py-3 relative">
+                        <td className="px-4 py-3">
                           <button
                             disabled={actionLoading === m.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenMenu(openMenu === m.id ? null : m.id);
+                              if (openMenu === m.id) {
+                                setOpenMenu(null);
+                                setMenuPos(null);
+                              } else {
+                                const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                setOpenMenu(m.id);
+                              }
                             }}
                             className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
                           >
@@ -503,10 +518,12 @@ export default function AdminMarketsPage() {
                               <MoreVertical className="h-4 w-4 text-gray-400" />
                             )}
                           </button>
-                          {openMenu === m.id && (
+                          {openMenu === m.id && menuPos && (
                             <div
+                              ref={menuRef}
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1"
+                              style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }}
+                              className="w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 py-1"
                             >
                               <button
                                 onClick={() => {
@@ -713,7 +730,9 @@ export default function AdminMarketsPage() {
             <h3 className="font-semibold text-lg">Crear nuevo poll</h3>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Título</label>
+              <label className="block text-sm font-medium mb-1">
+                Título <span className="text-gray-400 font-normal">(mín. 10 caracteres)</span>
+              </label>
               <input
                 type="text"
                 value={createModal.title}
@@ -722,17 +741,21 @@ export default function AdminMarketsPage() {
                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 autoFocus
               />
+              <p className="text-xs text-gray-400 mt-1">{createModal.title.trim().length}/10 mín.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Descripción</label>
+              <label className="block text-sm font-medium mb-1">
+                Descripción <span className="text-gray-400 font-normal">(mín. 50 caracteres)</span>
+              </label>
               <textarea
                 value={createModal.description}
                 onChange={(e) => setCreateModal((p) => ({ ...p, description: e.target.value }))}
-                placeholder="Descripción y reglas de resolución..."
+                placeholder="Descripción y reglas de resolución del mercado..."
                 rows={3}
                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 resize-none"
               />
+              <p className="text-xs text-gray-400 mt-1">{createModal.description.trim().length}/50 mín.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
