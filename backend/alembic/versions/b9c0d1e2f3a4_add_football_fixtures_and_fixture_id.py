@@ -1,7 +1,7 @@
 """add football_fixtures table and fixture_id to markets
 
 Revision ID: b9c0d1e2f3a4
-Revises: a7b8c9d0e1f2
+Revises: b8c9d0e1f2a3
 Create Date: 2026-06-09
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from alembic import op
 
 revision: str = 'b9c0d1e2f3a4'
-down_revision: Union[str, None] = 'a7b8c9d0e1f2'
+down_revision: Union[str, None] = 'b8c9d0e1f2a3'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
