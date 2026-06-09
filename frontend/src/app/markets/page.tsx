@@ -89,10 +89,21 @@ function MarketsContent() {
   const filtered = allMarkets.filter((m) => {
     const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
     const normalizedSearch = searchQuery.trim().toLowerCase();
-    const searchMatch =
-      !normalizedSearch ||
-      m.title.toLowerCase().includes(normalizedSearch) ||
-      m.description.toLowerCase().includes(normalizedSearch);
+    let searchMatch = true;
+    if (normalizedSearch) {
+      // Support % as wildcard: "arg%camp" → /arg.*camp/i
+      const hasWildcard = normalizedSearch.includes('%');
+      if (hasWildcard) {
+        const pattern = normalizedSearch.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+        const re = new RegExp(pattern, 'i');
+        searchMatch = re.test(m.title) || re.test(m.description) || re.test(m.category);
+      } else {
+        searchMatch =
+          m.title.toLowerCase().includes(normalizedSearch) ||
+          m.description.toLowerCase().includes(normalizedSearch) ||
+          m.category.toLowerCase().includes(normalizedSearch);
+      }
+    }
     return catMatch && searchMatch;
   });
 
