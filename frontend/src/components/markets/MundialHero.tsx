@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -53,13 +53,27 @@ interface MundialHeroProps {
   totalPolls: number;
 }
 
-export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
-  const countdown = useCountdown(KICKOFF);
+function VerTodosButton() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isOnMundialPage =
     pathname === '/markets/category/mundial' ||
     (pathname === '/markets' && searchParams.get('categoria') === 'mundial');
+  if (isOnMundialPage) return null;
+  return (
+    <Link
+      href="/markets/category/mundial"
+      scroll={true}
+      className="inline-flex items-center gap-2 bg-white text-green-800 font-semibold px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
+    >
+      Ver todos los polls
+      <ArrowRight className="h-4 w-4" />
+    </Link>
+  );
+}
+
+export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
+  const countdown = useCountdown(KICKOFF);
   const started =
     countdown.days === 0 &&
     countdown.hours === 0 &&
@@ -118,7 +132,7 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
               )}
             </div>
 
-            {!isOnMundialPage && (
+            <Suspense fallback={
               <Link
                 href="/markets/category/mundial"
                 scroll={true}
@@ -127,7 +141,9 @@ export function MundialHero({ featuredPolls, totalPolls }: MundialHeroProps) {
                 Ver todos los polls
                 <ArrowRight className="h-4 w-4" />
               </Link>
-            )}
+            }>
+              <VerTodosButton />
+            </Suspense>
           </div>
 
           {/* Right: featured poll cards */}
