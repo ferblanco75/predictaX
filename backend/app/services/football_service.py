@@ -163,9 +163,111 @@ def get_standings(season: int = 2026) -> Optional[list]:
     standings = data.get("standings", [])
     # Keep only TOTAL type to avoid duplicates (HOME/AWAY variants)
     groups = [s for s in standings if s.get("type") == "TOTAL" and s.get("group")]
-    normalized = [_normalize_standing(s) for s in groups]
+
+    if groups:
+        normalized = [_normalize_standing(s) for s in groups]
+    else:
+        # Pre-tournament: standings API has no groups yet.
+        # Build group tables from match data instead.
+        normalized = _build_groups_from_fixtures(season)
+
     _cache_set(cache_key, normalized, TTL_STANDINGS)
     return normalized
+
+
+def _build_groups_from_fixtures(season: int) -> list:
+    """Build group standings from fixture data when the standings API has no groups yet."""
+    try:
+        with httpx.Client(timeout=10) as client:
+            res = client.get(
+                f"{BASE_URL}/competitions/{COMPETITION_CODE}/matches",
+                headers=_headers(),
+                params={"season": season},
+            )
+            res.raise_for_status()
+            data = res.json()
+    except Exception as e:
+        logger.warning(f"football-data.org matches fetch for groups failed: {e}")
+        return []
+
+    groups: dict[str, dict] = {}
+    for m in data.get("matches", []):
+        group = m.get("group")
+        if not group or m.get("stage") != "GROUP_STAGE":
+            continue
+        group_key = _normalize_group_key(group)
+        if group_key not in groups:
+            groups[group_key] = {}
+
+        score = m.get("score", {})
+        ft = score.get("fullTime", {})
+        home_goals = ft.get("home")
+        away_goals = ft.get("away")
+        status = m.get("status", "TIMED")
+        finished = status in ("FINISHED", "AWARDED")
+
+        for side, opponent_side, goals_scored, goals_conceded in [
+            ("homeTeam", "awayTeam", home_goals, away_goals),
+            ("awayTeam", "homeTeam", away_goals, home_goals),
+        ]:
+            team = m.get(side, {})
+            team_id = team.get("id")
+            if not team_id:
+                continue
+            if team_id not in groups[group_key]:
+                groups[group_key][team_id] = {
+                    "team_id": team_id,
+                    "team": team.get("name", ""),
+                    "team_tla": team.get("tla", ""),
+                    "team_crest": team.get("crest"),
+                    "played": 0, "won": 0, "draw": 0, "lost": 0,
+                    "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
+                }
+            entry = groups[group_key][team_id]
+            if finished and goals_scored is not None and goals_conceded is not None:
+                entry["played"] += 1
+                entry["goals_for"] += goals_scored
+                entry["goals_against"] += goals_conceded
+                entry["goal_diff"] += goals_scored - goals_conceded
+                if goals_scored > goals_conceded:
+                    entry["won"] += 1
+                    entry["points"] += 3
+                elif goals_scored == goals_conceded:
+                    entry["draw"] += 1
+                    entry["points"] += 1
+                else:
+                    entry["lost"] += 1
+
+    result = []
+    for group_key in sorted(groups.keys()):
+        table = sorted(
+            groups[group_key].values(),
+            key=lambda r: (-r["points"], -r["goal_diff"], -r["goals_for"], r["team"]),
+        )
+        for i, row in enumerate(table):
+            row["position"] = i + 1
+        result.append({
+            "stage": "GROUP_STAGE",
+            "group": group_key,
+            "table": [
+                {
+                    "position": row["position"],
+                    "team": row["team"],
+                    "team_tla": row["team_tla"],
+                    "team_crest": row["team_crest"],
+                    "played": row["played"],
+                    "won": row["won"],
+                    "draw": row["draw"],
+                    "lost": row["lost"],
+                    "goals_for": row["goals_for"],
+                    "goals_against": row["goals_against"],
+                    "goal_diff": row["goal_diff"],
+                    "points": row["points"],
+                }
+                for row in table
+            ],
+        })
+    return result
 
 
 def sync_fixtures_to_db(season: int = 2026) -> int:
