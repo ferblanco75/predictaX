@@ -161,8 +161,8 @@ def get_standings(season: int = 2026) -> Optional[list]:
         return None
 
     standings = data.get("standings", [])
-    # Keep only GROUP_STAGE / TOTAL type to avoid duplicates
-    groups = [s for s in standings if s.get("type") == "TOTAL"]
+    # Keep only TOTAL type to avoid duplicates (HOME/AWAY variants)
+    groups = [s for s in standings if s.get("type") == "TOTAL" and s.get("group")]
     normalized = [_normalize_standing(s) for s in groups]
     _cache_set(cache_key, normalized, TTL_STANDINGS)
     return normalized
@@ -243,10 +243,24 @@ def _normalize_match(m: dict) -> dict:
     }
 
 
+def _normalize_group_key(group: str | None) -> str | None:
+    """Normalize group labels to GROUP_X format ('Group A' → 'GROUP_A')."""
+    if not group:
+        return group
+    # Already in GROUP_X format
+    if group.startswith("GROUP_"):
+        return group
+    # "Group A" → "GROUP_A"
+    parts = group.strip().split()
+    if len(parts) == 2 and parts[0].lower() == "group":
+        return f"GROUP_{parts[1].upper()}"
+    return group.upper().replace(" ", "_")
+
+
 def _normalize_standing(s: dict) -> dict:
     return {
         "stage": s.get("stage"),
-        "group": s.get("group"),
+        "group": _normalize_group_key(s.get("group")),
         "table": [
             {
                 "position": row.get("position"),

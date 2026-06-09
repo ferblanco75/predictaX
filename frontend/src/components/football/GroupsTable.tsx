@@ -12,14 +12,21 @@ export function GroupsTable({ standings }: GroupsTableProps) {
   // Sort groups alphabetically by group label
   const sorted = [...standings].sort((a, b) => (a.group ?? '').localeCompare(b.group ?? ''));
 
+  function groupLabel(group: string | null): string {
+    if (!group) return 'Tabla';
+    // GROUP_A → "A", Group A → "A"
+    const letter = group.replace(/^GROUP_/i, '').replace(/^Group\s+/i, '').trim();
+    return `Grupo ${letter}`;
+  }
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {sorted.map((standing) => {
-        const groupLabel = standing.group ? `Grupo ${standing.group.replace('GROUP_', '')}` : 'Tabla';
+        const label = groupLabel(standing.group);
         return (
           <div key={standing.group ?? standing.stage} className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
             <div className="bg-green-700 text-white text-xs font-bold uppercase tracking-wide px-3 py-2">
-              {groupLabel}
+              {label}
             </div>
             <table className="w-full text-xs">
               <thead>

@@ -28,16 +28,16 @@ export function FixtureCard({ fixture, compact = false }: FixtureCardProps) {
   return (
     <div className={`flex items-center gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2.5 ${compact ? '' : 'shadow-sm'}`}>
       {/* Home */}
-      <div className="flex items-center gap-1.5 flex-1 justify-end">
-        <span className="text-sm font-medium text-right hidden sm:block">{home_team}</span>
-        <span className="text-xs font-semibold text-gray-500 sm:hidden">{home_team_tla}</span>
+      <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+        <span className="text-sm font-medium text-right truncate hidden sm:block">{home_team}</span>
+        <span className="text-xs font-semibold text-right sm:hidden">{home_team_tla}</span>
         {home_team_crest && <img src={home_team_crest} alt={home_team_tla} className="h-6 w-6 object-contain shrink-0" />}
       </div>
 
       {/* Score / time */}
-      <div className="flex flex-col items-center min-w-[60px]">
+      <div className="flex flex-col items-center min-w-[64px] shrink-0">
         {isScheduled ? (
-          <span className="text-xs text-gray-400 text-center">{timeStr}</span>
+          <span className="text-xs text-gray-400 text-center whitespace-nowrap">{timeStr}</span>
         ) : (
           <div className="flex items-center gap-1">
             <span className="text-base font-bold tabular-nums">{score.home ?? 0}</span>
@@ -57,10 +57,10 @@ export function FixtureCard({ fixture, compact = false }: FixtureCardProps) {
       </div>
 
       {/* Away */}
-      <div className="flex items-center gap-1.5 flex-1 justify-start">
+      <div className="flex items-center gap-1.5 flex-1 justify-start min-w-0">
         {away_team_crest && <img src={away_team_crest} alt={away_team_tla} className="h-6 w-6 object-contain shrink-0" />}
-        <span className="text-sm font-medium hidden sm:block">{away_team}</span>
-        <span className="text-xs font-semibold text-gray-500 sm:hidden">{away_team_tla}</span>
+        <span className="text-sm font-medium truncate hidden sm:block">{away_team}</span>
+        <span className="text-xs font-semibold sm:hidden">{away_team_tla}</span>
       </div>
     </div>
   );
