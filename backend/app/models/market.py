@@ -65,6 +65,7 @@ class Market(Base):
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolution_value = Column(Boolean, nullable=True)
     stats_data = Column(JSONB, nullable=True)
+    fixture_id = Column(Integer, nullable=True)
     created_by = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True
     )

@@ -49,6 +49,7 @@ class MarketResponse(BaseModel):
     history: List[MarketHistoryPoint]
     relatedMarkets: List[str] = []
     statsData: Optional[Dict[str, Any]] = None
+    fixtureId: Optional[int] = None
 
     class Config:
         from_attributes = True

@@ -11,6 +11,7 @@ import { MultipleChoicePredictionForm } from './MultipleChoicePredictionForm';
 import { ProbabilityGauge } from './ProbabilityGauge';
 import { useMakePrediction, useUserMarketPrediction } from '@/lib/hooks/useMakePrediction';
 import { MarketStats } from './MarketStats';
+import { MatchLiveStats } from '@/components/football/MatchLiveStats';
 import type { Market } from '@/lib/types';
 
 interface MarketDetailClientProps {
@@ -141,6 +142,9 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
               <ProbabilityChart data={chartHistory} categoryColor={categoryColor} />
             </CardContent>
           </Card>
+
+          {/* Live match stats — only for markets linked to a fixture */}
+          {market.fixtureId && <MatchLiveStats fixtureId={market.fixtureId} />}
 
           {/* Stats block — only for markets with statsData */}
           {market.statsData && (

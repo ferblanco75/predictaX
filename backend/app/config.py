@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
+    # Football Data
+    FOOTBALL_DATA_API_KEY: str = ""
+
     # Email - Resend
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "ferblanco@gmail.com"

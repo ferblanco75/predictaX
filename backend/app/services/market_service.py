@@ -205,6 +205,7 @@ def format_market_response(
         "history": formatted_history,
         "relatedMarkets": [],  # TODO: Implement related markets
         "statsData": market.stats_data,
+        "fixtureId": market.fixture_id,
     }
 
 
