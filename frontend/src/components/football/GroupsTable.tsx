@@ -39,7 +39,7 @@ function SingleGroup({ standing, index }: { standing: Standing; index: number })
               <td className="px-2 py-1.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   {row.team_crest && (
-                    <img src={row.team_crest} alt={row.team_tla} className="h-4 w-4 object-contain shrink-0" />
+                    <img src={row.team_crest} alt="" className="h-4 w-4 object-contain shrink-0" />
                   )}
                   <span className="font-medium truncate" title={row.team}>
                     {row.team_tla || row.team}

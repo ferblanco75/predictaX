@@ -32,7 +32,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function ScoreDisplay({ fixture }: { fixture: Fixture }) {
-  const { home_team, away_team, home_team_tla, away_team_tla, home_team_crest, away_team_crest, score, status } = fixture;
+  const { home_team, away_team, home_team_crest, away_team_crest, score, status } = fixture;
   const isScheduled = !['IN_PLAY', 'PAUSED', 'FINISHED', 'AWARDED'].includes(status);
 
   return (
@@ -40,7 +40,7 @@ function ScoreDisplay({ fixture }: { fixture: Fixture }) {
       {/* Home team */}
       <div className="flex flex-col items-center gap-2 flex-1">
         {home_team_crest && (
-          <img src={home_team_crest} alt={home_team_tla} className="h-12 w-12 object-contain" />
+          <img src={home_team_crest} alt="" className="h-12 w-12 object-contain" />
         )}
         <span className="text-sm font-semibold text-center leading-tight">{home_team}</span>
       </div>
@@ -66,7 +66,7 @@ function ScoreDisplay({ fixture }: { fixture: Fixture }) {
       {/* Away team */}
       <div className="flex flex-col items-center gap-2 flex-1">
         {away_team_crest && (
-          <img src={away_team_crest} alt={away_team_tla} className="h-12 w-12 object-contain" />
+          <img src={away_team_crest} alt="" className="h-12 w-12 object-contain" />
         )}
         <span className="text-sm font-semibold text-center leading-tight">{away_team}</span>
       </div>
