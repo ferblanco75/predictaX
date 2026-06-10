@@ -3,7 +3,7 @@ Admin router — protected endpoints for platform metrics and management.
 All endpoints require admin role.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -51,6 +51,13 @@ router = APIRouter(
     tags=["Admin"],
     dependencies=[Depends(get_current_admin)],
 )
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """Strip tzinfo (converting to UTC first) so it can be compared with datetime.utcnow()."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 # --------------- Overview ---------------
@@ -970,9 +977,10 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
     if body.description is not None:
         market.description = body.description
     if body.end_date is not None:
-        if body.end_date <= datetime.utcnow():
+        end_date = _to_naive_utc(body.end_date)
+        if end_date <= datetime.utcnow():
             raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
-        market.end_date = body.end_date
+        market.end_date = end_date
     if body.category is not None:
         try:
             market.category = MarketCategory(body.category.lower())
@@ -995,7 +1003,8 @@ def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
     if not (1 <= body.probability <= 99):
         raise HTTPException(status_code=400, detail="La probabilidad debe estar entre 1% y 99%")
 
-    if body.end_date <= datetime.utcnow():
+    end_date = _to_naive_utc(body.end_date)
+    if end_date <= datetime.utcnow():
         raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
 
     try:
@@ -1014,7 +1023,7 @@ def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
         description=body.description,
         category=category,
         type=market_type,
-        end_date=body.end_date,
+        end_date=end_date,
         probability_market=body.probability,
         status=MarketStatus.ACTIVE,
     )
