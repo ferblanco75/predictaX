@@ -108,7 +108,10 @@ export default function SecurityPolicyPage() {
           ))}
 
           <Card>
-            <CardContent className="flex flex-col gap-3 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader>
+              <CardTitle>Documentos relacionados</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>Este canal complementa los términos y la política de privacidad.</span>
               <div className="flex gap-4">
                 <Link href="/terms" className="font-medium text-blue-600 hover:text-blue-700">

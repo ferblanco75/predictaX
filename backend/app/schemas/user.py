@@ -30,8 +30,14 @@ class UserCreate(BaseModel):
     @classmethod
     def validate_email_domain(cls, value: str) -> str:
         domain = value.split("@")[-1]
-        tld = domain.rsplit(".", 1)[-1]
-        if len(tld) < 2:
+        labels = domain.split(".")
+        if len(labels) < 2:
+            raise ValueError("El dominio del email no parece válido")
+        tld = labels[-1]
+        if len(tld) < 2 or tld.isdigit():
+            raise ValueError("El dominio del email no parece válido")
+        # Reject domains whose registrable label is purely numeric (e.g. "1.com")
+        if labels[-2].isdigit():
             raise ValueError("El dominio del email no parece válido")
         return value
 

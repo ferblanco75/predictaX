@@ -229,57 +229,65 @@ export function CookieConsentManager() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-4">
-                <label className="rounded-xl border border-slate-200 p-3 text-sm">
-                  <span className="block font-medium text-slate-900">Esenciales</span>
+                <label className="flex flex-col rounded-xl border border-slate-200 p-3 text-sm">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-slate-900">Esenciales</span>
+                    <input className="shrink-0" type="checkbox" checked disabled readOnly />
+                  </span>
                   <span className="mt-1 block text-slate-600">
                     Sesión, seguridad y preferencias básicas.
                   </span>
-                  <input className="mt-3" type="checkbox" checked disabled readOnly />
                 </label>
 
-                <label className="rounded-xl border border-slate-200 p-3 text-sm">
-                  <span className="block font-medium text-slate-900">Analytics</span>
+                <label className="flex flex-col rounded-xl border border-slate-200 p-3 text-sm">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-slate-900">Analytics</span>
+                    <input
+                      className="shrink-0"
+                      type="checkbox"
+                      checked={draft.analytics}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, analytics: event.target.checked }))
+                      }
+                    />
+                  </span>
                   <span className="mt-1 block text-slate-600">
                     Google Analytics, Vercel Analytics, Speed Insights y Sentry client-side.
                   </span>
-                  <input
-                    className="mt-3"
-                    type="checkbox"
-                    checked={draft.analytics}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, analytics: event.target.checked }))
-                    }
-                  />
                 </label>
 
-                <label className="rounded-xl border border-slate-200 p-3 text-sm">
-                  <span className="block font-medium text-slate-900">Funcionales</span>
+                <label className="flex flex-col rounded-xl border border-slate-200 p-3 text-sm">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-slate-900">Funcionales</span>
+                    <input
+                      className="shrink-0"
+                      type="checkbox"
+                      checked={draft.functional}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, functional: event.target.checked }))
+                      }
+                    />
+                  </span>
                   <span className="mt-1 block text-slate-600">
                     Preferencias opcionales que mejoren la experiencia.
                   </span>
-                  <input
-                    className="mt-3"
-                    type="checkbox"
-                    checked={draft.functional}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, functional: event.target.checked }))
-                    }
-                  />
                 </label>
 
-                <label className="rounded-xl border border-slate-200 p-3 text-sm">
-                  <span className="block font-medium text-slate-900">Marketing</span>
+                <label className="flex flex-col rounded-xl border border-slate-200 p-3 text-sm">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-slate-900">Marketing</span>
+                    <input
+                      className="shrink-0"
+                      type="checkbox"
+                      checked={draft.marketing}
+                      onChange={(event) =>
+                        setDraft((current) => ({ ...current, marketing: event.target.checked }))
+                      }
+                    />
+                  </span>
                   <span className="mt-1 block text-slate-600">
                     Reservado para campañas futuras. No se carga tracking de marketing hoy.
                   </span>
-                  <input
-                    className="mt-3"
-                    type="checkbox"
-                    checked={draft.marketing}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, marketing: event.target.checked }))
-                    }
-                  />
                 </label>
               </div>
 

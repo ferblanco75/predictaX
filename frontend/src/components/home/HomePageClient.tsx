@@ -13,6 +13,7 @@ import { getTrendingMarkets } from '@/lib/api/markets';
 import { useMarkets } from '@/lib/hooks/useMarkets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/lib/stores/app-store';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -26,6 +27,7 @@ const fadeInUp = {
 export function HomePageClient() {
   const trendingMarkets = getTrendingMarkets(6);
   const { data: mundialPolls = [] } = useMarkets({ category: 'mundial', limit: 3 });
+  const isLoggedIn = useAppStore((state) => state.isLoggedIn);
 
   const categoryIcons: Record<
     string,
@@ -58,15 +60,17 @@ export function HomePageClient() {
               >
                 Explorar mercados
               </Link>
-              <Link
-                href="/auth"
-                className={cn(
-                  buttonVariants({ size: 'lg', variant: 'outline' }),
-                  'bg-transparent text-white border-white hover:bg-white/10'
-                )}
-              >
-                Comenzar ahora
-              </Link>
+              {!isLoggedIn && (
+                <Link
+                  href="/auth"
+                  className={cn(
+                    buttonVariants({ size: 'lg', variant: 'outline' }),
+                    'bg-transparent text-white border-white hover:bg-white/10'
+                  )}
+                >
+                  Comenzar ahora
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>

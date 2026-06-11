@@ -96,12 +96,18 @@ function MarketsContent() {
       if (hasWildcard) {
         const pattern = normalizedSearch.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
         const re = new RegExp(pattern, 'i');
-        searchMatch = re.test(m.title) || re.test(m.description) || re.test(m.category);
+        searchMatch = re.test(m.title) || re.test(m.description);
       } else {
-        searchMatch =
-          m.title.toLowerCase().includes(normalizedSearch) ||
-          m.description.toLowerCase().includes(normalizedSearch) ||
-          m.category.toLowerCase().includes(normalizedSearch);
+        // Title match is the primary relevance signal (substring match).
+        // Description only counts as a match on whole-word boundaries, to avoid
+        // matching unrelated markets that happen to share a common word.
+        const titleMatch = m.title.toLowerCase().includes(normalizedSearch);
+        const wordBoundaryRe = new RegExp(
+          `\\b${normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+          'i'
+        );
+        const descriptionMatch = wordBoundaryRe.test(m.description);
+        searchMatch = titleMatch || descriptionMatch;
       }
     }
     return catMatch && searchMatch;

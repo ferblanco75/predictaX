@@ -94,8 +94,26 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
     className: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300',
   };
 
-  const handleCopyLink = async () => {
-    const url = window.location.href;
+  const buildShareUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('utm_source', 'share');
+    url.searchParams.set('utm_medium', 'social');
+    url.searchParams.set('utm_campaign', `market_${id}`);
+    return url.toString();
+  };
+
+  const handleShare = async () => {
+    const url = buildShareUrl();
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: market?.title, url });
+        return;
+      } catch {
+        // User cancelled or Web Share API failed — fall back to copy.
+      }
+    }
+
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -143,7 +161,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                     <CardTitle className="text-3xl">{market.title}</CardTitle>
                     <button
                       type="button"
-                      onClick={handleCopyLink}
+                      onClick={handleShare}
                       className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
                     >
                       {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}

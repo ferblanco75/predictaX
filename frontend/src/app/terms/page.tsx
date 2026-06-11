@@ -118,7 +118,10 @@ export default function TermsPage() {
           ))}
 
           <Card>
-            <CardContent className="flex flex-col gap-3 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader>
+              <CardTitle>Política de Privacidad</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>También podés revisar cómo tratamos tus datos personales.</span>
               <Link href="/privacy" className="font-medium text-blue-600 hover:text-blue-700">
                 Ver Política de Privacidad

@@ -99,6 +99,12 @@ def test_register_invalid_email(client: TestClient):
     assert response.status_code == 422
 
 
+def test_register_numeric_domain_email(client: TestClient):
+    bad_data = {**USER_DATA, "email": "123@1.com"}
+    response = client.post(REGISTER_URL, json=bad_data)
+    assert response.status_code == 422
+
+
 def test_register_short_password(client: TestClient):
     bad_data = {**USER_DATA, "password": "short"}
     response = client.post(REGISTER_URL, json=bad_data)

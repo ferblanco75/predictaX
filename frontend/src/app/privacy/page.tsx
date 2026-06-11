@@ -123,7 +123,10 @@ export default function PrivacyPage() {
           ))}
 
           <Card>
-            <CardContent className="flex flex-col gap-3 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader>
+              <CardTitle>Términos y Condiciones</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>El uso de NeuroPredict también se rige por sus términos de servicio.</span>
               <Link href="/terms" className="font-medium text-blue-600 hover:text-blue-700">
                 Ver Términos y Condiciones

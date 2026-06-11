@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, AlertCircle, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
+import { AlertCircle, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useRequestOTP, useVerifyOTP, useRegister } from '@/lib/hooks/useAuth';
 
 interface FormErrors {
@@ -25,8 +25,12 @@ function validateEmail(email: string): string | undefined {
   const normalizedEmail = email.trim();
   if (!normalizedEmail) return 'El email es requerido';
   if (normalizedEmail.length > 255) return 'El email es demasiado largo';
-  // local@domain.tld — TLD must be at least 2 chars
+  // local@domain.tld — TLD must be at least 2 alphabetic chars
   if (!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(normalizedEmail)) return 'Email inválido';
+  // Reject domains whose registrable label is purely numeric (e.g. "123@1.com")
+  const domain = normalizedEmail.split('@')[1] ?? '';
+  const labels = domain.split('.');
+  if (labels.length >= 2 && /^\d+$/.test(labels[labels.length - 2])) return 'Email inválido';
 }
 
 function validateName(name: string): string | undefined {
@@ -247,6 +251,31 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+function LogoutBanner() {
+  const [reason, setReason] = useState<'manual' | 'expired' | null>(null);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('neuropredict_logout_reason');
+    if (stored === 'manual' || stored === 'expired') {
+      setReason(stored);
+      sessionStorage.removeItem('neuropredict_logout_reason');
+    }
+  }, []);
+
+  if (!reason) return null;
+
+  const message =
+    reason === 'expired'
+      ? 'Tu sesión expiró. Volvé a iniciar sesión para continuar.'
+      : 'Sesión cerrada correctamente.';
+
+  return (
+    <div className="mb-4 rounded-lg bg-white/10 px-4 py-3 text-sm text-white ring-1 ring-white/20 text-center">
+      {message}
+    </div>
+  );
+}
+
 export default function AuthPage() {
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
   // After successful register, show OTP code step for this email
@@ -303,12 +332,12 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 text-white">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg" aria-hidden="true" />
             <span className="text-2xl font-bold">NeuroPredict</span>
           </Link>
         </div>
+
+        <LogoutBanner />
 
         <Card>
           <CardHeader>
