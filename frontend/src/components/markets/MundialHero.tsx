@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Users } from 'lucide-react';
 import type { Market } from '@/lib/types';
 
-// Partido inaugural: Argentina vs Arabia Saudita, 14 junio 2026, 12:00 ET
 const KICKOFF = new Date('2026-06-11T20:00:00-05:00');
 
 function useCountdown(target: Date) {
