@@ -28,9 +28,9 @@ MUNDIAL_POLLS = [
         "title": "¿Ganará Argentina el Mundial 2026?",
         "description": (
             "Argentina llega al Mundial 2026 como campeona defensora tras su consagración en Qatar 2022. "
-            "El equipo de Lionel Scaloni mantiene la columna vertebral del plantel campeón y suma figuras jóvenes como Lautaro Martínez, Julian Álvarez y Enzo Fernández.\n\n"
-            "Lionel Messi, a sus 38 años, confirmó que disputará el torneo buscando el único título que le falta: un segundo Mundial. "
-            "Argentina integra el Grupo A junto a España, Marruecos y Arabia Saudita.\n\n"
+            "El equipo de Lionel Scaloni mantiene la columna vertebral del plantel campeón y suma figuras jóvenes como Lautaro Martínez, Julián Álvarez y Enzo Fernández.\n\n"
+            "Lionel Messi, a sus 38 años, ya anotó un hat-trick en el debut (3-0 vs Algeria). "
+            "Argentina integra el Grupo J junto a Algeria, Austria y Jordan.\n\n"
             "Este mercado se resolverá como SÍ si Argentina es campeona del Mundial FIFA 2026."
         ),
         "category": MarketCategory.MUNDIAL,
@@ -47,8 +47,8 @@ MUNDIAL_POLLS = [
             },
             "historial_campeonatos": [
                 {"año": 2022, "resultado": "Campeón 🏆", "goleador": "Mbappé (8)"},
-                {"año": 2018, "resultado": "Octavos (vs Francia 3-4)"},
-                {"año": 2014, "resultado": "Finalista (vs Alemania 0-1 AET)"},
+                {"año": 2018, "resultado": "Octavos (vs Francia 4-3)"},
+                {"año": 2014, "resultado": "Finalista (vs Alemania 0-1 AET, gol Götze)"},
                 {"año": 2010, "resultado": "Cuartos de final"},
             ],
             "probabilidad_ia": 28.0,
@@ -65,10 +65,10 @@ MUNDIAL_POLLS = [
     {
         "title": "¿Ganará Brasil el Mundial 2026?",
         "description": (
-            "Brasil no gana un Mundial desde 2002 y llega al torneo como uno de los favoritos con una nueva generación liderada por Vinicius Jr., Rodrygo y Endrick. "
+            "Brasil no gana un Mundial desde 2002 y llega al torneo como uno de los favoritos con una nueva generación liderada por Vinicius Jr., Neymar y Endrick. "
             "La selección canarinha tuvo una clasificación complicada en las Eliminatorias Sudamericanas pero llega en forma al torneo.\n\n"
-            "El técnico Carlo Ancelotti apuesta por un sistema ofensivo con doble 9. "
-            "Brasil integra el Grupo C junto a Alemania, Colombia y Japón.\n\n"
+            "El técnico Carlo Ancelotti apuesta por un sistema ofensivo. "
+            "Brasil integra el Grupo C junto a Marruecos, Haití y Escocia.\n\n"
             "Este mercado se resolverá como SÍ si Brasil es campeón del Mundial FIFA 2026."
         ),
         "category": MarketCategory.MUNDIAL,
@@ -97,8 +97,10 @@ MUNDIAL_POLLS = [
         "title": "¿Ganará Francia el Mundial 2026?",
         "description": (
             "Francia llega al Mundial 2026 con uno de los planteles más talentosos del mundo. "
-            "Mbappé lidera un equipo que fue campeón en 2018 y finalista en 2022.\n\n"
-            "Francia integra el Grupo B junto a Portugal, México y Senegal.\n\n"
+            "Mbappé, ahora en el Real Madrid, lidera un equipo que fue campeón en 2018 y finalista en 2022. "
+            "Deschamps cuenta con Camavinga, Tchouaméni, Olise, Cherki y una defensa sólida.\n\n"
+            "El técnico Didier Deschamps busca su segundo título mundial como entrenador en su último torneo al frente de Les Bleus. "
+            "Francia integra el Grupo I junto a Senegal, Irak y Noruega.\n\n"
             "Este mercado se resolverá como SÍ si Francia es campeón del Mundial FIFA 2026."
         ),
         "category": MarketCategory.MUNDIAL,
@@ -162,105 +164,124 @@ MUNDIAL_POLLS = [
     },
     # ── FASE DE GRUPOS ───────────────────────────────────────────────────────
     {
-        "title": "¿Pasará Argentina la fase de grupos del Mundial 2026?",
+        "fixture_id": 537397,
+        "title": "¿Ganará Argentina a Algeria en su debut del Mundial 2026?",
         "description": (
-            "Argentina integra el Grupo A junto a España, Marruecos y Arabia Saudita.\n"
-            "Partidos: vs Arabia Saudita (14 jun), vs Marruecos (19 jun), vs España (25 jun).\n\n"
-            "Este mercado se resolverá como SÍ si Argentina termina entre los dos primeros del Grupo A."
+            "El primer partido de Argentina en el Mundial 2026 fue contra Algeria el 16 de junio en el Arrowhead Stadium de Kansas City. "
+            "Argentina ganó 3-0 con hat-trick de Lionel Messi, igualando el récord de 16 goles mundialistas de Miroslav Klose.\n\n"
+            "Este mercado se resolvió como SÍ: Argentina ganó 3-0."
         ),
         "category": MarketCategory.MUNDIAL,
         "type": MarketType.BINARY,
-        "probability_market": 82.00,
-        "volume": 22400.0,
-        "participants_count": 1120,
-        "end_date": dt("2026-06-25"),
+        "probability_market": 99.00,
+        "volume": 26800.0,
+        "participants_count": 1230,
+        "end_date": dt("2026-06-16"),
+        "status": MarketStatus.RESOLVED,
+        "stats_data": {
+            "resultado_final": "Argentina 3-0 Algeria",
+            "goles": [
+                {"jugador": "Messi", "minuto": 17},
+                {"jugador": "Messi", "minuto": 60},
+                {"jugador": "Messi", "minuto": 76},
+            ],
+            "dato_clave": "Hat-trick de Messi en su debut mundialista. Iguala récord de Klose con 16 goles en Mundiales.",
+        },
+    },
+    {
+        "fixture_id": 537399,
+        "title": "¿Ganará Argentina a Austria en la fase de grupos del Mundial 2026?",
+        "description": (
+            "Segundo partido de Argentina en el Grupo J. Se juega el 22 de junio en el AT&T Stadium de Arlington, Texas.\n\n"
+            "Argentina viene de golear 3-0 a Algeria con hat-trick de Messi. Austria busca dar la sorpresa ante la campeona defensora.\n\n"
+            "Este mercado se resolverá como SÍ si Argentina gana el partido (resultado a 90 minutos)."
+        ),
+        "category": MarketCategory.MUNDIAL,
+        "type": MarketType.BINARY,
+        "probability_market": 78.00,
+        "volume": 19600.0,
+        "participants_count": 940,
+        "end_date": dt("2026-06-22"),
         "status": MarketStatus.ACTIVE,
         "stats_data": {
-            "grupo_a": [
-                {"pais": "Argentina", "ranking_fifa": 1, "prob_clasificar": 82},
-                {"pais": "España", "ranking_fifa": 5, "prob_clasificar": 78},
-                {"pais": "Marruecos", "ranking_fifa": 14, "prob_clasificar": 35},
-                {"pais": "Arabia Saudita", "ranking_fifa": 56, "prob_clasificar": 12},
+            "grupo_j": [
+                {"pais": "Argentina", "prob_clasificar": 92},
+                {"pais": "Austria", "prob_clasificar": 55},
+                {"pais": "Algeria", "prob_clasificar": 25},
+                {"pais": "Jordan", "prob_clasificar": 8},
             ],
-            "forma_reciente": {
-                "Argentina": ["W", "W", "W", "D", "W"],
-                "descripcion": "Últimos 5 partidos en Eliminatorias"
-            },
-            "antecedente": "En Qatar 2022 Argentina perdió contra Arabia Saudita en el debut pero igual clasificó primero.",
-            "probabilidad_ia": 82.0,
-            "dato_clave": "Argentina clasificó a todos los Mundiales desde 1974. Solo en 2002 quedó eliminada en grupos.",
+            "dato_clave": "Argentina llega con 3 puntos y +3 de diferencia de gol tras golear a Algeria.",
+        },
+    },
+    {
+        "title": "¿Pasará Argentina la fase de grupos del Mundial 2026?",
+        "description": (
+            "Argentina integra el Grupo J junto a Algeria, Austria y Jordan. Los partidos de la fase de grupos son:\n"
+            "• Argentina vs Algeria — 16 de junio (Kansas City) — Resultado: Argentina 3-0 ✅\n"
+            "• Argentina vs Austria — 22 de junio (Arlington, Texas)\n"
+            "• Jordan vs Argentina — 27 de junio (Arlington, Texas)\n\n"
+            "En el formato de 48 equipos, clasifican los 2 primeros de cada grupo y los 8 mejores terceros.\n\n"
+            "Este mercado se resolverá como SÍ si Argentina avanza a la ronda de 32."
+        ),
+        "category": MarketCategory.MUNDIAL,
+        "type": MarketType.BINARY,
+        "probability_market": 95.00,
+        "volume": 22400.0,
+        "participants_count": 1120,
+        "end_date": dt("2026-06-27"),
+        "status": MarketStatus.ACTIVE,
+        "stats_data": {
+            "grupo_j": [
+                {"pais": "Argentina", "pts": 3, "gf": 3, "gc": 0},
+                {"pais": "Austria", "pts": 0, "gf": 0, "gc": 0},
+                {"pais": "Algeria", "pts": 0, "gf": 0, "gc": 3},
+                {"pais": "Jordan", "pts": 0, "gf": 0, "gc": 0},
+            ],
+            "dato_clave": "Argentina ya ganó su primer partido 3-0. Con 3 puntos, está muy cerca de clasificar.",
         },
     },
     {
         "title": "¿Marcará Argentina más de 5 goles en la fase de grupos?",
         "description": (
-            "En sus tres partidos de la fase de grupos ante Arabia Saudita, Marruecos y España, "
+            "En sus tres partidos de la fase de grupos ante Algeria, Austria y Jordan, "
             "¿logrará Argentina superar los 5 goles en total?\n\n"
+            "Ya lleva 3 goles (hat-trick de Messi vs Algeria). Faltan los partidos contra Austria (22 jun) y Jordan (27 jun).\n\n"
+            "Historial en fases de grupos:\n"
+            "• Qatar 2022: 5 goles en 3 partidos\n"
+            "• Brasil 2014: 6 goles en 3 partidos\n"
+            "• Rusia 2018: 3 goles en 3 partidos\n\n"
             "Este mercado se resolverá como SÍ si Argentina suma más de 5 goles en sus 3 partidos de grupos."
         ),
         "category": MarketCategory.MUNDIAL,
         "type": MarketType.BINARY,
-        "probability_market": 54.00,
+        "probability_market": 72.00,
         "volume": 14800.0,
         "participants_count": 680,
-        "end_date": dt("2026-06-25"),
+        "end_date": dt("2026-06-27"),
         "status": MarketStatus.ACTIVE,
         "stats_data": {
+            "goles_actuales": 3,
+            "partidos_jugados": 1,
+            "partidos_restantes": 2,
             "historial_goles_grupos": [
-                {"mundial": "Qatar 2022", "goles": 5, "partidos": 3, "promedio": 1.67},
-                {"mundial": "Rusia 2018", "goles": 3, "partidos": 3, "promedio": 1.0},
-                {"mundial": "Brasil 2014", "goles": 6, "partidos": 3, "promedio": 2.0},
-                {"mundial": "Sudáfrica 2010", "goles": 3, "partidos": 3, "promedio": 1.0},
+                {"mundial": "Qatar 2022", "goles": 5},
+                {"mundial": "Brasil 2014", "goles": 6},
+                {"mundial": "Rusia 2018", "goles": 3},
             ],
-            "forma_reciente": {
-                "Argentina": ["W", "W", "W", "D", "W"],
-                "goles_ultimos_5": 12,
-                "descripcion": "12 goles en últimos 5 partidos (Eliminatorias)"
-            },
-            "probabilidad_ia": 54.0,
-            "dato_clave": "Argentina promedió 2.1 goles por partido en Eliminatorias 2026. Rival más fácil: Arabia Saudita.",
-        },
-    },
-    {
-        "title": "¿Ganará Argentina a España en la fase de grupos?",
-        "description": (
-            "El partido del Grupo A entre Argentina (campeona 2022) y España (campeona 2010). "
-            "Se juega el 25 de junio en el Hard Rock Stadium de Miami.\n\n"
-            "Dato estadístico: en Mundiales, el antecedente competitivo más citado entre ambos es Argentina 2-1 España en Inglaterra 1966. "
-            "En amistosos recientes, España ganó 6-1 en 2018 y Argentina ganó 4-1 en 2010, señal de un historial cruzado con partidos de alto margen.\n\n"
-            "Este mercado se resolverá como SÍ si Argentina gana este partido (90 minutos)."
-        ),
-        "category": MarketCategory.MUNDIAL,
-        "type": MarketType.BINARY,
-        "probability_market": 38.00,
-        "volume": 19600.0,
-        "participants_count": 940,
-        "end_date": dt("2026-06-25"),
-        "status": MarketStatus.ACTIVE,
-        "stats_data": {
-            "head_to_head": [
-                {
-                    "fecha": "Jul 1966",
-                    "resultado": "Argentina 2-1 España",
-                    "tipo": "Mundial 1966 — Fase de grupos",
-                },
-                {"fecha": "Mar 2018", "resultado": "España 6-1 Argentina", "tipo": "Amistoso"},
-                {"fecha": "Sep 2010", "resultado": "Argentina 4-1 España", "tipo": "Amistoso"},
-            ],
-            "forma_reciente": {
-                "Argentina": ["W", "W", "W", "D", "W"],
-                "España": ["W", "W", "W", "W", "W"],
-            },
-            "probabilidad_ia": 38.0,
-            "balance_h2h": {"Argentina": 2, "España": 1},
-            "dato_clave": "Argentina ganó el único antecedente mundialista registrado en este mercado: 2-1 vs España en 1966. En amistosos recientes hubo goleadas para ambos lados.",
+            "dato_clave": "Con 3 goles en 1 partido, Argentina necesita solo 3 más en 2 partidos para superar la marca.",
         },
     },
     # ── ELIMINACIÓN DIRECTA ──────────────────────────────────────────────────
     {
         "title": "¿Llegará Argentina a las semifinales del Mundial 2026?",
         "description": (
-            "Argentina llega como campeona defensora. El camino a semis implica superar grupos, octavos y cuartos.\n\n"
+            "Argentina llega al Mundial como campeona defensora. El camino a las semifinales implicaría superar la fase de grupos, "
+            "la ronda de 32, octavos y cuartos de final.\n\n"
+            "En los últimos cuatro Mundiales, Argentina llegó a:\n"
+            "• Qatar 2022: Campeón ✅\n"
+            "• Rusia 2018: Octavos de final (eliminada por Francia 4-3)\n"
+            "• Brasil 2014: Final (perdió ante Alemania 1-0 en tiempo extra)\n"
+            "• Sudáfrica 2010: Cuartos de final\n\n"
             "Este mercado se resolverá como SÍ si Argentina juega al menos una semifinal del Mundial 2026."
         ),
         "category": MarketCategory.MUNDIAL,
@@ -273,8 +294,8 @@ MUNDIAL_POLLS = [
         "stats_data": {
             "historial_mundiales": [
                 {"mundial": "Qatar 2022", "fase": "Campeón 🏆"},
-                {"mundial": "Rusia 2018", "fase": "Octavos (vs Francia 3-4)"},
-                {"mundial": "Brasil 2014", "fase": "Final (vs Alemania 0-1 AET)"},
+                {"mundial": "Rusia 2018", "fase": "Octavos (vs Francia 4-3)"},
+                {"mundial": "Brasil 2014", "fase": "Final (vs Alemania 0-1 AET, gol Götze)"},
                 {"mundial": "Sudáfrica 2010", "fase": "Cuartos de final"},
                 {"mundial": "Alemania 2006", "fase": "Cuartos de final"},
             ],
@@ -376,30 +397,37 @@ MUNDIAL_POLLS = [
     {
         "title": "¿Anotará Messi en el Mundial 2026?",
         "description": (
-            "Messi disputará el Mundial 2026 a los 38 años. En Qatar 2022 fue MVP con 7 goles y 3 asistencias.\n\n"
+            "Lionel Messi disputará el Mundial 2026 a los 38 años en su sexto torneo mundialista. "
+            "En el debut contra Algeria (16 de junio), Messi anotó un hat-trick histórico para el 3-0, "
+            "igualando el récord de 16 goles mundialistas de Miroslav Klose.\n\n"
+            "Historial goleador de Messi en Mundiales:\n"
+            "• USA/CAN/MEX 2026: 3 goles (en curso) ⚽⚽⚽\n"
+            "• Qatar 2022: 7 goles (MVP 🏆)\n"
+            "• Rusia 2018: 1 gol\n"
+            "• Brasil 2014: 4 goles (MVP)\n"
+            "• Sudáfrica 2010: 0 goles\n"
+            "• Alemania 2006: 1 gol\n\n"
+            "Total: 16 goles en 27 partidos. Messi anotó en 5 de sus 6 mundiales.\n\n"
             "Este mercado se resolverá como SÍ si Messi anota al menos 1 gol en el torneo."
         ),
         "category": MarketCategory.MUNDIAL,
         "type": MarketType.BINARY,
-        "probability_market": 74.00,
+        "probability_market": 99.00,
         "volume": 35600.0,
         "participants_count": 1680,
         "end_date": dt("2026-07-19"),
-        "status": MarketStatus.ACTIVE,
+        "status": MarketStatus.RESOLVED,
         "stats_data": {
             "historial_goles_messi": [
+                {"mundial": "USA/CAN/MEX 2026", "goles": 3, "asistencias": 0, "nota": "En curso ⚽⚽⚽"},
                 {"mundial": "Qatar 2022", "goles": 7, "asistencias": 3, "nota": "MVP 🏆"},
                 {"mundial": "Rusia 2018", "goles": 1, "asistencias": 0},
                 {"mundial": "Brasil 2014", "goles": 4, "asistencias": 1, "nota": "MVP (sin título)"},
                 {"mundial": "Sudáfrica 2010", "goles": 0, "asistencias": 2},
                 {"mundial": "Alemania 2006", "goles": 1, "asistencias": 1},
             ],
-            "forma_reciente": {
-                "Messi": ["⚽", "⚽⚽", "–", "⚽", "⚽"],
-                "descripcion": "Goles en últimos 5 partidos con Argentina/Inter Miami"
-            },
-            "probabilidad_ia": 74.0,
-            "dato_clave": "Messi anotó en 4 de sus 5 Mundiales. Total: 13 goles en 26 partidos mundialistas.",
+            "probabilidad_ia": 99.0,
+            "dato_clave": "RESUELTO: Messi anotó hat-trick vs Algeria el 16/06. Total: 16 goles mundialistas, récord igualado con Klose.",
         },
     },
     {
@@ -436,36 +464,30 @@ MUNDIAL_POLLS = [
     },
     # ── PARTIDO ESPECÍFICO ───────────────────────────────────────────────────
     {
-        "title": "¿Ganará Argentina su primer partido del Mundial 2026 vs Arabia Saudita?",
+        "fixture_id": 537401,
+        "title": "¿Ganará Argentina a Jordan en la fase de grupos del Mundial 2026?",
         "description": (
-            "El primer partido de Argentina es contra Arabia Saudita el 14 de junio en el SoFi Stadium de Los Ángeles. "
-            "En Qatar 2022, Arabia Saudita ganó 2-1 en la mayor sorpresa del torneo.\n\n"
-            "Dato estadístico: ese 2-1 fue el único cruce entre ambos en una Copa del Mundo y la única derrota argentina en Qatar 2022. "
-            "Argentina ganó los seis partidos restantes del torneo hasta levantar la copa.\n\n"
-            "Este mercado se resolverá como SÍ si Argentina gana el partido del 14 de junio (resultado a 90 minutos)."
+            "Tercer y último partido de Argentina en el Grupo J. Se juega el 27 de junio en el AT&T Stadium de Arlington, Texas.\n\n"
+            "Jordan clasifica a un Mundial por primera vez en su historia. Argentina llega como campeona defensora "
+            "con Messi en estado de gracia tras su hat-trick en el debut.\n\n"
+            "Este mercado se resolverá como SÍ si Argentina gana el partido (resultado a 90 minutos)."
         ),
         "category": MarketCategory.MUNDIAL,
         "type": MarketType.BINARY,
-        "probability_market": 76.00,
-        "volume": 26800.0,
-        "participants_count": 1230,
-        "end_date": dt("2026-06-14"),
+        "probability_market": 85.00,
+        "volume": 16200.0,
+        "participants_count": 720,
+        "end_date": dt("2026-06-27"),
         "status": MarketStatus.ACTIVE,
         "stats_data": {
-            "head_to_head": [
-                {"fecha": "Nov 2022", "resultado": "Arabia Saudita 2-1 Argentina", "tipo": "Qatar 2022 — Fase de grupos"},
+            "grupo_j": [
+                {"pais": "Argentina", "prob_clasificar": 92},
+                {"pais": "Austria", "prob_clasificar": 55},
+                {"pais": "Algeria", "prob_clasificar": 25},
+                {"pais": "Jordan", "prob_clasificar": 8},
             ],
-            "forma_reciente": {
-                "Argentina": ["W", "W", "W", "D", "W"],
-                "Arabia Saudita": ["W", "D", "W", "L", "W"],
-            },
-            "stats_torneo": {
-                "Argentina_eliminatorias": {"partidos": 18, "ganados": 12, "empatados": 4, "perdidos": 2, "goles_favor": 35, "goles_contra": 14},
-                "Arabia_eliminatorias": {"partidos": 18, "ganados": 11, "empatados": 3, "perdidos": 4},
-            },
-            "probabilidad_ia": 76.0,
-            "balance_h2h": {"Argentina": 0, "Empates": 0, "Arabia Saudita": 1},
-            "dato_clave": "El único antecedente es la derrota de Argentina en Qatar 2022. Argentina viene invicta en las últimas 20 fechas FIFA.",
+            "probabilidad_ia": 85.0,
+            "dato_clave": "Jordan debuta en un Mundial. Argentina es amplia favorita en el cierre de grupo.",
         },
     },
 ]
@@ -514,6 +536,7 @@ def run():
                 end_date=data["end_date"],
                 status=data["status"],
                 stats_data=data.get("stats_data"),
+                fixture_id=data.get("fixture_id"),
             )
             markets.append(m)
 

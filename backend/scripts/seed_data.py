@@ -170,14 +170,14 @@ def seed_markets(db: Session) -> list[Market]:
         },
         {
             "title": "La Ley de Bases será aprobada en el Congreso antes de mayo 2026",
-            "description": 'La llamada "Ley Ómnibus" o Ley de Bases es la principal reforma legislativa del gobierno de Milei. Su aprobación depende de negociaciones con bloques provinciales y moderados.\n\nEste mercado se resolverá como SÍ si la Ley de Bases (o una versión con más del 60% del articulado original) es aprobada por ambas cámaras antes del 1 de mayo de 2026.',
+            "description": 'La Ley de Bases y Puntos de Partida para la Libertad de los Argentinos (Ley 27.742) fue aprobada por el Congreso el 28 de junio de 2024 y promulgada el 8 de julio de 2024.\n\nLa ley declara emergencia pública en materia administrativa, económica, financiera y energética. Incluye el RIGI (Régimen de Incentivos para Grandes Inversiones), privatizaciones y reformas laborales.\n\nEste mercado se resolvió como SÍ: la Ley de Bases fue aprobada en junio 2024, antes de mayo 2026.',
             "category": MarketCategory.POLITICA,
             "type": MarketType.BINARY,
-            "probability_market": 62.00,
+            "probability_market": 99.00,
             "volume": 10800.0,
             "participants_count": 189,
             "end_date": parse_date("2026-05-01"),
-            "status": MarketStatus.ACTIVE,
+            "status": MarketStatus.RESOLVED,
         },
         {
             "title": "Elecciones México 2024: Claudia Sheinbaum ganará presidencia",

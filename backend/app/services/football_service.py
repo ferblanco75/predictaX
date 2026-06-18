@@ -280,6 +280,8 @@ def sync_fixtures_to_db(season: int = 2026) -> int:
     count = 0
     try:
         for f in fixtures:
+            if not f.get("home_team") or not f.get("away_team"):
+                continue
             existing = db.query(FootballFixture).filter(FootballFixture.id == f["id"]).first()
             if existing:
                 existing.status = f["status"]
