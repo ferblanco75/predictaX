@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -277,7 +277,7 @@ function LogoutBanner() {
   );
 }
 
-export default function AuthPage() {
+function AuthPageContent() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get('ref');
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
@@ -498,5 +498,13 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageContent />
+    </Suspense>
   );
 }
