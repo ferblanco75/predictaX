@@ -16,6 +16,7 @@ class UserCreate(BaseModel):
     privacy_accepted: bool
     is_adult: bool
     marketing_opt_in: bool = False
+    referral_code: str | None = Field(default=None, max_length=16)
     legal_consent_version: str = Field(
         default=settings.LEGAL_CONSENT_VERSION,
         max_length=32,
@@ -169,3 +170,10 @@ class OTPVerifyResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     is_new_user: bool
+
+
+class ReferralResponse(BaseModel):
+    referral_code: str
+    referral_link: str
+    referred_count: int
+    points_earned: float

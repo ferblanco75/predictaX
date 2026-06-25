@@ -31,12 +31,12 @@ function formatEndDate(endDate: string): string {
 export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const [copied, setCopied] = useState(false);
   const { isLoggedIn } = useAppStore();
-  const { data: fetchedMarket, isLoading, isError } = useMarket(id, { enabled: !initialMarket });
+  const { data: fetchedMarket, isLoading, isError } = useMarket(id);
   const { data: allPredictions = [] } = useUserPredictions();
-  const market = initialMarket ?? fetchedMarket;
+  const market = fetchedMarket ?? initialMarket;
   const myPredictions = allPredictions.filter((p) => p.market_id === id);
 
-  if (!initialMarket && isLoading) {
+  if (!market && isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 space-y-6">

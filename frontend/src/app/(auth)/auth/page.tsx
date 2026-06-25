@@ -2,6 +2,7 @@
 
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -277,6 +278,8 @@ function LogoutBanner() {
 }
 
 export default function AuthPage() {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get('ref');
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
   // After successful register, show OTP code step for this email
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
@@ -315,6 +318,7 @@ export default function AuthPage() {
         is_adult: isAdult,
         marketing_opt_in: marketingOptIn,
         legal_consent_version: LEGAL_CONSENT_VERSION,
+        ...(refCode ? { referral_code: refCode } : {}),
       },
       { onSuccess: ({ email: e }) => setRegisteredEmail(e) }
     );
@@ -343,7 +347,9 @@ export default function AuthPage() {
           <CardHeader>
             <CardTitle>Bienvenido</CardTitle>
             <CardDescription>
-              Inicia sesión o crea una cuenta para comenzar a predecir
+              {refCode
+                ? 'Te invitó un amigo — ambos ganan puntos al registrarte'
+                : 'Inicia sesión o crea una cuenta para comenzar a predecir'}
             </CardDescription>
           </CardHeader>
           <CardContent>

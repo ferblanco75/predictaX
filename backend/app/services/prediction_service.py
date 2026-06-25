@@ -9,7 +9,7 @@ from app.models.market import MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
 from app.schemas.prediction import PredictionCreate
-from app.services import market_service, snapshot_service
+from app.services import market_service, referral_service, snapshot_service
 
 
 def calculate_market_probability(predictions: List[Prediction]) -> float:
@@ -126,6 +126,13 @@ def create_prediction(
     # Create snapshot if probability changed significantly (>1%)
     if abs(new_probability - old_probability) > 1.0:
         snapshot_service.create_snapshot(db, market.id, new_probability)
+
+    # Award referrer bonus on the referred user's first prediction
+    user_prediction_count = (
+        db.query(Prediction).filter(Prediction.user_id == user.id).count()
+    )
+    if user_prediction_count == 1:
+        referral_service.award_referrer_bonus_if_eligible(db, user)
 
     return prediction
 

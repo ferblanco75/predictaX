@@ -91,23 +91,12 @@ function MarketsContent() {
     const normalizedSearch = searchQuery.trim().toLowerCase();
     let searchMatch = true;
     if (normalizedSearch) {
-      // Support % as wildcard: "arg%camp" → /arg.*camp/i
       const hasWildcard = normalizedSearch.includes('%');
       if (hasWildcard) {
         const pattern = normalizedSearch.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
-        const re = new RegExp(pattern, 'i');
-        searchMatch = re.test(m.title) || re.test(m.description);
+        searchMatch = new RegExp(pattern, 'i').test(m.title);
       } else {
-        // Title match is the primary relevance signal (substring match).
-        // Description only counts as a match on whole-word boundaries, to avoid
-        // matching unrelated markets that happen to share a common word.
-        const titleMatch = m.title.toLowerCase().includes(normalizedSearch);
-        const wordBoundaryRe = new RegExp(
-          `\\b${normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
-          'i'
-        );
-        const descriptionMatch = wordBoundaryRe.test(m.description);
-        searchMatch = titleMatch || descriptionMatch;
+        searchMatch = m.title.toLowerCase().includes(normalizedSearch);
       }
     }
     return catMatch && searchMatch;
@@ -214,7 +203,7 @@ function MarketsContent() {
                         setCurrentPage(1);
                         router.push('/markets');
                       }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
                         selectedCategory === 'all'
                           ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
                           : 'hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -230,7 +219,7 @@ function MarketsContent() {
                           setCurrentPage(1);
                           router.push('/markets');
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 ${
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 min-h-[44px] ${
                           cat.id === 'mundial'
                             ? selectedCategory === 'mundial'
                               ? 'bg-green-600 text-white'
@@ -263,7 +252,7 @@ function MarketsContent() {
                           setStatus(s.value as 'all' | 'active' | 'resolved');
                           setCurrentPage(1);
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
                           selectedStatus === s.value
                             ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-800'

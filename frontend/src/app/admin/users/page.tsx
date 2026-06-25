@@ -289,6 +289,9 @@ export default function AdminUsersPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
       );
+      if (pointsModal.userId === user.id) {
+        useAppStore.getState().login({ ...user, points: updated.points });
+      }
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
       setNotice({
         variant: 'success',

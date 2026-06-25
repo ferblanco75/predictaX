@@ -7,7 +7,7 @@ from app.core.rate_limit import enforce_rate_limit
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.user import OTPRequest, OTPRequestResponse, OTPVerify, OTPVerifyResponse, Token, UserCreate, UserLogin, UserResponse
-from app.services import auth_service, otp_service
+from app.services import auth_service, otp_service, referral_service
 
 router = APIRouter()
 
@@ -38,6 +38,9 @@ def register(user_data: UserCreate, request: Request, db: Session = Depends(get_
         settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
     )
     user = auth_service.create_user(db, user_data)
+    if user_data.referral_code:
+        referral_service.process_referral_on_register(db, user, user_data.referral_code)
+        db.refresh(user)
     return user
 
 

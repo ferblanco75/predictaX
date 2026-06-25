@@ -4,7 +4,7 @@ import type { FormEvent } from 'react';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Users, Trophy, Smartphone, Bitcoin, X, Coins, Shield } from 'lucide-react';
+import { Search, TrendingUp, Users, UserPlus, Trophy, Smartphone, Bitcoin, X, Coins, Shield } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -116,6 +116,14 @@ export function Navbar() {
                     <span className="hidden sm:inline text-xs font-semibold">Admin</span>
                   </Link>
                 )}
+                <Link
+                  href="/referrals"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
+                  title="Invitar amigos"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline text-xs font-semibold">Invitar</span>
+                </Link>
                 <span className="hidden sm:block text-sm font-medium text-muted-foreground">
                   {user.username}
                 </span>

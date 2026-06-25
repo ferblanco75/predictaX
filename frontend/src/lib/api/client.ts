@@ -18,14 +18,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       const hadToken = !!localStorage.getItem('token');
       localStorage.removeItem('token');
-      // Clear Zustand store so isLoggedIn becomes false immediately
       import('@/lib/stores/app-store').then(({ useAppStore }) => {
         useAppStore.getState().logout();
       });
-      if (hadToken) {
-        sessionStorage.setItem('neuropredict_logout_reason', 'expired');
+      if (!window.location.pathname.startsWith('/auth')) {
+        if (hadToken) {
+          sessionStorage.setItem('neuropredict_logout_reason', 'expired');
+        }
+        window.location.href = '/auth';
       }
-      window.location.href = '/auth';
     }
     // Surface backend detail message as the error message
     const detail = error.response?.data?.detail;

@@ -12,7 +12,8 @@ from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.schemas.user import CookieConsentUpdate, UserDeleteRequest, UserResponse
+from app.schemas.user import CookieConsentUpdate, ReferralResponse, UserDeleteRequest, UserResponse
+from app.services import referral_service
 
 router = APIRouter()
 
@@ -48,6 +49,21 @@ def get_leaderboard(
     )
 
     return users
+
+
+@router.get("/me/referral", response_model=ReferralResponse)
+def get_my_referral(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    stats = referral_service.get_referral_stats(db, current_user)
+    base_url = "https://neuropredict.com"
+    return ReferralResponse(
+        referral_code=stats["referral_code"],
+        referral_link=f"{base_url}/auth?ref={stats['referral_code']}",
+        referred_count=stats["referred_count"],
+        points_earned=stats["points_earned"],
+    )
 
 
 @router.get("/me/data-export")

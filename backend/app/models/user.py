@@ -35,6 +35,7 @@ class User(Base):
     cookie_consent_marketing = Column(Boolean, default=False, nullable=False)
     cookie_consent_version = Column(String(32), nullable=True)
     cookie_consent_updated_at = Column(DateTime(timezone=True), nullable=True)
+    referral_code = Column(String(16), unique=True, index=True, nullable=True)
 
     # Relationships
     predictions = relationship(

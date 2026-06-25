@@ -329,7 +329,7 @@ export function CookieSettingsButton() {
   return (
     <button
       type="button"
-      className="hover:text-gray-900"
+      className="hover:text-gray-900 dark:hover:text-gray-100"
       onClick={() => window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT))}
     >
       Preferencias de privacidad

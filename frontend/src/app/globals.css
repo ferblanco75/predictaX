@@ -127,3 +127,33 @@
     @apply font-sans;
   }
 }
+
+/* iOS safe area for bottom navigation */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent pull-to-refresh interfering with scrollable content */
+@media (max-width: 767px) {
+  html {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* Disable text selection on nav elements for app-like feel */
+nav button, nav a {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scroll on mobile */
+@media (max-width: 767px) {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

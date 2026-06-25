@@ -10,6 +10,7 @@ from app.models.market import Market, MarketCategory, MarketStatus, MarketType
 from app.models.market_snapshot import MarketSnapshot
 from app.models.otp_code import OTPCode
 from app.models.prediction import Prediction
+from app.models.referral import Referral
 from app.models.user import User
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "AIUsageLog",
     "ActivityLog",
     "OTPCode",
+    "Referral",
 ]

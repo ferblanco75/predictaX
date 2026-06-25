@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -7,6 +7,8 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
 import { CookieConsentManager } from '@/components/privacy/CookieConsentManager';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { SessionValidator } from '@/components/providers/SessionValidator';
 import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
@@ -19,9 +21,30 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: 'NeuroPredict',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'NeuroPredict',
+  },
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/apple-touch-icon.png',
+  },
   title: {
     default: 'NeuroPredict - Predicciones Mundial 2026 y mercados de América Latina',
     template: '%s | NeuroPredict',
@@ -103,9 +126,11 @@ export default function RootLayout({
               speed={200}
               shadow="0 0 10px #3b82f6,0 0 5px #3b82f6"
             />
+            <SessionValidator />
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
             <Footer />
+            <MobileBottomNav />
           </ThemeProvider>
         </QueryProvider>
         <CookieConsentManager />
