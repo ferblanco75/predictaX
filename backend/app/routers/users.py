@@ -12,6 +12,7 @@ from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
+from app.models.prediction import Prediction
 from app.schemas.user import CookieConsentUpdate, ReferralResponse, UserDeleteRequest, UserResponse
 from app.services import referral_service
 
@@ -64,6 +65,68 @@ def get_my_referral(
         referred_count=stats["referred_count"],
         points_earned=stats["points_earned"],
     )
+
+
+@router.get("/me/profile")
+def get_my_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    predictions = (
+        db.query(Prediction)
+        .filter(Prediction.user_id == current_user.id)
+        .order_by(Prediction.created_at.desc())
+        .all()
+    )
+
+    total_wagered = sum(p.points_wagered for p in predictions)
+    won = [p for p in predictions if p.status == "won"]
+    lost = [p for p in predictions if p.status == "lost"]
+    pending = [p for p in predictions if p.status == "pending"]
+
+    total_won = sum(
+        (p.points_wagered / ((p.probability_at_bet or 50) / 100.0))
+        for p in won
+    )
+    total_lost = sum(p.points_wagered for p in lost)
+
+    first_prediction = predictions[-1].created_at.isoformat() if predictions else None
+
+    return {
+        "user": {
+            "id": str(current_user.id),
+            "username": current_user.username,
+            "email": current_user.email,
+            "points": current_user.points,
+            "role": current_user.role,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+        },
+        "stats": {
+            "total_predictions": len(predictions),
+            "won": len(won),
+            "lost": len(lost),
+            "pending": len(pending),
+            "total_wagered": round(total_wagered, 2),
+            "total_won": round(total_won, 2),
+            "total_lost": round(total_lost, 2),
+            "net": round(total_won - total_lost, 2),
+            "win_rate": round(len(won) / max(len(won) + len(lost), 1) * 100, 1),
+            "first_prediction_at": first_prediction,
+        },
+        "predictions": [
+            {
+                "id": str(p.id),
+                "market_id": str(p.market_id),
+                "market_title": p.market.title if p.market else None,
+                "probability": p.probability,
+                "points_wagered": p.points_wagered,
+                "potential_gain": p.potential_gain,
+                "status": p.status,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in predictions
+        ],
+    }
 
 
 @router.get("/me/data-export")

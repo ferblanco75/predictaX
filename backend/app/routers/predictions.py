@@ -69,7 +69,20 @@ def get_user_predictions(
         401: If not authenticated
     """
     predictions = prediction_service.get_user_predictions(db, current_user.id)
-    return predictions
+    return [
+        PredictionResponse(
+            id=p.id,
+            user_id=p.user_id,
+            market_id=p.market_id,
+            market_title=p.market.title if p.market else None,
+            probability=p.probability,
+            points_wagered=p.points_wagered,
+            potential_gain=p.potential_gain,
+            status=p.status,
+            created_at=p.created_at,
+        )
+        for p in predictions
+    ]
 
 
 @router.get("/market/{market_id}", response_model=List[PublicMarketPredictionResponse])

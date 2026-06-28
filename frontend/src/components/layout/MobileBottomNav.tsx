@@ -41,7 +41,7 @@ export function MobileBottomNav() {
                 ? pathname.includes(item.match) || (pathname === '/markets' && typeof window !== 'undefined' && window.location.search.includes(item.match))
                 : pathname.startsWith(item.href.split('?')[0]);
 
-          const href = item.authAware && isLoggedIn ? '/referrals' : item.href;
+          const href = item.authAware && isLoggedIn ? '/profile' : item.href;
           const label = item.authAware && isLoggedIn ? 'Perfil' : item.label;
           const Icon = item.icon;
 

@@ -124,9 +124,12 @@ export function Navbar() {
                   <UserPlus className="h-4 w-4" />
                   <span className="hidden sm:inline text-xs font-semibold">Invitar</span>
                 </Link>
-                <span className="hidden sm:block text-sm font-medium text-muted-foreground">
+                <Link
+                  href="/profile"
+                  className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {user.username}
-                </span>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"

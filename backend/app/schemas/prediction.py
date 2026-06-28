@@ -22,6 +22,7 @@ class PredictionResponse(BaseModel):
     id: UUID
     user_id: UUID
     market_id: UUID
+    market_title: str | None = None
     probability: float
     points_wagered: float
     potential_gain: float | None = None

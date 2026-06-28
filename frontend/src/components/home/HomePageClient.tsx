@@ -9,7 +9,6 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { MundialHero } from '@/components/markets/MundialHero';
-import { getTrendingMarkets } from '@/lib/api/markets';
 import { useMarkets } from '@/lib/hooks/useMarkets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
@@ -25,7 +24,7 @@ const fadeInUp = {
 };
 
 export function HomePageClient() {
-  const trendingMarkets = getTrendingMarkets(6);
+  const { data: trendingMarkets = [] } = useMarkets({ limit: 6 });
   const { data: mundialPolls = [] } = useMarkets({ category: 'mundial', limit: 3 });
   const isLoggedIn = useAppStore((state) => state.isLoggedIn);
 
