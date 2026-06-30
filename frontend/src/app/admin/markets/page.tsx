@@ -110,6 +110,7 @@ export default function AdminMarketsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [notice, setNotice] = useState<NoticeState | null>(null);
+  const [modalNotice, setModalNotice] = useState<NoticeState | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmActionState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -232,20 +233,24 @@ export default function AdminMarketsPage() {
   const handleCreateSave = async () => {
     if (!user?.token) return;
     if (!createModal.title.trim()) {
-      setNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
+      setModalNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
     }
     if (createModal.title.trim().length < 10) {
-      setNotice({ variant: 'error', title: 'Título muy corto', message: 'El título debe tener al menos 10 caracteres.' }); return;
+      setModalNotice({ variant: 'error', title: 'Título muy corto', message: 'El título debe tener al menos 10 caracteres.' }); return;
     }
     if (!createModal.description.trim() || createModal.description.trim().length < 50) {
-      setNotice({ variant: 'error', title: 'Descripción muy corta', message: 'La descripción debe tener al menos 50 caracteres.' }); return;
+      setModalNotice({ variant: 'error', title: 'Descripción muy corta', message: 'La descripción debe tener al menos 50 caracteres.' }); return;
     }
     if (!createModal.end_date || new Date(createModal.end_date) <= new Date()) {
-      setNotice({ variant: 'error', title: 'Fecha inválida', message: 'La fecha de cierre debe ser posterior a ahora' }); return;
+      setModalNotice({ variant: 'error', title: 'Fecha inválida', message: 'La fecha de cierre debe ser posterior a ahora' }); return;
+    }
+    if (new Date(createModal.end_date).getFullYear() > new Date().getFullYear() + 10) {
+      setModalNotice({ variant: 'error', title: 'Año inválido', message: 'El año de cierre no puede ser mayor a 10 años en el futuro.' }); return;
     }
     if (createModal.probability < 1 || createModal.probability > 99) {
-      setNotice({ variant: 'error', title: 'Probabilidad inválida', message: 'Debe estar entre 1% y 99%' }); return;
+      setModalNotice({ variant: 'error', title: 'Probabilidad inválida', message: 'Debe estar entre 1% y 99%' }); return;
     }
+    setModalNotice(null);
     setActionLoading('creating');
     try {
       const created = await createMarket(user.token, {
@@ -260,7 +265,7 @@ export default function AdminMarketsPage() {
       setCreateModal(EMPTY_CREATE);
       setNotice({ variant: 'success', title: 'Poll creado', message: created.title });
     } catch (error) {
-      setNotice({ variant: 'error', title: 'No se pudo crear el mercado', message: getErrorMessage(error) });
+      setModalNotice({ variant: 'error', title: 'No se pudo crear el mercado', message: getErrorMessage(error) });
     } finally {
       setActionLoading(null);
     }
@@ -305,6 +310,10 @@ export default function AdminMarketsPage() {
 
   const handleEditSave = async () => {
     if (!user?.token) return;
+    if (editModal.end_date && new Date(editModal.end_date).getFullYear() > new Date().getFullYear() + 10) {
+      setModalNotice({ variant: 'error', title: 'Año inválido', message: 'El año de cierre no puede ser mayor a 10 años en el futuro.' }); return;
+    }
+    setModalNotice(null);
     setActionLoading(editModal.marketId);
     try {
       const updated = await editMarket(user.token, editModal.marketId, {
@@ -327,7 +336,7 @@ export default function AdminMarketsPage() {
         message: updated.title,
       });
     } catch (error) {
-      setNotice({
+      setModalNotice({
         variant: 'error',
         title: 'No se pudo actualizar el mercado',
         message: getErrorMessage(error),
@@ -367,7 +376,7 @@ export default function AdminMarketsPage() {
             Expirar vencidos
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
+            onClick={(e) => { e.stopPropagation(); setModalNotice(null); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
@@ -527,6 +536,7 @@ export default function AdminMarketsPage() {
                             >
                               <button
                                 onClick={() => {
+                                  setModalNotice(null);
                                   setEditModal({
                                     open: true,
                                     marketId: m.id,
@@ -655,13 +665,23 @@ export default function AdminMarketsPage() {
       {editModal.open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' })}
+          onClick={() => { setModalNotice(null); setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' }); }}
         >
           <div
-            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-96 shadow-xl"
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-96 shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold mb-4">Editar mercado</h3>
+            {modalNotice && (
+              <div className="mb-4">
+                <AdminNotice
+                  variant={modalNotice.variant}
+                  title={modalNotice.title}
+                  message={modalNotice.message}
+                  onDismiss={() => setModalNotice(null)}
+                />
+              </div>
+            )}
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Título</label>
@@ -691,6 +711,7 @@ export default function AdminMarketsPage() {
                   type="datetime-local"
                   value={editModal.end_date}
                   min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
                   onChange={(e) => setEditModal((prev) => ({ ...prev, end_date: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
@@ -698,9 +719,10 @@ export default function AdminMarketsPage() {
             </div>
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() =>
-                  setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' })
-                }
+                onClick={() => {
+                  setModalNotice(null);
+                  setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' });
+                }}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar
@@ -721,13 +743,22 @@ export default function AdminMarketsPage() {
       {createModal.open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setCreateModal(EMPTY_CREATE)}
+          onClick={() => { setModalNotice(null); setCreateModal(EMPTY_CREATE); }}
         >
           <div
-            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-lg shadow-xl space-y-4"
+            className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold text-lg">Crear nuevo poll</h3>
+
+            {modalNotice && (
+              <AdminNotice
+                variant={modalNotice.variant}
+                title={modalNotice.title}
+                message={modalNotice.message}
+                onDismiss={() => setModalNotice(null)}
+              />
+            )}
 
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -791,6 +822,7 @@ export default function AdminMarketsPage() {
                   type="datetime-local"
                   value={createModal.end_date}
                   min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
                   onChange={(e) => setCreateModal((p) => ({ ...p, end_date: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
@@ -810,7 +842,7 @@ export default function AdminMarketsPage() {
 
             <div className="flex gap-2 justify-end pt-2">
               <button
-                onClick={() => setCreateModal(EMPTY_CREATE)}
+                onClick={() => { setModalNotice(null); setCreateModal(EMPTY_CREATE); }}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar

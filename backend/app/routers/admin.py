@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
 
@@ -32,11 +32,24 @@ class UserPointsUpdate(BaseModel):
 class MarketResolveRequest(BaseModel):
     resolution_value: bool  # True = YES, False = NO
 
+def _validate_end_date_year(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return value
+    max_year = datetime.now().year + 10
+    if value.year > max_year:
+        raise ValueError(f"El año de cierre no puede ser mayor a {max_year}")
+    return value
+
 class MarketEditRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     end_date: Optional[datetime] = None
     category: Optional[str] = None
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, value: Optional[datetime]) -> Optional[datetime]:
+        return _validate_end_date_year(value)
 
 class MarketCreateRequest(BaseModel):
     title: str
@@ -45,6 +58,11 @@ class MarketCreateRequest(BaseModel):
     type: str = "binary"
     end_date: datetime
     probability: float = 50.0
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, value: datetime) -> datetime:
+        return _validate_end_date_year(value)
 
 router = APIRouter(
     prefix="/api/admin",
@@ -842,14 +860,16 @@ def update_user_role(user_id: str, body: UserRoleUpdate, db: Session = Depends(g
 
 @router.patch("/users/{user_id}/points")
 def update_user_points(user_id: str, body: UserPointsUpdate, db: Session = Depends(get_db)):
-    """Adjust a user's points balance."""
+    """Adjust a user's points balance. No-op if the new value matches the current one."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.points == body.points:
+        return {"id": str(user.id), "points": user.points, "changed": False}
     user.points = body.points
     db.commit()
     db.refresh(user)
-    return {"id": str(user.id), "points": user.points}
+    return {"id": str(user.id), "points": user.points, "changed": True}
 
 
 # --------------- Market Management Actions ---------------

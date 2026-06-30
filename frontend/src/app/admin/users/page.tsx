@@ -283,6 +283,15 @@ export default function AdminUsersPage() {
       });
       return;
     }
+    if (newPoints === pointsModal.currentPoints) {
+      setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
+      setNotice({
+        variant: 'info',
+        title: 'Sin cambios',
+        message: `${pointsModal.username} ya tiene ${Math.round(newPoints).toLocaleString()} puntos. No se realizó ninguna operación.`,
+      });
+      return;
+    }
     setActionLoading(pointsModal.userId);
     try {
       const updated = await updateUserPoints(user.token, pointsModal.userId, newPoints);
