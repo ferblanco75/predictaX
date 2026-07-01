@@ -327,34 +327,51 @@ def get_markets_ranking(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    """Get markets ranked by activity."""
-    markets = db.query(Market).filter(Market.status == MarketStatus.ACTIVE).all()
+    """Get markets ranked by activity (single query with subquery for prediction counts)."""
+    from sqlalchemy import outerjoin, label
+    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
-    result = []
-    for m in markets:
-        pred_count = db.query(func.count(Prediction.id)).filter(
-            Prediction.market_id == m.id
-        ).scalar()
-        result.append({
+    pred_count_subq = (
+        db.query(
+            Prediction.market_id,
+            func.count(Prediction.id).label("pred_count"),
+        )
+        .group_by(Prediction.market_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Market,
+            func.coalesce(pred_count_subq.c.pred_count, 0).label("pred_count"),
+        )
+        .outerjoin(pred_count_subq, Market.id == pred_count_subq.c.market_id)
+        .filter(Market.status == MarketStatus.ACTIVE)
+        .all()
+    )
+
+    sort_col = {
+        "most_active": lambda x: -x[1],
+        "least_active": lambda x: x[1],
+        "most_volume": lambda x: -float(x[0].volume),
+        "most_participants": lambda x: -x[0].participants_count,
+    }.get(sort, lambda x: -x[1])
+
+    rows.sort(key=sort_col)
+
+    return [
+        {
             "id": str(m.id),
             "title": m.title,
             "category": m.category.value,
             "probability": float(m.probability_market),
-            "predictions_count": pred_count,
+            "predictions_count": int(pred_count),
             "volume": float(m.volume),
             "participants": m.participants_count,
             "end_date": m.end_date.isoformat() if m.end_date else None,
-        })
-
-    sort_key = {
-        "most_active": lambda x: -x["predictions_count"],
-        "least_active": lambda x: x["predictions_count"],
-        "most_volume": lambda x: -x["volume"],
-        "most_participants": lambda x: -x["participants"],
-    }.get(sort, lambda x: -x["predictions_count"])
-
-    result.sort(key=sort_key)
-    return result[:limit]
+        }
+        for m, pred_count in rows[:limit]
+    ]
 
 
 # --------------- Predictions ---------------

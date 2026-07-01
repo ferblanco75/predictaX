@@ -1,13 +1,25 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 async function adminFetch(endpoint: string, token: string) {
-  const res = await fetch(`${API_URL}/admin${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    throw new Error(`Admin API error: ${res.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${API_URL}/admin${endpoint}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Admin API error: ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('La solicitud tardó demasiado. Verificá tu conexión e intentá de nuevo.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 async function adminMutate(
