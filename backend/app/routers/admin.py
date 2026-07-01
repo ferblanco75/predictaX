@@ -217,6 +217,17 @@ def list_users(
 
     users = query.offset(offset).limit(limit).all()
 
+    user_ids = [u.id for u in users]
+    pred_counts: dict = {}
+    if user_ids:
+        rows_pc = (
+            db.query(Prediction.user_id, func.count(Prediction.id).label("cnt"))
+            .filter(Prediction.user_id.in_(user_ids))
+            .group_by(Prediction.user_id)
+            .all()
+        )
+        pred_counts = {str(r.user_id): r.cnt for r in rows_pc}
+
     return {
         "data": [
             {
@@ -226,7 +237,7 @@ def list_users(
                 "role": u.role,
                 "points": u.points,
                 "is_active": u.is_active,
-                "predictions_count": len(u.predictions),
+                "predictions_count": pred_counts.get(str(u.id), 0),
                 "created_at": u.created_at.isoformat() if u.created_at else None,
             }
             for u in users
@@ -470,9 +481,15 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
         .all()
     )
 
+    top_market_ids = [row.market_id for row in top_markets]
+    markets_map: dict = {}
+    if top_market_ids:
+        markets_fetched = db.query(Market).filter(Market.id.in_(top_market_ids)).all()
+        markets_map = {str(m.id): m for m in markets_fetched}
+
     top_markets_data = []
     for row in top_markets:
-        market = db.query(Market).filter(Market.id == row.market_id).first()
+        market = markets_map.get(str(row.market_id))
         top_markets_data.append({
             "market_id": str(row.market_id),
             "title": market.title if market else "Unknown",
@@ -574,9 +591,15 @@ def get_top_active_users(
         .all()
     )
 
+    top_user_ids = [row.user_id for row in top]
+    users_map: dict = {}
+    if top_user_ids:
+        users_fetched = db.query(User).filter(User.id.in_(top_user_ids)).all()
+        users_map = {str(u.id): u for u in users_fetched}
+
     result = []
     for row in top:
-        user = db.query(User).filter(User.id == row.user_id).first()
+        user = users_map.get(str(row.user_id))
         if user:
             result.append({
                 "id": str(user.id),
@@ -830,10 +853,23 @@ def get_recent_activity(
         .all()
     )
 
+    pred_user_ids = list({p.user_id for p in recent_predictions})
+    pred_market_ids = list({p.market_id for p in recent_predictions})
+
+    users_by_id: dict = {}
+    if pred_user_ids:
+        fetched_users = db.query(User).filter(User.id.in_(pred_user_ids)).all()
+        users_by_id = {str(u.id): u for u in fetched_users}
+
+    markets_by_id: dict = {}
+    if pred_market_ids:
+        fetched_markets = db.query(Market).filter(Market.id.in_(pred_market_ids)).all()
+        markets_by_id = {str(m.id): m for m in fetched_markets}
+
     feed = []
     for p in recent_predictions:
-        user = db.query(User).filter(User.id == p.user_id).first()
-        market = db.query(Market).filter(Market.id == p.market_id).first()
+        user = users_by_id.get(str(p.user_id))
+        market = markets_by_id.get(str(p.market_id))
         feed.append({
             "type": "prediction",
             "user": user.username if user else "unknown",
