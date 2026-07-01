@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import { AdminEmptyState, AdminErrorState } from '@/components/admin/AdminState';
 import { getSitePerformance } from '@/lib/api/admin';
 import { Activity, AlertTriangle, Clock, Zap, Server } from 'lucide-react';
@@ -28,17 +28,17 @@ function LatencyBadge({ ms }: { ms: number }) {
 }
 
 export default function AdminPerformancePage() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [data, setData] = useState<Performance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadPerformance = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     setLoading(true);
     setError('');
     try {
-      const performance = await getSitePerformance(user.token, 7);
+      const performance = await getSitePerformance(token, 7);
       setData(performance);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar performance.');
@@ -51,8 +51,8 @@ export default function AdminPerformancePage() {
     void loadPerformance();
 
     const interval = setInterval(() => {
-      if (user?.token)
-        getSitePerformance(user.token, 7)
+      if (token)
+        getSitePerformance(token, 7)
           .then(setData)
           .catch(() => {
             setError('No se pudo refrescar performance.');
@@ -60,7 +60,7 @@ export default function AdminPerformancePage() {
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token]);
+  }, [token]);
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import { AdminEmptyState } from '@/components/admin/AdminState';
 import {
   getOverview,
@@ -164,7 +164,7 @@ function timeAgo(timestamp: string): string {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [data, setData] = useState<Overview | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -173,12 +173,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!user?.token) return;
+    if (!token) return;
     Promise.all([
-      getOverview(user.token),
-      getTopActiveUsers(user.token, 30, 5),
-      getRecentActivity(user.token, 10),
-      getCategoryInterest(user.token, 30),
+      getOverview(token),
+      getTopActiveUsers(token, 30, 5),
+      getRecentActivity(token, 10),
+      getCategoryInterest(token, 30),
     ])
       .then(([overview, users, feed, cats]) => {
         setData(overview);
@@ -190,8 +190,8 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      if (!user?.token) return;
-      Promise.all([getOverview(user.token), getRecentActivity(user.token, 10)])
+      if (!token) return;
+      Promise.all([getOverview(token), getRecentActivity(token, 10)])
         .then(([overview, feed]) => {
           setData(overview);
           setActivity(feed);
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
         .catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
-  }, [user?.token]);
+  }, [token]);
 
   if (loading) {
     return (

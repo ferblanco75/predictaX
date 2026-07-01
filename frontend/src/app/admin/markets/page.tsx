@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import {
   AdminConfirmModal,
   AdminEmptyState,
@@ -105,6 +106,7 @@ const categoryColors: Record<string, string> = {
 
 export default function AdminMarketsPage() {
   const { user } = useAppStore();
+  const token = useAdminToken();
   const [markets, setMarkets] = useState<MarketRanking[]>([]);
   const [sort, setSort] = useState('most_active');
   const [loading, setLoading] = useState(true);
@@ -133,11 +135,11 @@ export default function AdminMarketsPage() {
   const [createModal, setCreateModal] = useState<CreateModalState>(EMPTY_CREATE);
 
   const loadMarkets = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     setLoading(true);
     setLoadError('');
     try {
-      const ranking = await getMarketsRanking(user.token, sort, 50);
+      const ranking = await getMarketsRanking(token, sort, 50);
       setMarkets(ranking);
     } catch (error) {
       setLoadError(getErrorMessage(error));
@@ -149,14 +151,14 @@ export default function AdminMarketsPage() {
   useEffect(() => {
     void loadMarkets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token, sort]);
+  }, [token, sort]);
 
   const handleResolve = async (resolutionValue: boolean) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(resolveModal.marketId);
     setResolveModal({ open: false, marketId: '', title: '' });
     try {
-      const updated = await resolveMarket(user.token, resolveModal.marketId, resolutionValue);
+      const updated = await resolveMarket(token, resolveModal.marketId, resolutionValue);
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
@@ -173,12 +175,12 @@ export default function AdminMarketsPage() {
   };
 
   const handleDelete = async (marketId: string, title: string, predictionsCount: number) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(marketId);
     setOpenMenu(null);
     setConfirmAction(null);
     try {
-      await deleteMarket(user.token, marketId);
+      await deleteMarket(token, marketId);
       setMarkets((prev) => prev.filter((m) => m.id !== marketId));
       setNotice({ variant: 'success', title: 'Mercado eliminado', message: `"${title}" y ${predictionsCount} predicciones eliminadas.` });
     } catch (error) {
@@ -189,12 +191,12 @@ export default function AdminMarketsPage() {
   };
 
   const handleUnresolve = async (marketId: string, title: string) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(marketId);
     setOpenMenu(null);
     setConfirmAction(null);
     try {
-      const res = await unresolveMarket(user.token, marketId);
+      const res = await unresolveMarket(token, marketId);
       setMarkets((prev) => prev.map((m) => m.id === marketId ? { ...m, status: 'active' } : m));
       setNotice({
         variant: 'success',
@@ -231,7 +233,7 @@ export default function AdminMarketsPage() {
   };
 
   const handleCreateSave = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     if (!createModal.title.trim()) {
       setModalNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
     }
@@ -253,7 +255,7 @@ export default function AdminMarketsPage() {
     setModalNotice(null);
     setActionLoading('creating');
     try {
-      const created = await createMarket(user.token, {
+      const created = await createMarket(token, {
         title: createModal.title,
         description: createModal.description,
         category: createModal.category,
@@ -272,12 +274,12 @@ export default function AdminMarketsPage() {
   };
 
   const handleCancel = async (marketId: string, title: string) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(marketId);
     setOpenMenu(null);
     setConfirmAction(null);
     try {
-      const updated = await cancelMarket(user.token, marketId);
+      const updated = await cancelMarket(token, marketId);
       setMarkets((prev) =>
         prev.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m))
       );
@@ -309,14 +311,14 @@ export default function AdminMarketsPage() {
   };
 
   const handleEditSave = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     if (editModal.end_date && new Date(editModal.end_date).getFullYear() > new Date().getFullYear() + 10) {
       setModalNotice({ variant: 'error', title: 'Año inválido', message: 'El año de cierre no puede ser mayor a 10 años en el futuro.' }); return;
     }
     setModalNotice(null);
     setActionLoading(editModal.marketId);
     try {
-      const updated = await editMarket(user.token, editModal.marketId, {
+      const updated = await editMarket(token, editModal.marketId, {
         title: editModal.title,
         description: editModal.description,
         category: editModal.category || undefined,
@@ -361,9 +363,9 @@ export default function AdminMarketsPage() {
           <button
             onClick={async (e) => {
               e.stopPropagation();
-              if (!user?.token) return;
+              if (!token) return;
               try {
-                const res = await expirePastMarkets(user.token);
+                const res = await expirePastMarkets(token);
                 setNotice({ variant: 'success', title: 'Vencidos expirados', message: res.message });
                 void loadMarkets();
               } catch (error) {

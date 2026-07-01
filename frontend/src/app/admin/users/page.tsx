@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import {
   AdminConfirmModal,
   AdminEmptyState,
@@ -96,6 +97,7 @@ function getErrorMessage(error: unknown) {
 
 export default function AdminUsersPage() {
   const { user } = useAppStore();
+  const token = useAdminToken();
   const [tab, setTab] = useState<Tab>('all');
   const [users, setUsers] = useState<UserData[]>([]);
   const [total, setTotal] = useState(0);
@@ -134,23 +136,23 @@ export default function AdminUsersPage() {
   };
 
   const fetchUserStats = async (userId: string) => {
-    if (!user?.token || userStats[userId]) return;
+    if (!token || userStats[userId]) return;
     try {
-      const stats = await getUserStats(user.token, userId);
+      const stats = await getUserStats(token, userId);
       setUserStats((prev) => ({ ...prev, [userId]: stats }));
     } catch { /* silent */ }
   };
 
   const loadUsersData = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     setLoading(true);
     setLoadError('');
     try {
       const [u, top, inactive, eng] = await Promise.all([
-        getUsers(user.token, { limit: 50, sort_by: sortBy, order: sortOrder }),
-        getTopActiveUsers(user.token, 30, 10),
-        getInactiveUsers(user.token, 30),
-        getUserEngagement(user.token, 30),
+        getUsers(token, { limit: 50, sort_by: sortBy, order: sortOrder }),
+        getTopActiveUsers(token, 30, 10),
+        getInactiveUsers(token, 30),
+        getUserEngagement(token, 30),
       ]);
       setUsers(u.data);
       setTotal(u.total);
@@ -167,13 +169,13 @@ export default function AdminUsersPage() {
   useEffect(() => {
     void loadUsersData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token, sortBy, sortOrder]);
+  }, [token, sortBy, sortOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.token) return;
+    if (!token) return;
     setLoadError('');
-    getUsers(user.token, { search, limit: 50 })
+    getUsers(token, { search, limit: 50 })
       .then((res) => {
         setUsers(res.data);
         setTotal(res.total);
@@ -188,12 +190,12 @@ export default function AdminUsersPage() {
   };
 
   const handleToggleActive = async (userId: string, username: string, currentActive: boolean) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(userId);
     setOpenMenu(null);
     setConfirmAction(null);
     try {
-      const updated = await toggleUserActive(user.token, userId);
+      const updated = await toggleUserActive(token, userId);
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, is_active: updated.is_active } : u))
       );
@@ -214,13 +216,13 @@ export default function AdminUsersPage() {
   };
 
   const handleToggleRole = async (userId: string, username: string, currentRole: string) => {
-    if (!user?.token) return;
+    if (!token) return;
     setActionLoading(userId);
     setOpenMenu(null);
     setConfirmAction(null);
     const newRole = currentRole === 'admin' ? 'user' : 'admin';
     try {
-      const updated = await updateUserRole(user.token, userId, newRole);
+      const updated = await updateUserRole(token, userId, newRole);
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
       setNotice({
         variant: 'success',
@@ -273,7 +275,7 @@ export default function AdminUsersPage() {
   };
 
   const handleSavePoints = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     const newPoints = parseFloat(pointsInput);
     if (isNaN(newPoints) || newPoints < 0) {
       setNotice({
@@ -294,12 +296,12 @@ export default function AdminUsersPage() {
     }
     setActionLoading(pointsModal.userId);
     try {
-      const updated = await updateUserPoints(user.token, pointsModal.userId, newPoints);
+      const updated = await updateUserPoints(token, pointsModal.userId, newPoints);
       setUsers((prev) =>
         prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
       );
-      if (pointsModal.userId === user.id) {
-        useAppStore.getState().login({ ...user, points: updated.points });
+      if (user?.id && pointsModal.userId === user.id) {
+        useAppStore.getState().login({ id: user.id, username: user.username, email: user.email, role: user.role, points: updated.points, token: user.token });
       }
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
       setNotice({

@@ -31,6 +31,7 @@ export function SessionValidator() {
           email: res.data.email,
           points: res.data.points,
           role: res.data.role,
+          token,
         });
       })
       .catch(() => {

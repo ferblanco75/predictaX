@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import { AdminEmptyState, AdminErrorState } from '@/components/admin/AdminState';
 import { getAIUsageSummary, getAIUsageHistory } from '@/lib/api/admin';
 import { Bot, Zap, Clock, AlertTriangle, Database } from 'lucide-react';
@@ -82,20 +82,20 @@ function QuotaGauge({ used, limit }: { used: number; limit: number }) {
 }
 
 export default function AdminAIPage() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [summary, setSummary] = useState<AISummary | null>(null);
   const [history, setHistory] = useState<DailyAI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadAIData = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     setLoading(true);
     setError('');
     try {
       const [s, h] = await Promise.all([
-        getAIUsageSummary(user.token),
-        getAIUsageHistory(user.token, 30),
+        getAIUsageSummary(token),
+        getAIUsageHistory(token, 30),
       ]);
       setSummary(s);
       setHistory(h);
@@ -110,8 +110,8 @@ export default function AdminAIPage() {
     void loadAIData();
 
     const interval = setInterval(() => {
-      if (user?.token) {
-        getAIUsageSummary(user.token)
+      if (token) {
+        getAIUsageSummary(token)
           .then(setSummary)
           .catch(() => {
             setError('No se pudo refrescar el resumen de AI.');
@@ -120,7 +120,7 @@ export default function AdminAIPage() {
     }, 15000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token]);
+  }, [token]);
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import { AdminErrorState } from '@/components/admin/AdminState';
 import { getPredictionsDaily } from '@/lib/api/admin';
 import { BarChart3 } from 'lucide-react';
@@ -13,17 +13,17 @@ interface DailyData {
 }
 
 export default function AdminPredictionsPage() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [daily, setDaily] = useState<DailyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadPredictions = async () => {
-    if (!user?.token) return;
+    if (!token) return;
     setLoading(true);
     setError('');
     try {
-      const data = await getPredictionsDaily(user.token, 30);
+      const data = await getPredictionsDaily(token, 30);
       setDaily(data);
     } catch (loadError) {
       setError(
@@ -37,7 +37,7 @@ export default function AdminPredictionsPage() {
   useEffect(() => {
     void loadPredictions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.token]);
+  }, [token]);
 
   const totalPredictions = daily.reduce((a, d) => a + d.count, 0);
   const totalVolume = daily.reduce((a, d) => a + d.volume, 0);
