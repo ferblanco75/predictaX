@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/lib/stores/app-store';
 import api from '@/lib/api/client';
@@ -10,16 +10,13 @@ export function SessionValidator() {
   const pathname = usePathname();
   const lastSync = useRef(0);
 
-  useEffect(() => {
+  const syncUser = useCallback((force = false) => {
     if (!isLoggedIn) return;
     const token = localStorage.getItem('token');
-    if (!token) {
-      logout();
-      return;
-    }
+    if (!token) { logout(); return; }
 
     const now = Date.now();
-    if (now - lastSync.current < 30_000) return;
+    if (!force && now - lastSync.current < 30_000) return;
     lastSync.current = now;
 
     api
@@ -37,7 +34,19 @@ export function SessionValidator() {
       .catch(() => {
         // 401 interceptor handles redirect + logout
       });
+  }, [isLoggedIn, login, logout]);
+
+  // Sync on route change (throttled)
+  useEffect(() => {
+    syncUser();
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Force sync when a market is resolved (bypasses throttle)
+  useEffect(() => {
+    const handler = () => syncUser(true);
+    window.addEventListener('market:resolved', handler);
+    return () => window.removeEventListener('market:resolved', handler);
+  }, [syncUser]);
 
   return null;
 }

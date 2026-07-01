@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
 import { useAdminToken } from '@/lib/hooks/useAdminToken';
 import {
   AdminConfirmModal,
@@ -105,7 +104,6 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function AdminMarketsPage() {
-  const { user } = useAppStore();
   const token = useAdminToken();
   const [markets, setMarkets] = useState<MarketRanking[]>([]);
   const [sort, setSort] = useState('most_active');
@@ -167,6 +165,7 @@ export default function AdminMarketsPage() {
         title: 'Mercado resuelto',
         message: `${resolutionValue ? 'SÍ' : 'NO'} · ${updated.winners ?? 0} ganadores · ${updated.total_paid_pts?.toLocaleString() ?? 0} pts pagados`,
       });
+      window.dispatchEvent(new Event('market:resolved'));
     } catch (error) {
       setNotice({ variant: 'error', title: 'No se pudo resolver el mercado', message: getErrorMessage(error) });
     } finally {
