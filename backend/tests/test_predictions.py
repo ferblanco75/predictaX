@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.models.prediction import Prediction
@@ -66,7 +67,8 @@ def test_create_prediction_records_vote_and_updates_points(
     assert data["market_id"] == str(sample_market.id)
     assert data["probability"] == 70
     assert data["points_wagered"] == 100
-    assert data["potential_gain"] == 30
+    # payout = 100 / (55/100) = 181.82; potential_gain = payout - stake = 81.82
+    assert data["potential_gain"] == pytest.approx(81.82, abs=0.01)
     assert data["status"] == "pending"
 
     db.refresh(user)
@@ -145,3 +147,99 @@ def test_public_market_predictions_do_not_expose_user_ids(
     assert len(data) == 1
     assert "user_id" not in data[0]
     assert data[0]["market_id"] == str(sample_market.id)
+
+
+# ── YES / NO flow tests (issue #200) ──────────────────────────────────────────
+
+def _bet(client, headers, market_id, probability, points=100):
+    return client.post(
+        "/api/predictions",
+        headers=headers,
+        json={"market_id": str(market_id), "probability": probability, "points_wagered": points},
+    )
+
+
+def _resolve(client, headers, market_id, resolution_value: bool):
+    return client.post(
+        f"/api/admin/markets/{market_id}/resolve",
+        headers=headers,
+        json={"resolution_value": resolution_value, "resolution_note": "test"},
+    )
+
+
+def test_prediction_yes_wins(client, db, user_headers, admin_headers, sample_market):
+    """Apuesta SÍ (probability=75), mercado resuelve YES → usuario gana, saldo sube."""
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    points_before = user.points
+
+    res = _bet(client, user_headers, sample_market.id, probability=75, points=100)
+    assert res.status_code == 201
+
+    db.refresh(user)
+    assert user.points == points_before - 100  # puntos descontados al apostar
+
+    _resolve(client, admin_headers, sample_market.id, resolution_value=True)
+
+    db.refresh(user)
+    # payout = 100 / (55/100) = 181.82
+    assert user.points == pytest.approx(points_before - 100 + 181.82, abs=0.5)
+
+
+def test_prediction_yes_loses(client, db, user_headers, admin_headers, sample_market):
+    """Apuesta SÍ (probability=75), mercado resuelve NO → usuario pierde."""
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    points_before = user.points
+
+    res = _bet(client, user_headers, sample_market.id, probability=75, points=100)
+    assert res.status_code == 201
+
+    _resolve(client, admin_headers, sample_market.id, resolution_value=False)
+
+    db.refresh(user)
+    assert user.points == pytest.approx(points_before - 100, abs=0.01)
+
+
+def test_prediction_no_wins(client, db, user_headers, admin_headers, sample_market):
+    """Apuesta NO (probability=25), mercado resuelve NO → usuario gana."""
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    points_before = user.points
+
+    res = _bet(client, user_headers, sample_market.id, probability=25, points=100)
+    assert res.status_code == 201
+
+    _resolve(client, admin_headers, sample_market.id, resolution_value=False)
+
+    db.refresh(user)
+    # payout = 100 / (55/100) = 181.82
+    assert user.points == pytest.approx(points_before - 100 + 181.82, abs=0.5)
+
+
+def test_prediction_no_loses(client, db, user_headers, admin_headers, sample_market):
+    """Apuesta NO (probability=25), mercado resuelve YES → usuario pierde."""
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    points_before = user.points
+
+    res = _bet(client, user_headers, sample_market.id, probability=25, points=100)
+    assert res.status_code == 201
+
+    _resolve(client, admin_headers, sample_market.id, resolution_value=True)
+
+    db.refresh(user)
+    assert user.points == pytest.approx(points_before - 100, abs=0.01)
+
+
+def test_prediction_50_rejected(client, user_headers, sample_market):
+    """POST con probability=50 debe devolver HTTP 422."""
+    res = _bet(client, user_headers, sample_market.id, probability=50, points=100)
+    assert res.status_code == 422
+    assert "50" in res.json()["detail"][0]["msg"]
+
+
+def test_payout_calculation(client, db, user_headers, sample_market):
+    """Verifica que potential_gain = stake / (prob_market/100) - stake."""
+    res = _bet(client, user_headers, sample_market.id, probability=75, points=200)
+    assert res.status_code == 201
+    data = res.json()
+    # sample_market.probability_market = 55.0
+    expected_gain = 200 / (55.0 / 100) - 200  # = 163.64
+    assert data["potential_gain"] == pytest.approx(expected_gain, abs=0.01)

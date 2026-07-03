@@ -2,12 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Coins, RefreshCw } from 'lucide-react';
+import { AlertCircle, Coins, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 
 interface PredictionFormProps {
   currentProbability: number;
@@ -42,7 +41,7 @@ export function PredictionForm({
   existingPrediction = null,
 }: PredictionFormProps) {
   const { user } = useAppStore();
-  const [prediction, setPrediction] = useState(50);
+  const [prediction, setPrediction] = useState<75 | 25 | null>(null);
   const [betAmount, setBetAmount] = useState(100);
   const [predictionError, setPredictionError] = useState<string>();
   const [confirmingOverride, setConfirmingOverride] = useState(false);
@@ -51,6 +50,10 @@ export function PredictionForm({
   const maxBet = Math.min(10000, Math.floor(availablePoints));
 
   const handleSubmit = () => {
+    if (prediction === null) {
+      setPredictionError('Elegí SÍ o NO antes de confirmar');
+      return;
+    }
     if (betAmount < 1) {
       setPredictionError('Debes usar al menos 1 punto');
       return;
@@ -69,7 +72,7 @@ export function PredictionForm({
     }
     setPredictionError(undefined);
     setConfirmingOverride(false);
-    onSubmit(prediction, betAmount);
+    onSubmit(prediction!, betAmount);
   };
 
   const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
@@ -85,27 +88,36 @@ export function PredictionForm({
         <CardTitle>Hacer predicción</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Probability slider */}
+        {/* YES / NO buttons */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-medium">Tu predicción</label>
-            <span className="text-2xl font-bold text-blue-600">{prediction}%</span>
-          </div>
-          <Slider
-            value={[prediction]}
-            onValueChange={(value) => {
-              const newValue = Array.isArray(value) ? value[0] : value;
-              setPrediction(newValue);
-            }}
-            max={100}
-            step={1}
-            className="mb-2"
-            disabled={disabled}
-          />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
+          <label className="text-sm font-medium block mb-3">¿Va a ocurrir?</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => { setPrediction(75); setPredictionError(undefined); }}
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 py-4 text-base font-semibold transition-all ${
+                prediction === 75
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-emerald-700'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <ThumbsUp className="h-5 w-5" />
+              SÍ va a pasar
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => { setPrediction(25); setPredictionError(undefined); }}
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 py-4 text-base font-semibold transition-all ${
+                prediction === 25
+                  ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-red-300 hover:bg-red-50/50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:border-red-700'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <ThumbsDown className="h-5 w-5" />
+              NO va a pasar
+            </button>
           </div>
         </div>
 
@@ -203,7 +215,7 @@ export function PredictionForm({
                 <div>
                   <p className="font-medium">Ya tenés una predicción en este mercado</p>
                   <p className="text-xs mt-0.5 text-blue-700/80 dark:text-blue-300/80">
-                    Tu apuesta anterior: {existingPrediction.probability}% con {formatPoints(existingPrediction.points_wagered)} pts. Confirmar agregará una nueva apuesta.
+                    Tu apuesta anterior: {existingPrediction.probability > 50 ? 'SÍ' : 'NO'} con {formatPoints(existingPrediction.points_wagered)} pts. Confirmar agregará una nueva apuesta.
                   </p>
                 </div>
               </div>
@@ -227,8 +239,13 @@ export function PredictionForm({
             )}
 
             {!confirmingOverride && (
-              <Button size="lg" className="w-full active:scale-95 transition-transform" onClick={handleSubmit} disabled={disabled}>
-                {disabled ? 'Procesando...' : 'Confirmar predicción'}
+              <Button
+                size="lg"
+                className="w-full active:scale-95 transition-transform"
+                onClick={handleSubmit}
+                disabled={disabled || prediction === null}
+              >
+                {disabled ? 'Procesando...' : prediction === null ? 'Elegí SÍ o NO primero' : `Confirmar — ${prediction === 75 ? 'SÍ' : 'NO'} va a pasar`}
               </Button>
             )}
 
