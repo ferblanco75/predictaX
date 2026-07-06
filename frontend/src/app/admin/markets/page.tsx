@@ -835,7 +835,10 @@ export default function AdminMarketsPage() {
                   min={1}
                   max={99}
                   value={createModal.probability}
-                  onChange={(e) => setCreateModal((p) => ({ ...p, probability: Number(e.target.value) }))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setCreateModal((p) => ({ ...p, probability: Math.min(99, Math.max(1, v)) }));
+                  }}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
               </div>

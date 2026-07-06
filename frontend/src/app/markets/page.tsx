@@ -171,7 +171,7 @@ function MarketsContent() {
                 <div className="relative mb-5">
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                   <input
-                    type="search"
+                    type="text"
                     placeholder="Buscar..."
                     value={searchQuery}
                     onChange={(e) => {

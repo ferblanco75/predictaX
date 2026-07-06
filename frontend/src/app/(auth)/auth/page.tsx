@@ -2,13 +2,14 @@
 
 import { type FormEvent, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useRequestOTP, useVerifyOTP, useRegister } from '@/lib/hooks/useAuth';
+import { useAppStore } from '@/lib/stores/app-store';
 
 interface FormErrors {
   email?: string;
@@ -280,6 +281,12 @@ function LogoutBanner() {
 function AuthPageContent() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get('ref');
+  const router = useRouter();
+  const isLoggedIn = useAppStore((s) => s.isLoggedIn);
+
+  useEffect(() => {
+    if (isLoggedIn) router.replace('/');
+  }, [isLoggedIn, router]);
   const [registerErrors, setRegisterErrors] = useState<FormErrors>({});
   // After successful register, show OTP code step for this email
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
