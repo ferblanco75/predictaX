@@ -1,12 +1,15 @@
+from datetime import datetime, timezone
 from typing import List
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InsufficientPointsException
+from app.core.exceptions import BadRequestException, InsufficientPointsException
+from app.models.market import MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
 from app.schemas.prediction import PredictionCreate
-from app.services import market_service, snapshot_service
+from app.services import market_service, referral_service, snapshot_service
 
 
 def calculate_market_probability(predictions: List[Prediction]) -> float:
@@ -58,26 +61,53 @@ def create_prediction(
         NotFoundException: If market not found
     """
     # Validate user has enough points
-    if user.points < prediction_data.points_wagered:
+    if user.points + 0.01 < prediction_data.points_wagered:
         raise InsufficientPointsException(
-            f"Insufficient points. You have {user.points}, need {prediction_data.points_wagered}"
+            f"Puntos insuficientes. Tenés {int(user.points)} pts, "
+            f"necesitás {int(prediction_data.points_wagered)} pts"
         )
 
     # Get market
     market = market_service.get_market_by_id(db, prediction_data.market_id)
 
+    # Validate market is still open
+    if market.status != MarketStatus.ACTIVE:
+        raise BadRequestException("Este mercado ya no está activo")
+
+    if market.end_date and market.end_date.replace(tzinfo=timezone.utc) < datetime.now(
+        timezone.utc
+    ):
+        raise BadRequestException("Este mercado ya cerró")
+
     # Store old probability for snapshot comparison
-    old_probability = market.probability_market
+    old_probability = float(market.probability_market)
+
+    # Capture market probability at bet time (used for payout calculation on resolve)
+    prob_at_bet = float(market.probability_market)
+
+    # potential_gain = payout if winner - amount wagered
+    # payout = points_wagered / (probability_at_bet / 100)
+    # Using fee=0 for MVP
+    if prob_at_bet > 0:
+        potential_gain = (
+            prediction_data.points_wagered / (prob_at_bet / 100)
+            - prediction_data.points_wagered
+        )
+    else:
+        potential_gain = 0.0
 
     # Create prediction
     prediction = Prediction(
         user_id=user.id,
         market_id=prediction_data.market_id,
         probability=prediction_data.probability,
+        probability_at_bet=prob_at_bet,
         points_wagered=prediction_data.points_wagered,
+        potential_gain=round(potential_gain, 2),
     )
 
     db.add(prediction)
+    db.flush()
 
     # Deduct points from user
     user.points -= prediction_data.points_wagered
@@ -88,7 +118,6 @@ def create_prediction(
         .filter(Prediction.market_id == prediction_data.market_id)
         .all()
     )
-    all_predictions.append(prediction)  # Include the new one
 
     new_probability = calculate_market_probability(all_predictions)
     market.probability_market = new_probability
@@ -104,10 +133,17 @@ def create_prediction(
     if abs(new_probability - old_probability) > 1.0:
         snapshot_service.create_snapshot(db, market.id, new_probability)
 
+    # Award referrer bonus on the referred user's first prediction
+    user_prediction_count = (
+        db.query(Prediction).filter(Prediction.user_id == user.id).count()
+    )
+    if user_prediction_count == 1:
+        referral_service.award_referrer_bonus_if_eligible(db, user)
+
     return prediction
 
 
-def get_user_predictions(db: Session, user_id: int) -> List[Prediction]:
+def get_user_predictions(db: Session, user_id: UUID) -> List[Prediction]:
     """
     Get all predictions for a user.
 
@@ -126,7 +162,7 @@ def get_user_predictions(db: Session, user_id: int) -> List[Prediction]:
     )
 
 
-def get_market_predictions(db: Session, market_id: int) -> List[Prediction]:
+def get_market_predictions(db: Session, market_id: UUID) -> List[Prediction]:
     """
     Get all predictions for a market.
 

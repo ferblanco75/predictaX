@@ -1,5 +1,5 @@
 """
-Business logic services for PredictaX.
+Business logic services for NeuroPredict.
 """
 
 from app.services import (

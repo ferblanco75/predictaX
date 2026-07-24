@@ -7,7 +7,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.core.tracking import log_activity
-from app.routers import admin, auth, markets, predictions, users
+from app.routers import admin, auth, football, markets, predictions, users
 from app.schemas.common import HealthResponse
 
 try:
@@ -20,9 +20,31 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add conservative security headers to API responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), payment=()"
+        )
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+
+        if not settings.DEBUG:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains; preload"
+            )
+
+        return response
+
 # Create FastAPI app — disable Swagger/OpenAPI docs in production
 app = FastAPI(
-    title="PredictaX API",
+    title="NeuroPredict API",
     description="Prediction markets platform for Latin America",
     version="0.1.0",
     docs_url="/api/docs" if settings.DEBUG else None,
@@ -31,13 +53,39 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend
+# Allow all Vercel preview deployments via regex pattern
+cors_origins = settings.CORS_ORIGINS
+cors_origin_regex = r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
+    allow_origin_regex=cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+TRACKING_EXACT_EXCLUDES = {"/api/health", "/api/metrics", "/api/openapi.json"}
+TRACKING_PREFIX_EXCLUDES = (
+    "/api/docs",
+    "/api/redoc",
+    "/api/admin/metrics",
+    "/api/admin/ai/usage",
+    "/api/admin/activity",
+)
+
+
+def should_track_api_request(path: str) -> bool:
+    """Return whether an API path should be stored in activity_log."""
+    if not path.startswith("/api/"):
+        return False
+    if path in TRACKING_EXACT_EXCLUDES:
+        return False
+    return not path.startswith(TRACKING_PREFIX_EXCLUDES)
+
 
 # Request tracking middleware
 class TrackingMiddleware(BaseHTTPMiddleware):
@@ -46,9 +94,8 @@ class TrackingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         elapsed_ms = int((time.time() - start) * 1000)
 
-        # Only track API calls, skip health checks and static files
         path = request.url.path
-        if path.startswith("/api/") and path != "/api/health" and not path.startswith("/api/docs"):
+        if should_track_api_request(path):
             log_activity(
                 action="api_request",
                 endpoint=f"{request.method} {path}",
@@ -61,8 +108,8 @@ class TrackingMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(TrackingMiddleware)
 
-# Prometheus metrics at /api/metrics
-if PROMETHEUS_AVAILABLE:
+# Prometheus metrics at /api/metrics. Disabled by default in production.
+if PROMETHEUS_AVAILABLE and settings.METRICS_ENABLED:
     Instrumentator(
         excluded_handlers=["/api/metrics", "/api/docs", "/api/redoc"],
     ).instrument(app).expose(app, endpoint="/api/metrics", include_in_schema=False)
@@ -73,6 +120,7 @@ app.include_router(markets.router, prefix="/api/markets", tags=["Markets"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(admin.router)  # prefix defined in router
+app.include_router(football.router)  # prefix defined in router
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["Health"])

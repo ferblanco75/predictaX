@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
+import { AdminEmptyState, AdminErrorState } from '@/components/admin/AdminState';
 import { getSitePerformance } from '@/lib/api/admin';
 import { Activity, AlertTriangle, Clock, Zap, Server } from 'lucide-react';
 
@@ -27,25 +28,39 @@ function LatencyBadge({ ms }: { ms: number }) {
 }
 
 export default function AdminPerformancePage() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [data, setData] = useState<Performance | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadPerformance = async () => {
+    if (!token) return;
+    setLoading(true);
+    setError('');
+    try {
+      const performance = await getSitePerformance(token, 7);
+      setData(performance);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar performance.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!user?.token) return;
-    getSitePerformance(user.token, 7)
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    void loadPerformance();
 
     const interval = setInterval(() => {
-      if (user?.token)
-        getSitePerformance(user.token, 7)
+      if (token)
+        getSitePerformance(token, 7)
           .then(setData)
-          .catch(() => {});
+          .catch(() => {
+            setError('No se pudo refrescar performance.');
+          });
     }, 30000);
     return () => clearInterval(interval);
-  }, [user?.token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   if (loading) {
     return (
@@ -60,7 +75,26 @@ export default function AdminPerformancePage() {
     );
   }
 
-  if (!data) return null;
+  if (error && !data) {
+    return (
+      <AdminErrorState
+        title="No se pudo cargar performance"
+        message={error}
+        onAction={loadPerformance}
+      />
+    );
+  }
+
+  if (!data) {
+    return (
+      <AdminEmptyState
+        title="Sin métricas de performance"
+        message="Todavía no hay datos disponibles para los últimos 7 días."
+        actionLabel="Reintentar"
+        onAction={loadPerformance}
+      />
+    );
+  }
   const s = data.summary;
 
   return (
@@ -69,6 +103,10 @@ export default function AdminPerformancePage() {
         <h1 className="text-2xl font-bold">Performance</h1>
         <p className="text-gray-500 text-sm">Métricas de rendimiento de la API (últimos 7 días)</p>
       </div>
+
+      {error && (
+        <AdminErrorState title="Auto-refresh falló" message={error} onAction={loadPerformance} />
+      )}
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

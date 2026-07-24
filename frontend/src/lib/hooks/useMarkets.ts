@@ -28,13 +28,13 @@ export function useMarkets(params: UseMarketsParams = {}) {
   });
 }
 
-export function useMarket(id: string) {
+export function useMarket(id: string, options?: { enabled?: boolean }) {
   return useQuery<Market>({
     queryKey: ['market', id],
     queryFn: async () => {
       const res = await api.get<Market>(`/markets/${id}`);
       return res.data;
     },
-    enabled: !!id,
+    enabled: options?.enabled !== undefined ? options.enabled && !!id : !!id,
   });
 }

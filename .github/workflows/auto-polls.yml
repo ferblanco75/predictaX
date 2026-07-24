@@ -1,0 +1,37 @@
+name: Auto-generate polls from trends
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # 12:00 UTC = 09:00 Argentina (UTC-3)
+  workflow_dispatch:         # permite correrlo manualmente desde GitHub UI
+
+jobs:
+  generate-polls:
+    name: Generate polls from Argentina trends
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests pytrends google-genai python-Levenshtein
+
+      - name: Run auto-polls script
+        working-directory: backend
+        run: python scripts/auto_polls.py
+        env:
+          BACKEND_URL:    ${{ secrets.BACKEND_URL }}
+          ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASS:     ${{ secrets.ADMIN_PASS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL:   gemini-2.0-flash

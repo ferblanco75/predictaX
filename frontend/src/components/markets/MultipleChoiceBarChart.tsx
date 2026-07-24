@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -61,9 +62,46 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
+function ChartEmptyState({ title, message }: { title: string; message: string }) {
+  return (
+    <div className="flex h-[400px] min-h-[400px] items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-center dark:border-gray-700 dark:bg-gray-900/40">
+      <div className="max-w-sm px-6">
+        <p className="font-medium text-gray-700 dark:text-gray-200">{title}</p>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export function MultipleChoiceBarChart({ options }: MultipleChoiceBarChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  const validOptions = options.filter((option) => Number.isFinite(option.probability));
+
+  if (!mounted) {
+    return (
+      <div className="flex h-[400px] min-h-[400px] items-center justify-center text-gray-400">
+        Cargando gráfico...
+      </div>
+    );
+  }
+
+  if (validOptions.length === 0) {
+    return (
+      <ChartEmptyState
+        title="Sin opciones para graficar"
+        message="La distribución aparecerá cuando el mercado tenga opciones con probabilidades válidas."
+      />
+    );
+  }
+
   // Sort options by probability (descending)
-  const sortedOptions = [...options].sort((a, b) => b.probability - a.probability);
+  const sortedOptions = [...validOptions].sort((a, b) => b.probability - a.probability);
 
   // Get color for each option based on its original index
   const getBarColor = (optionId: string) => {
@@ -72,7 +110,7 @@ export function MultipleChoiceBarChart({ options }: MultipleChoiceBarChartProps)
   };
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="h-[400px] min-h-[400px] w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={sortedOptions}

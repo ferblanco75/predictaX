@@ -1,15 +1,20 @@
 FROM python:3.11-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry==1.8.0
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Install packaging tooling with patched versions before resolving dependencies
+RUN pip install --no-cache-dir --upgrade pip==26.1.1 wheel==0.46.2 \
+    && pip install --no-cache-dir poetry==2.3.4
 
 # Copy dependency files
 COPY pyproject.toml ./
@@ -20,6 +25,10 @@ RUN poetry config virtualenvs.create false \
 
 # Copy application code
 COPY . .
+
+RUN chown -R appuser:appuser /app
+
+USER appuser
 
 # Expose port
 EXPOSE 8000

@@ -1,5 +1,8 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.exceptions import BadRequestException, UnauthorizedException
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.models.user import User
@@ -22,18 +25,25 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     """
     # Check if email already exists
     if db.query(User).filter(User.email == user_data.email).first():
-        raise BadRequestException("Email already registered")
+        raise BadRequestException("Este email ya está registrado. ¿Ya tenés cuenta? Iniciá sesión.")
 
     # Check if username already exists
     if db.query(User).filter(User.username == user_data.username).first():
-        raise BadRequestException("Username already taken")
+        raise BadRequestException("Este nombre de usuario ya está en uso. Elegí otro.")
 
     # Create new user
-    hashed_password = get_password_hash(user_data.password)
+    now = datetime.now(timezone.utc)
+    hashed_password = get_password_hash(user_data.password) if user_data.password else ""
     db_user = User(
         email=user_data.email,
         username=user_data.username,
         hashed_password=hashed_password,
+        terms_accepted_at=now,
+        privacy_accepted_at=now,
+        age_confirmed_at=now,
+        legal_consent_version=settings.LEGAL_CONSENT_VERSION,
+        marketing_opt_in=user_data.marketing_opt_in,
+        marketing_opt_in_at=now if user_data.marketing_opt_in else None,
     )
 
     db.add(db_user)
@@ -64,6 +74,9 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
         raise UnauthorizedException("Invalid email or password")
 
     if not verify_password(password, user.hashed_password):
+        raise UnauthorizedException("Invalid email or password")
+
+    if not user.is_active or user.deleted_at is not None:
         raise UnauthorizedException("Invalid email or password")
 
     return user
