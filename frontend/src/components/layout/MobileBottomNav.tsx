@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { Home, BarChart3, Trophy, UserPlus, User } from 'lucide-react';
+import { Home, BarChart3, UserPlus, User } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-store';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +19,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/', icon: Home, label: 'Inicio' },
   { href: '/markets', icon: BarChart3, label: 'Mercados' },
-  { href: '/markets?categoria=mundial', icon: Trophy, label: 'Mundial', match: 'mundial' },
   { href: '/referrals', icon: UserPlus, label: 'Invitar', requiresAuth: true },
   { href: '/auth', icon: User, label: 'Cuenta', authAware: true },
 ];

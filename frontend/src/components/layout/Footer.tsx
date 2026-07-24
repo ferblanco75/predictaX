@@ -13,7 +13,7 @@ export function Footer() {
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">NeuroPredict</span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
-              Plataforma de mercados de predicción para Mundial 2026, economía, política, deportes y
+              Plataforma de mercados de predicción sobre economía, política, deportes y
               tecnología en América Latina.
             </p>
           </div>
@@ -30,11 +30,6 @@ export function Footer() {
               <li>
                 <Link href="/markets/category/politica" className="hover:text-gray-900 dark:hover:text-gray-100">
                   Política
-                </Link>
-              </li>
-              <li>
-                <Link href="/markets/category/mundial" className="hover:text-gray-900 dark:hover:text-gray-100">
-                  Mundial 2026
                 </Link>
               </li>
               <li>

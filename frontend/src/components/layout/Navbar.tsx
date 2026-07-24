@@ -14,7 +14,6 @@ import type { MarketCategory } from '@/lib/types';
 import api from '@/lib/api/client';
 
 const categories = [
-  { id: 'mundial', name: 'Mundial 2026', icon: Trophy, color: 'bg-green-600' },
   { id: 'economia', name: 'Economía', icon: TrendingUp, color: 'bg-green-500' },
   { id: 'politica', name: 'Política', icon: Users, color: 'bg-blue-500' },
   { id: 'deportes', name: 'Deportes', icon: Trophy, color: 'bg-amber-500' },

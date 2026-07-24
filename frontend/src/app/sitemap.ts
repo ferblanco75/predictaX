@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${CANONICAL_BASE_URL}/markets/category/${cat.id}`,
     lastModified: now,
     changeFrequency: 'daily' as const,
-    priority: cat.id === 'mundial' ? 0.95 : 0.8,
+    priority: 0.8,
   }));
 
   const markets = await getSitemapMarkets();
@@ -73,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${CANONICAL_BASE_URL}/markets/${market.id}`,
     lastModified: now,
     changeFrequency: 'hourly' as const,
-    priority: market.category === 'mundial' ? 0.85 : 0.7,
+    priority: 0.7,
   }));
 
   return [...staticPages, ...categoryPages, ...marketPages];

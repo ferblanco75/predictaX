@@ -8,7 +8,6 @@ import { motion } from 'framer-motion';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
-import { MundialHero } from '@/components/markets/MundialHero';
 import { useMarkets } from '@/lib/hooks/useMarkets';
 import { categories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
@@ -25,7 +24,6 @@ const fadeInUp = {
 
 export function HomePageClient() {
   const { data: trendingMarkets = [] } = useMarkets({ limit: 6 });
-  const { data: mundialPolls = [] } = useMarkets({ category: 'mundial', limit: 3 });
   const isLoggedIn = useAppStore((state) => state.isLoggedIn);
 
   const categoryIcons: Record<
@@ -74,10 +72,6 @@ export function HomePageClient() {
           </motion.div>
         </div>
       </section>
-
-      <div className="container mx-auto px-4 pt-10">
-        <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
-      </div>
 
       <motion.section
         className="container mx-auto px-4 py-12"

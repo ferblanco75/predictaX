@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Filter, Search, X, Coins, PartyPopper } from 'lucide-react';
 import { MarketList } from '@/components/markets/MarketList';
-import { MundialHero } from '@/components/markets/MundialHero';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/Pagination';
 import { useMarkets } from '@/lib/hooks/useMarkets';
@@ -81,18 +80,18 @@ function MarketsContent() {
     limit: 100,
   });
 
-  const { data: mundialPolls = [] } = useMarkets({
-    category: 'mundial' as MarketCategory,
-    limit: 3,
-  });
-
   const filtered = allMarkets.filter((m) => {
     const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
     const normalizedSearch = searchQuery.trim().toLowerCase();
     let searchMatch = true;
     if (normalizedSearch) {
-      const hasWildcard = normalizedSearch.includes('%');
-      if (hasWildcard) {
+      // Pattern "digits*%" → probability prefix filter (e.g. "5*%" = 50–59%)
+      const probWildcard = normalizedSearch.match(/^(\d+)\*%$/);
+      if (probWildcard) {
+        const prefix = probWildcard[1];
+        searchMatch = String(Math.round(m.probability)).startsWith(prefix);
+      } else if (normalizedSearch.includes('%')) {
+        // "%" as text wildcard in title (existing behaviour)
         const pattern = normalizedSearch.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
         searchMatch = new RegExp(pattern, 'i').test(m.title);
       } else {
@@ -149,8 +148,6 @@ function MarketsContent() {
           </div>
         )}
 
-        <MundialHero featuredPolls={mundialPolls} totalPolls={14} />
-
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-1">Mercados de predicción</h1>
           <p className="text-gray-500 text-sm">
@@ -172,7 +169,7 @@ function MarketsContent() {
                   <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder="Buscar... (ej: 5*%)"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -220,16 +217,11 @@ function MarketsContent() {
                           router.push('/markets');
                         }}
                         className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 min-h-[44px] ${
-                          cat.id === 'mundial'
-                            ? selectedCategory === 'mundial'
-                              ? 'bg-green-600 text-white'
-                              : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 border border-green-200 dark:border-green-800'
-                            : selectedCategory === cat.id
-                              ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                          selectedCategory === cat.id
+                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                         }`}
                       >
-                        {cat.id === 'mundial' && <span>⚽</span>}
                         {cat.name}
                       </button>
                     ))}

@@ -46,23 +46,22 @@ export const metadata: Metadata = {
     apple: '/icons/apple-touch-icon.png',
   },
   title: {
-    default: 'NeuroPredict - Predicciones Mundial 2026 y mercados de América Latina',
+    default: 'NeuroPredict - Mercados de predicción en América Latina',
     template: '%s | NeuroPredict',
   },
   description:
-    'Participa en polls y mercados de predicción del Mundial 2026, fútbol, economía, política, deportes y tecnología en América Latina.',
+    'Participa en polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
   keywords: [
-    'Mundial 2026',
-    'predicciones Mundial 2026',
-    'polls Mundial 2026',
-    'predicciones fútbol',
     'mercados de predicción',
+    'predicciones',
     'pronósticos',
-    'América Latina',
     'economía',
     'política',
     'deportes',
+    'fútbol',
     'criptomonedas',
+    'tecnología',
+    'América Latina',
   ],
   authors: [{ name: 'NeuroPredict' }],
   creator: 'NeuroPredict',
@@ -71,9 +70,9 @@ export const metadata: Metadata = {
     locale: 'es_LA',
     url: canonicalUrl('/'),
     siteName: 'NeuroPredict',
-    title: 'NeuroPredict - Predicciones Mundial 2026',
+    title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
-      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
+      'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
     images: [
       {
         url: '/og-image.png',
@@ -85,9 +84,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NeuroPredict - Predicciones Mundial 2026',
+    title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
-      'Polls y mercados de predicción del Mundial 2026, fútbol y actualidad de América Latina.',
+      'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
     images: ['/og-image.png'],
   },
   robots: {
