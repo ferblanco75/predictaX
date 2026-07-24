@@ -8,7 +8,10 @@ interface GroupsTableProps {
 
 function groupLabel(group: string | null): string {
   if (!group) return 'Tabla';
-  const letter = group.replace(/^GROUP_/i, '').replace(/^Group\s+/i, '').trim();
+  const letter = group
+    .replace(/^GROUP_/i, '')
+    .replace(/^Group\s+/i, '')
+    .trim();
   return `Grupo ${letter}`;
 }
 
@@ -26,7 +29,9 @@ function SingleGroup({ standing, index }: { standing: Standing; index: number })
             <th className="px-2 py-1.5 text-left font-medium">Equipo</th>
             <th className="px-1 py-1.5 text-center font-medium">PJ</th>
             <th className="px-1 py-1.5 text-center font-medium">DG</th>
-            <th className="px-1 py-1.5 text-center font-medium text-gray-700 dark:text-gray-300">Pts</th>
+            <th className="px-1 py-1.5 text-center font-medium text-gray-700 dark:text-gray-300">
+              Pts
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -47,7 +52,9 @@ function SingleGroup({ standing, index }: { standing: Standing; index: number })
                 </div>
               </td>
               <td className="px-1 py-1.5 text-center text-gray-500">{row.played}</td>
-              <td className={`px-1 py-1.5 text-center ${(row.goal_diff ?? 0) > 0 ? 'text-green-600' : (row.goal_diff ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+              <td
+                className={`px-1 py-1.5 text-center ${(row.goal_diff ?? 0) > 0 ? 'text-green-600' : (row.goal_diff ?? 0) < 0 ? 'text-red-500' : 'text-gray-400'}`}
+              >
                 {(row.goal_diff ?? 0) > 0 ? `+${row.goal_diff}` : row.goal_diff}
               </td>
               <td className="px-1 py-1.5 text-center font-bold">{row.points}</td>

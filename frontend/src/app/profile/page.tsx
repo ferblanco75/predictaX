@@ -3,7 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, TrendingDown, Clock, Coins, Target, ArrowUpRight, ArrowDownRight, Filter } from 'lucide-react';
+import {
+  Trophy,
+  TrendingDown,
+  Clock,
+  Coins,
+  Target,
+  ArrowUpRight,
+  ArrowDownRight,
+  Filter,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/stores/app-store';
@@ -49,9 +58,18 @@ interface ProfileData {
 }
 
 const STATUS_CONFIG = {
-  won: { label: 'Ganada', className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400' },
-  lost: { label: 'Perdida', className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400' },
-  pending: { label: 'Pendiente', className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400' },
+  won: {
+    label: 'Ganada',
+    className: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
+  },
+  lost: {
+    label: 'Perdida',
+    className: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+  },
+  pending: {
+    label: 'Pendiente',
+    className: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  },
 } as const;
 
 export default function ProfilePage() {
@@ -109,7 +127,11 @@ export default function ProfilePage() {
     : null;
 
   const activeSince = stats.first_prediction_at
-    ? new Date(stats.first_prediction_at).toLocaleDateString('es-AR', { year: 'numeric', month: 'short', day: 'numeric' })
+    ? new Date(stats.first_prediction_at).toLocaleDateString('es-AR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
     : null;
 
   return (
@@ -121,7 +143,12 @@ export default function ProfilePage() {
           <p className="text-gray-500 mt-1">
             {memberSince && <>Miembro desde {memberSince}</>}
             {user.role === 'admin' && (
-              <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">Admin</Badge>
+              <Badge
+                variant="secondary"
+                className="ml-2 bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+              >
+                Admin
+              </Badge>
             )}
           </p>
         </div>
@@ -131,7 +158,9 @@ export default function ProfilePage() {
           <Card>
             <CardContent className="pt-6 text-center">
               <Coins className="h-7 w-7 mx-auto mb-2 text-amber-500" />
-              <p className="text-2xl font-bold">{Math.round(user.points).toLocaleString('es-AR')}</p>
+              <p className="text-2xl font-bold">
+                {Math.round(user.points).toLocaleString('es-AR')}
+              </p>
               <p className="text-xs text-gray-500 mt-1">Puntos actuales</p>
             </CardContent>
           </Card>
@@ -156,8 +185,11 @@ export default function ProfilePage() {
               ) : (
                 <ArrowDownRight className="h-7 w-7 mx-auto mb-2 text-red-500" />
               )}
-              <p className={`text-2xl font-bold ${stats.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
-                {stats.net >= 0 ? '+' : ''}{Math.round(stats.net).toLocaleString('es-AR')}
+              <p
+                className={`text-2xl font-bold ${stats.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}
+              >
+                {stats.net >= 0 ? '+' : ''}
+                {Math.round(stats.net).toLocaleString('es-AR')}
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 {activeSince ? `Neto desde ${activeSince}` : 'Balance neto'}
@@ -174,7 +206,9 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500">Ganadas</p>
                 <p className="text-xl font-bold text-green-600 dark:text-green-400">{stats.won}</p>
               </div>
-              <p className="text-sm font-semibold text-green-600 dark:text-green-400">+{Math.round(stats.total_won).toLocaleString('es-AR')} pts</p>
+              <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                +{Math.round(stats.total_won).toLocaleString('es-AR')} pts
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -183,16 +217,22 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500">Perdidas</p>
                 <p className="text-xl font-bold text-red-500">{stats.lost}</p>
               </div>
-              <p className="text-sm font-semibold text-red-500">-{Math.round(stats.total_lost).toLocaleString('es-AR')} pts</p>
+              <p className="text-sm font-semibold text-red-500">
+                -{Math.round(stats.total_lost).toLocaleString('es-AR')} pts
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5 flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Pendientes</p>
-                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{stats.pending}</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                  {stats.pending}
+                </p>
               </div>
-              <p className="text-sm font-semibold text-gray-500">{Math.round(stats.total_wagered).toLocaleString('es-AR')} apostados</p>
+              <p className="text-sm font-semibold text-gray-500">
+                {Math.round(stats.total_wagered).toLocaleString('es-AR')} apostados
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -208,14 +248,23 @@ export default function ProfilePage() {
                   {(['all', 'won', 'lost', 'pending'] as const).map((s) => (
                     <button
                       key={s}
-                      onClick={() => { setStatusFilter(s); setLimit(20); }}
+                      onClick={() => {
+                        setStatusFilter(s);
+                        setLimit(20);
+                      }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[32px] ${
                         statusFilter === s
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                     >
-                      {s === 'all' ? 'Todas' : s === 'won' ? 'Ganadas' : s === 'lost' ? 'Perdidas' : 'Pendientes'}
+                      {s === 'all'
+                        ? 'Todas'
+                        : s === 'won'
+                          ? 'Ganadas'
+                          : s === 'lost'
+                            ? 'Perdidas'
+                            : 'Pendientes'}
                     </button>
                   ))}
                 </div>
@@ -236,7 +285,11 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 {displayed.map((p) => {
                   const cfg = STATUS_CONFIG[p.status];
-                  const date = new Date(p.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+                  const date = new Date(p.created_at).toLocaleDateString('es-AR', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  });
                   return (
                     <Link
                       key={p.id}

@@ -37,7 +37,10 @@ export function MobileBottomNav() {
             item.href === '/'
               ? pathname === '/'
               : item.match
-                ? pathname.includes(item.match) || (pathname === '/markets' && typeof window !== 'undefined' && window.location.search.includes(item.match))
+                ? pathname.includes(item.match) ||
+                  (pathname === '/markets' &&
+                    typeof window !== 'undefined' &&
+                    window.location.search.includes(item.match))
                 : pathname.startsWith(item.href.split('?')[0]);
 
           const href = item.authAware && isLoggedIn ? '/profile' : item.href;

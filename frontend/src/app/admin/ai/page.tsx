@@ -93,10 +93,7 @@ export default function AdminAIPage() {
     setLoading(true);
     setError('');
     try {
-      const [s, h] = await Promise.all([
-        getAIUsageSummary(token),
-        getAIUsageHistory(token, 30),
-      ]);
+      const [s, h] = await Promise.all([getAIUsageSummary(token), getAIUsageHistory(token, 30)]);
       setSummary(s);
       setHistory(h);
     } catch (loadError) {

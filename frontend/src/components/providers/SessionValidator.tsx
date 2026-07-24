@@ -10,31 +10,37 @@ export function SessionValidator() {
   const pathname = usePathname();
   const lastSync = useRef(0);
 
-  const syncUser = useCallback((force = false) => {
-    if (!isLoggedIn) return;
-    const token = localStorage.getItem('token');
-    if (!token) { logout(); return; }
+  const syncUser = useCallback(
+    (force = false) => {
+      if (!isLoggedIn) return;
+      const token = localStorage.getItem('token');
+      if (!token) {
+        logout();
+        return;
+      }
 
-    const now = Date.now();
-    if (!force && now - lastSync.current < 30_000) return;
-    lastSync.current = now;
+      const now = Date.now();
+      if (!force && now - lastSync.current < 30_000) return;
+      lastSync.current = now;
 
-    api
-      .get('/auth/me')
-      .then((res) => {
-        login({
-          id: res.data.id,
-          username: res.data.username,
-          email: res.data.email,
-          points: res.data.points,
-          role: res.data.role,
-          token,
+      api
+        .get('/auth/me')
+        .then((res) => {
+          login({
+            id: res.data.id,
+            username: res.data.username,
+            email: res.data.email,
+            points: res.data.points,
+            role: res.data.role,
+            token,
+          });
+        })
+        .catch(() => {
+          // 401 interceptor handles redirect + logout
         });
-      })
-      .catch(() => {
-        // 401 interceptor handles redirect + logout
-      });
-  }, [isLoggedIn, login, logout]);
+    },
+    [isLoggedIn, login, logout]
+  );
 
   // Sync on route change (throttled)
   useEffect(() => {

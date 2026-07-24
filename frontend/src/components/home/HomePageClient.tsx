@@ -143,7 +143,9 @@ export function HomePageClient() {
           viewport={{ once: true, amount: 0.2 }}
         >
           <div className="container mx-auto px-4 py-16 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para comenzar a predecir?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              ¿Listo para comenzar a predecir?
+            </h2>
             <p className="text-xl mb-8 text-purple-100">
               Únete a nuestra comunidad y empieza a participar en mercados de predicción.
             </p>

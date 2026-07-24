@@ -157,7 +157,9 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
               <Clock className="h-5 w-5 shrink-0 text-amber-500" />
               <div>
                 <p className="font-semibold">Este mercado cerró — pendiente de resolución</p>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Ya no se aceptan nuevas predicciones.</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  Ya no se aceptan nuevas predicciones.
+                </p>
               </div>
             </div>
           )}

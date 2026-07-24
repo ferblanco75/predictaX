@@ -4,7 +4,18 @@ import type { FormEvent } from 'react';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, TrendingUp, Users, UserPlus, Trophy, Smartphone, Bitcoin, X, Coins, Shield } from 'lucide-react';
+import {
+  Search,
+  TrendingUp,
+  Users,
+  UserPlus,
+  Trophy,
+  Smartphone,
+  Bitcoin,
+  X,
+  Coins,
+  Shield,
+} from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -23,16 +34,27 @@ const categories = [
 
 export function Navbar() {
   const router = useRouter();
-  const { selectedCategory, setCategory, searchQuery, setSearchQuery, isLoggedIn, user, logout, login } =
-    useAppStore();
+  const {
+    selectedCategory,
+    setCategory,
+    searchQuery,
+    setSearchQuery,
+    isLoggedIn,
+    user,
+    logout,
+    login,
+  } = useAppStore();
 
   // Refresh user data from DB on mount so points/role stay in sync after admin edits
   useEffect(() => {
     if (!isLoggedIn || !user?.token) return;
-    api.get<{ points: number; role: string }>('/auth/me').then((res) => {
-      login({ ...user, points: res.data.points, role: res.data.role });
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    api
+      .get<{ points: number; role: string }>('/auth/me')
+      .then((res) => {
+        login({ ...user, points: res.data.points, role: res.data.role });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {

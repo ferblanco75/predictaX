@@ -121,10 +121,21 @@ export default function AdminUsersPage() {
   const [sortBy, setSortBy] = useState<'created_at' | 'points' | 'username'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
-  const [userStats, setUserStats] = useState<Record<string, {
-    total_predictions: number; won: number; lost: number; pending: number;
-    points_won: number; points_lost: number; net: number; favorite_category: string | null;
-  }>>({});
+  const [userStats, setUserStats] = useState<
+    Record<
+      string,
+      {
+        total_predictions: number;
+        won: number;
+        lost: number;
+        pending: number;
+        points_won: number;
+        points_lost: number;
+        net: number;
+        favorite_category: string | null;
+      }
+    >
+  >({});
 
   const handleSort = (col: 'created_at' | 'points' | 'username') => {
     if (sortBy === col) {
@@ -140,7 +151,9 @@ export default function AdminUsersPage() {
     try {
       const stats = await getUserStats(token, userId);
       setUserStats((prev) => ({ ...prev, [userId]: stats }));
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
   };
 
   const loadUsersData = async () => {
@@ -301,7 +314,16 @@ export default function AdminUsersPage() {
         prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
       );
       if (user?.id && pointsModal.userId === user.id) {
-        useAppStore.getState().login({ id: user.id, username: user.username, email: user.email, role: user.role, points: updated.points, token: user.token });
+        useAppStore
+          .getState()
+          .login({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            points: updated.points,
+            token: user.token,
+          });
       }
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
       setNotice({
@@ -396,7 +418,12 @@ export default function AdminUsersPage() {
                   >
                     <span className="flex items-center gap-1">
                       Usuario
-                      {sortBy === 'username' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                      {sortBy === 'username' &&
+                        (sortOrder === 'desc' ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronUp className="h-3 w-3" />
+                        ))}
                     </span>
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
@@ -408,7 +435,12 @@ export default function AdminUsersPage() {
                   >
                     <span className="flex items-center justify-end gap-1">
                       Puntos
-                      {sortBy === 'points' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                      {sortBy === 'points' &&
+                        (sortOrder === 'desc' ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronUp className="h-3 w-3" />
+                        ))}
                     </span>
                   </th>
                   <th className="text-right px-4 py-3 font-medium text-gray-500">Predicciones</th>
@@ -418,7 +450,12 @@ export default function AdminUsersPage() {
                   >
                     <span className="flex items-center gap-1">
                       Registro
-                      {sortBy === 'created_at' && (sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />)}
+                      {sortBy === 'created_at' &&
+                        (sortOrder === 'desc' ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronUp className="h-3 w-3" />
+                        ))}
                     </span>
                   </th>
                   <th className="px-4 py-3" />
@@ -547,30 +584,58 @@ export default function AdminUsersPage() {
                           )}
                         </td>
                       </tr>,
-                      ...(expandedUser === u.id ? [
-                        <tr key={`${u.id}-stats`} className="bg-blue-50/50 dark:bg-blue-950/20">
-                          <td colSpan={8} className="px-6 py-3">
-                            {userStats[u.id] ? (
-                              <div className="flex flex-wrap gap-4 text-sm">
-                                <span className="text-gray-500">Predicciones: <strong>{userStats[u.id].total_predictions}</strong></span>
-                                <span className="text-green-600">Ganadas: <strong>{userStats[u.id].won}</strong></span>
-                                <span className="text-red-500">Perdidas: <strong>{userStats[u.id].lost}</strong></span>
-                                <span className="text-amber-500">Pendientes: <strong>{userStats[u.id].pending}</strong></span>
-                                <span className="text-green-600">+{Math.round(userStats[u.id].points_won).toLocaleString()} pts ganados</span>
-                                <span className="text-red-500">-{Math.round(userStats[u.id].points_lost).toLocaleString()} pts perdidos</span>
-                                <span className={userStats[u.id].net >= 0 ? 'text-green-700 font-semibold' : 'text-red-600 font-semibold'}>
-                                  Neto: {userStats[u.id].net >= 0 ? '+' : ''}{Math.round(userStats[u.id].net).toLocaleString()} pts
-                                </span>
-                                {userStats[u.id].favorite_category && (
-                                  <span className="text-gray-500">Fav: <strong>{userStats[u.id].favorite_category}</strong></span>
+                      ...(expandedUser === u.id
+                        ? [
+                            <tr key={`${u.id}-stats`} className="bg-blue-50/50 dark:bg-blue-950/20">
+                              <td colSpan={8} className="px-6 py-3">
+                                {userStats[u.id] ? (
+                                  <div className="flex flex-wrap gap-4 text-sm">
+                                    <span className="text-gray-500">
+                                      Predicciones:{' '}
+                                      <strong>{userStats[u.id].total_predictions}</strong>
+                                    </span>
+                                    <span className="text-green-600">
+                                      Ganadas: <strong>{userStats[u.id].won}</strong>
+                                    </span>
+                                    <span className="text-red-500">
+                                      Perdidas: <strong>{userStats[u.id].lost}</strong>
+                                    </span>
+                                    <span className="text-amber-500">
+                                      Pendientes: <strong>{userStats[u.id].pending}</strong>
+                                    </span>
+                                    <span className="text-green-600">
+                                      +{Math.round(userStats[u.id].points_won).toLocaleString()} pts
+                                      ganados
+                                    </span>
+                                    <span className="text-red-500">
+                                      -{Math.round(userStats[u.id].points_lost).toLocaleString()}{' '}
+                                      pts perdidos
+                                    </span>
+                                    <span
+                                      className={
+                                        userStats[u.id].net >= 0
+                                          ? 'text-green-700 font-semibold'
+                                          : 'text-red-600 font-semibold'
+                                      }
+                                    >
+                                      Neto: {userStats[u.id].net >= 0 ? '+' : ''}
+                                      {Math.round(userStats[u.id].net).toLocaleString()} pts
+                                    </span>
+                                    {userStats[u.id].favorite_category && (
+                                      <span className="text-gray-500">
+                                        Fav: <strong>{userStats[u.id].favorite_category}</strong>
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-400 animate-pulse">
+                                    Cargando stats...
+                                  </span>
                                 )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-400 animate-pulse">Cargando stats...</span>
-                            )}
-                          </td>
-                        </tr>
-                      ] : []),
+                              </td>
+                            </tr>,
+                          ]
+                        : []),
                     ])}
               </tbody>
             </table>

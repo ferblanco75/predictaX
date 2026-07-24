@@ -6,7 +6,15 @@ import api from '@/lib/api/client';
 export interface Fixture {
   id: number;
   utc_date: string;
-  status: 'TIMED' | 'IN_PLAY' | 'PAUSED' | 'FINISHED' | 'AWARDED' | 'POSTPONED' | 'CANCELLED' | string;
+  status:
+    | 'TIMED'
+    | 'IN_PLAY'
+    | 'PAUSED'
+    | 'FINISHED'
+    | 'AWARDED'
+    | 'POSTPONED'
+    | 'CANCELLED'
+    | string;
   matchday: number | null;
   stage: string | null;
   group: string | null;

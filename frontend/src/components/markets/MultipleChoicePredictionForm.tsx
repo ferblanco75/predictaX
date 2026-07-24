@@ -95,7 +95,9 @@ export function MultipleChoicePredictionForm({
       return;
     }
     if (betAmount > Math.floor(availablePoints)) {
-      setError(`No tenés suficientes puntos (disponible: ${formatPoints(Math.floor(availablePoints))} pts)`);
+      setError(
+        `No tenés suficientes puntos (disponible: ${formatPoints(Math.floor(availablePoints))} pts)`
+      );
       return;
     }
     if (betAmount > 10000) {
@@ -196,7 +198,10 @@ export function MultipleChoicePredictionForm({
                 <button
                   type="button"
                   className="ml-1 text-blue-600 hover:underline"
-                  onClick={() => { setBetAmount(maxBet); setError(undefined); }}
+                  onClick={() => {
+                    setBetAmount(maxBet);
+                    setError(undefined);
+                  }}
                   disabled={disabled}
                 >
                   Máx

@@ -52,9 +52,10 @@ export function MarketStats({ statsData }: MarketStatsProps) {
   const datoClave = statsData.dato_clave as string | undefined;
   const probabilidadIa = statsData.probabilidad_ia as number | undefined;
   const favoritos = statsData.favoritos as Array<{ pais: string; prob: number }> | undefined;
-  const competidores = statsData.competidores as Array<{ jugador?: string; pais?: string; prob: number }> | undefined;
-  const historial = (
-    statsData.historial_mundiales ||
+  const competidores = statsData.competidores as
+    | Array<{ jugador?: string; pais?: string; prob: number }>
+    | undefined;
+  const historial = (statsData.historial_mundiales ||
     statsData.historial_campeonatos ||
     statsData.historial_finales ||
     statsData.historial_goles_messi ||
@@ -62,10 +63,10 @@ export function MarketStats({ statsData }: MarketStatsProps) {
     statsData.historial_bota_oro ||
     statsData.historial_balon_oro_mundial ||
     statsData.historial_goles_grupos ||
-    statsData.historial_finales_latam
-  ) as Array<Record<string, unknown>> | undefined;
+    statsData.historial_finales_latam) as Array<Record<string, unknown>> | undefined;
 
-  const hasContent = headToHead || formaReciente || datoClave || favoritos || competidores || historial;
+  const hasContent =
+    headToHead || formaReciente || datoClave || favoritos || competidores || historial;
   if (!hasContent) return null;
 
   return (
@@ -77,7 +78,6 @@ export function MarketStats({ statsData }: MarketStatsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
-
         {/* Dato clave */}
         {datoClave && (
           <div className="flex gap-2 bg-green-50 dark:bg-green-950 rounded-lg px-4 py-3">
@@ -95,14 +95,15 @@ export function MarketStats({ statsData }: MarketStatsProps) {
             <div className="space-y-2">
               {Object.entries(formaReciente)
                 .filter(([key]) => key !== 'descripcion' && key !== 'goles_ultimos_5')
-                .map(([equipo, resultados]) => (
-                  Array.isArray(resultados) && (
-                    <div key={equipo} className="flex items-center justify-between">
-                      <span className="text-sm font-medium w-36 truncate">{equipo}</span>
-                      <FormaBar resultados={resultados} />
-                    </div>
-                  )
-                ))}
+                .map(
+                  ([equipo, resultados]) =>
+                    Array.isArray(resultados) && (
+                      <div key={equipo} className="flex items-center justify-between">
+                        <span className="text-sm font-medium w-36 truncate">{equipo}</span>
+                        <FormaBar resultados={resultados} />
+                      </div>
+                    )
+                )}
               {formaReciente.descripcion && (
                 <p className="text-xs text-gray-400 mt-1">{String(formaReciente.descripcion)}</p>
               )}
@@ -122,7 +123,9 @@ export function MarketStats({ statsData }: MarketStatsProps) {
                   <span className="text-gray-500 text-xs w-24 flex-shrink-0">{row.fecha}</span>
                   <span className="font-medium text-center flex-1">{row.resultado}</span>
                   {row.tipo && (
-                    <span className="text-xs text-gray-400 text-right w-28 truncate">{row.tipo}</span>
+                    <span className="text-xs text-gray-400 text-right w-28 truncate">
+                      {row.tipo}
+                    </span>
                   )}
                 </div>
               ))}
@@ -140,12 +143,18 @@ export function MarketStats({ statsData }: MarketStatsProps) {
               {historial.slice(0, 5).map((row, i) => {
                 const año = row.año || row.mundial || row.fecha;
                 const valor = row.resultado || row.goleador || row.ganador || row.fase || row.goles;
-                const extra = row.goles ? `${row.goles} goles` : row.promedio ? `${row.promedio}/partido` : '';
+                const extra = row.goles
+                  ? `${row.goles} goles`
+                  : row.promedio
+                    ? `${row.promedio}/partido`
+                    : '';
                 return (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <span className="text-gray-500 text-xs w-20 flex-shrink-0">{String(año)}</span>
                     <span className="font-medium flex-1 text-center">{String(valor ?? '')}</span>
-                    {extra && <span className="text-xs text-gray-400 w-24 text-right">{extra}</span>}
+                    {extra && (
+                      <span className="text-xs text-gray-400 w-24 text-right">{extra}</span>
+                    )}
                   </div>
                 );
               })}
@@ -163,7 +172,10 @@ export function MarketStats({ statsData }: MarketStatsProps) {
               {(favoritos || competidores || []).slice(0, 5).map((item, i) => {
                 const nombre = 'pais' in item ? item.pais : item.jugador || '';
                 return (
-                  <div key={i} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  >
                     <span className="text-xs text-gray-400 w-4">{i + 1}</span>
                     <span className="text-sm flex-1">{String(nombre)}</span>
                     <div className="flex items-center gap-2">
@@ -193,7 +205,6 @@ export function MarketStats({ statsData }: MarketStatsProps) {
             </div>
           </div>
         )}
-
       </CardContent>
     </Card>
   );

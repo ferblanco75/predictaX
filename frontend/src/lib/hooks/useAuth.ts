@@ -87,7 +87,10 @@ export function useVerifyOTP() {
 
   return useMutation<{ isNewUser: boolean }, Error, { email: string; code: string }>({
     mutationFn: async ({ email, code }) => {
-      const tokenRes = await api.post<TokenResponse & { is_new_user: boolean }>('/auth/otp/verify', { email, code });
+      const tokenRes = await api.post<TokenResponse & { is_new_user: boolean }>(
+        '/auth/otp/verify',
+        { email, code }
+      );
       const { access_token, is_new_user } = tokenRes.data;
       localStorage.setItem('token', access_token);
 

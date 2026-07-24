@@ -51,11 +51,23 @@ function ScoreDisplay({ fixture }: { fixture: Fixture }) {
           <div className="text-lg font-bold text-gray-400">vs</div>
         ) : (
           <div className="text-4xl font-extrabold tabular-nums">
-            <span className={score.home != null && score.away != null && score.home > score.away ? 'text-green-600 dark:text-green-400' : ''}>
+            <span
+              className={
+                score.home != null && score.away != null && score.home > score.away
+                  ? 'text-green-600 dark:text-green-400'
+                  : ''
+              }
+            >
               {score.home ?? 0}
             </span>
             <span className="text-gray-400 mx-1">–</span>
-            <span className={score.home != null && score.away != null && score.away > score.home ? 'text-green-600 dark:text-green-400' : ''}>
+            <span
+              className={
+                score.home != null && score.away != null && score.away > score.home
+                  ? 'text-green-600 dark:text-green-400'
+                  : ''
+              }
+            >
               {score.away ?? 0}
             </span>
           </div>

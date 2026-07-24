@@ -8,7 +8,16 @@ import {
   AdminErrorState,
   AdminNotice,
 } from '@/components/admin/AdminState';
-import { getMarketsRanking, resolveMarket, cancelMarket, editMarket, createMarket, deleteMarket, expirePastMarkets, unresolveMarket } from '@/lib/api/admin';
+import {
+  getMarketsRanking,
+  resolveMarket,
+  cancelMarket,
+  editMarket,
+  createMarket,
+  deleteMarket,
+  expirePastMarkets,
+  unresolveMarket,
+} from '@/lib/api/admin';
 import {
   Flame,
   Snowflake,
@@ -116,7 +125,9 @@ export default function AdminMarketsPage() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'resolved' | 'cancelled'>(
+    'all'
+  );
   const [resolveModal, setResolveModal] = useState<ResolveModalState>({
     open: false,
     marketId: '',
@@ -167,7 +178,11 @@ export default function AdminMarketsPage() {
       });
       window.dispatchEvent(new Event('market:resolved'));
     } catch (error) {
-      setNotice({ variant: 'error', title: 'No se pudo resolver el mercado', message: getErrorMessage(error) });
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo resolver el mercado',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -181,9 +196,17 @@ export default function AdminMarketsPage() {
     try {
       await deleteMarket(token, marketId);
       setMarkets((prev) => prev.filter((m) => m.id !== marketId));
-      setNotice({ variant: 'success', title: 'Mercado eliminado', message: `"${title}" y ${predictionsCount} predicciones eliminadas.` });
+      setNotice({
+        variant: 'success',
+        title: 'Mercado eliminado',
+        message: `"${title}" y ${predictionsCount} predicciones eliminadas.`,
+      });
     } catch (error) {
-      setNotice({ variant: 'error', title: 'No se pudo eliminar', message: getErrorMessage(error) });
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo eliminar',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -196,14 +219,18 @@ export default function AdminMarketsPage() {
     setConfirmAction(null);
     try {
       const res = await unresolveMarket(token, marketId);
-      setMarkets((prev) => prev.map((m) => m.id === marketId ? { ...m, status: 'active' } : m));
+      setMarkets((prev) => prev.map((m) => (m.id === marketId ? { ...m, status: 'active' } : m)));
       setNotice({
         variant: 'success',
         title: 'Resolución revertida',
         message: `"${title}" vuelve a activo · ${res.reverted_predictions} predicciones revertidas · ${res.points_adjusted?.toLocaleString() ?? 0} pts ajustados`,
       });
     } catch (error) {
-      setNotice({ variant: 'error', title: 'No se pudo revertir', message: getErrorMessage(error) });
+      setNotice({
+        variant: 'error',
+        title: 'No se pudo revertir',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -234,22 +261,48 @@ export default function AdminMarketsPage() {
   const handleCreateSave = async () => {
     if (!token) return;
     if (!createModal.title.trim()) {
-      setModalNotice({ variant: 'error', title: 'El título es requerido', message: '' }); return;
+      setModalNotice({ variant: 'error', title: 'El título es requerido', message: '' });
+      return;
     }
     if (createModal.title.trim().length < 10) {
-      setModalNotice({ variant: 'error', title: 'Título muy corto', message: 'El título debe tener al menos 10 caracteres.' }); return;
+      setModalNotice({
+        variant: 'error',
+        title: 'Título muy corto',
+        message: 'El título debe tener al menos 10 caracteres.',
+      });
+      return;
     }
     if (!createModal.description.trim() || createModal.description.trim().length < 50) {
-      setModalNotice({ variant: 'error', title: 'Descripción muy corta', message: 'La descripción debe tener al menos 50 caracteres.' }); return;
+      setModalNotice({
+        variant: 'error',
+        title: 'Descripción muy corta',
+        message: 'La descripción debe tener al menos 50 caracteres.',
+      });
+      return;
     }
     if (!createModal.end_date || new Date(createModal.end_date) <= new Date()) {
-      setModalNotice({ variant: 'error', title: 'Fecha inválida', message: 'La fecha de cierre debe ser posterior a ahora' }); return;
+      setModalNotice({
+        variant: 'error',
+        title: 'Fecha inválida',
+        message: 'La fecha de cierre debe ser posterior a ahora',
+      });
+      return;
     }
     if (new Date(createModal.end_date).getFullYear() > new Date().getFullYear() + 10) {
-      setModalNotice({ variant: 'error', title: 'Año inválido', message: 'El año de cierre no puede ser mayor a 10 años en el futuro.' }); return;
+      setModalNotice({
+        variant: 'error',
+        title: 'Año inválido',
+        message: 'El año de cierre no puede ser mayor a 10 años en el futuro.',
+      });
+      return;
     }
     if (createModal.probability < 1 || createModal.probability > 99) {
-      setModalNotice({ variant: 'error', title: 'Probabilidad inválida', message: 'Debe estar entre 1% y 99%' }); return;
+      setModalNotice({
+        variant: 'error',
+        title: 'Probabilidad inválida',
+        message: 'Debe estar entre 1% y 99%',
+      });
+      return;
     }
     setModalNotice(null);
     setActionLoading('creating');
@@ -262,11 +315,28 @@ export default function AdminMarketsPage() {
         end_date: new Date(createModal.end_date).toISOString(),
         probability: createModal.probability,
       });
-      setMarkets((prev) => [{ id: created.id, title: created.title, category: created.category, probability: created.probability, predictions_count: 0, volume: 0, participants: 0, end_date: created.end_date, status: 'active' }, ...prev]);
+      setMarkets((prev) => [
+        {
+          id: created.id,
+          title: created.title,
+          category: created.category,
+          probability: created.probability,
+          predictions_count: 0,
+          volume: 0,
+          participants: 0,
+          end_date: created.end_date,
+          status: 'active',
+        },
+        ...prev,
+      ]);
       setCreateModal(EMPTY_CREATE);
       setNotice({ variant: 'success', title: 'Poll creado', message: created.title });
     } catch (error) {
-      setModalNotice({ variant: 'error', title: 'No se pudo crear el mercado', message: getErrorMessage(error) });
+      setModalNotice({
+        variant: 'error',
+        title: 'No se pudo crear el mercado',
+        message: getErrorMessage(error),
+      });
     } finally {
       setActionLoading(null);
     }
@@ -311,8 +381,16 @@ export default function AdminMarketsPage() {
 
   const handleEditSave = async () => {
     if (!token) return;
-    if (editModal.end_date && new Date(editModal.end_date).getFullYear() > new Date().getFullYear() + 10) {
-      setModalNotice({ variant: 'error', title: 'Año inválido', message: 'El año de cierre no puede ser mayor a 10 años en el futuro.' }); return;
+    if (
+      editModal.end_date &&
+      new Date(editModal.end_date).getFullYear() > new Date().getFullYear() + 10
+    ) {
+      setModalNotice({
+        variant: 'error',
+        title: 'Año inválido',
+        message: 'El año de cierre no puede ser mayor a 10 años en el futuro.',
+      });
+      return;
     }
     setModalNotice(null);
     setActionLoading(editModal.marketId);
@@ -326,11 +404,23 @@ export default function AdminMarketsPage() {
       setMarkets((prev) =>
         prev.map((m) =>
           m.id === updated.id
-            ? { ...m, title: updated.title, category: updated.category ?? m.category, end_date: updated.end_date ?? m.end_date }
+            ? {
+                ...m,
+                title: updated.title,
+                category: updated.category ?? m.category,
+                end_date: updated.end_date ?? m.end_date,
+              }
             : m
         )
       );
-      setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' });
+      setEditModal({
+        open: false,
+        marketId: '',
+        title: '',
+        description: '',
+        category: '',
+        end_date: '',
+      });
       setNotice({
         variant: 'success',
         title: 'Mercado actualizado',
@@ -347,9 +437,10 @@ export default function AdminMarketsPage() {
     }
   };
 
-  const filteredMarkets = statusFilter === 'all'
-    ? markets
-    : markets.filter((m) => (m.status || 'active') === statusFilter);
+  const filteredMarkets =
+    statusFilter === 'all'
+      ? markets
+      : markets.filter((m) => (m.status || 'active') === statusFilter);
 
   return (
     <div className="space-y-6" onClick={() => setOpenMenu(null)}>
@@ -365,7 +456,11 @@ export default function AdminMarketsPage() {
               if (!token) return;
               try {
                 const res = await expirePastMarkets(token);
-                setNotice({ variant: 'success', title: 'Vencidos expirados', message: res.message });
+                setNotice({
+                  variant: 'success',
+                  title: 'Vencidos expirados',
+                  message: res.message,
+                });
                 void loadMarkets();
               } catch (error) {
                 setNotice({ variant: 'error', title: 'Error', message: getErrorMessage(error) });
@@ -377,7 +472,11 @@ export default function AdminMarketsPage() {
             Expirar vencidos
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setModalNotice(null); setCreateModal({ ...EMPTY_CREATE, open: true }); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setModalNotice(null);
+              setCreateModal({ ...EMPTY_CREATE, open: true });
+            }}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
@@ -424,7 +523,11 @@ export default function AdminMarketsPage() {
                   : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
-              {{ all: 'Todos', active: 'Activos', resolved: 'Resueltos', cancelled: 'Cancelados' }[s]}
+              {
+                { all: 'Todos', active: 'Activos', resolved: 'Resueltos', cancelled: 'Cancelados' }[
+                  s
+                ]
+              }
             </button>
           ))}
         </div>
@@ -515,8 +618,13 @@ export default function AdminMarketsPage() {
                                 setOpenMenu(null);
                                 setMenuPos(null);
                               } else {
-                                const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                const rect = (
+                                  e.currentTarget as HTMLButtonElement
+                                ).getBoundingClientRect();
+                                setMenuPos({
+                                  top: rect.bottom + 4,
+                                  right: window.innerWidth - rect.right,
+                                });
                                 setOpenMenu(m.id);
                               }
                             }}
@@ -568,7 +676,11 @@ export default function AdminMarketsPage() {
                                 <>
                                   <button
                                     onClick={() => {
-                                      setResolveModal({ open: true, marketId: m.id, title: m.title });
+                                      setResolveModal({
+                                        open: true,
+                                        marketId: m.id,
+                                        title: m.title,
+                                      });
                                       setOpenMenu(null);
                                     }}
                                     className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -666,7 +778,17 @@ export default function AdminMarketsPage() {
       {editModal.open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => { setModalNotice(null); setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' }); }}
+          onClick={() => {
+            setModalNotice(null);
+            setEditModal({
+              open: false,
+              marketId: '',
+              title: '',
+              description: '',
+              category: '',
+              end_date: '',
+            });
+          }}
         >
           <div
             className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-96 shadow-xl max-h-[90vh] overflow-y-auto"
@@ -701,9 +823,13 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setEditModal((prev) => ({ ...prev, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
+                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
+                    (c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
               <div>
@@ -712,7 +838,9 @@ export default function AdminMarketsPage() {
                   type="datetime-local"
                   value={editModal.end_date}
                   min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 16)}
                   onChange={(e) => setEditModal((prev) => ({ ...prev, end_date: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
@@ -722,7 +850,14 @@ export default function AdminMarketsPage() {
               <button
                 onClick={() => {
                   setModalNotice(null);
-                  setEditModal({ open: false, marketId: '', title: '', description: '', category: '', end_date: '' });
+                  setEditModal({
+                    open: false,
+                    marketId: '',
+                    title: '',
+                    description: '',
+                    category: '',
+                    end_date: '',
+                  });
                 }}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -744,7 +879,10 @@ export default function AdminMarketsPage() {
       {createModal.open && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => { setModalNotice(null); setCreateModal(EMPTY_CREATE); }}
+          onClick={() => {
+            setModalNotice(null);
+            setCreateModal(EMPTY_CREATE);
+          }}
         >
           <div
             className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl space-y-4"
@@ -773,7 +911,9 @@ export default function AdminMarketsPage() {
                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 autoFocus
               />
-              <p className="text-xs text-gray-400 mt-1">{createModal.title.trim().length}/10 mín.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {createModal.title.trim().length}/10 mín.
+              </p>
             </div>
 
             <div>
@@ -787,7 +927,9 @@ export default function AdminMarketsPage() {
                 rows={3}
                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 resize-none"
               />
-              <p className="text-xs text-gray-400 mt-1">{createModal.description.trim().length}/50 mín.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {createModal.description.trim().length}/50 mín.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -798,9 +940,13 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setCreateModal((p) => ({ ...p, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
+                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
+                    (c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
               <div>
@@ -823,7 +969,9 @@ export default function AdminMarketsPage() {
                   type="datetime-local"
                   value={createModal.end_date}
                   min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                  max={new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 16)}
                   onChange={(e) => setCreateModal((p) => ({ ...p, end_date: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 />
@@ -846,14 +994,19 @@ export default function AdminMarketsPage() {
 
             <div className="flex gap-2 justify-end pt-2">
               <button
-                onClick={() => { setModalNotice(null); setCreateModal(EMPTY_CREATE); }}
+                onClick={() => {
+                  setModalNotice(null);
+                  setCreateModal(EMPTY_CREATE);
+                }}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateSave}
-                disabled={!createModal.title || !createModal.end_date || actionLoading === 'creating'}
+                disabled={
+                  !createModal.title || !createModal.end_date || actionLoading === 'creating'
+                }
                 className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {actionLoading === 'creating' ? 'Creando...' : 'Crear poll'}

@@ -322,7 +322,9 @@ export default function AdminDashboard() {
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Volumen total</span>
-              <span className="font-medium">{data.predictions.volume_total.toLocaleString()} pts</span>
+              <span className="font-medium">
+                {data.predictions.volume_total.toLocaleString()} pts
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Nuevos usuarios (mes)</span>
@@ -368,7 +370,9 @@ export default function AdminDashboard() {
                     <div className="text-xs text-gray-400">{u.predictions_count} predicciones</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium">{u.total_wagered.toLocaleString()} pts</div>
+                    <div className="text-sm font-medium">
+                      {u.total_wagered.toLocaleString()} pts
+                    </div>
                     <div className="text-xs text-gray-400">usados</div>
                   </div>
                 </div>

@@ -26,7 +26,11 @@ function MarketsContent() {
     resetFilters,
   } = useAppStore();
   const [currentPage, setCurrentPage] = useState(() => {
-    const p = parseInt(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('page') ?? '1' : '1');
+    const p = parseInt(
+      typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('page') ?? '1')
+        : '1'
+    );
     return isNaN(p) || p < 1 ? 1 : p;
   });
   const [showWelcome, setShowWelcome] = useState(false);
@@ -37,7 +41,9 @@ function MarketsContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (page === 1) params.delete('page');
     else params.set('page', String(page));
-    router.replace(params.size > 0 ? `/markets?${params.toString()}` : '/markets', { scroll: false });
+    router.replace(params.size > 0 ? `/markets?${params.toString()}` : '/markets', {
+      scroll: false,
+    });
   };
 
   // Show welcome banner for new users (?welcome=1) and clear the param
@@ -46,7 +52,9 @@ function MarketsContent() {
       setShowWelcome(true);
       const clean = new URLSearchParams(searchParams.toString());
       clean.delete('welcome');
-      router.replace(clean.size > 0 ? `/markets?${clean.toString()}` : '/markets', { scroll: false });
+      router.replace(clean.size > 0 ? `/markets?${clean.toString()}` : '/markets', {
+        scroll: false,
+      });
     }
   }, [searchParams, router]);
 
@@ -92,7 +100,10 @@ function MarketsContent() {
         searchMatch = String(Math.round(m.probability)).startsWith(prefix);
       } else if (normalizedSearch.includes('%')) {
         // "%" as text wildcard in title (existing behaviour)
-        const pattern = normalizedSearch.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+        const pattern = normalizedSearch
+          .split('%')
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*');
         searchMatch = new RegExp(pattern, 'i').test(m.title);
       } else {
         searchMatch = m.title.toLowerCase().includes(normalizedSearch);
@@ -121,7 +132,6 @@ function MarketsContent() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-
         {/* Welcome banner for new users */}
         {showWelcome && user && (
           <div className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border border-green-200 dark:border-green-800 px-5 py-4">
@@ -306,7 +316,9 @@ function MarketsContent() {
             {!isLoading && filtered.length > 0 && (
               <div className="mt-6 space-y-3">
                 <p className="text-center text-sm text-gray-500">
-                  Mostrando {(safeCurrentPage - 1) * MARKETS_PER_PAGE + 1}–{Math.min(safeCurrentPage * MARKETS_PER_PAGE, filtered.length)} de {filtered.length} mercados
+                  Mostrando {(safeCurrentPage - 1) * MARKETS_PER_PAGE + 1}–
+                  {Math.min(safeCurrentPage * MARKETS_PER_PAGE, filtered.length)} de{' '}
+                  {filtered.length} mercados
                 </p>
                 {totalPages > 1 && (
                   <Pagination

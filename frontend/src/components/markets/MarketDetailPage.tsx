@@ -208,7 +208,9 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Volumen virtual</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Volumen virtual
+                    </span>
                     <span className="font-semibold">{market.volume}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -247,8 +249,11 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                           <div className="flex items-center gap-2">
                             <span
                               className={`h-2 w-2 rounded-full ${
-                                pred.status === 'won' ? 'bg-green-500' :
-                                pred.status === 'lost' ? 'bg-red-500' : 'bg-amber-400'
+                                pred.status === 'won'
+                                  ? 'bg-green-500'
+                                  : pred.status === 'lost'
+                                    ? 'bg-red-500'
+                                    : 'bg-amber-400'
                               }`}
                             />
                             <span className="font-medium">{pred.probability}%</span>
@@ -260,7 +265,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                           <div className="flex items-center gap-2 text-xs">
                             {pred.status === 'won' && (
                               <span className="text-green-600 dark:text-green-400 font-semibold">
-                                +{Math.round((pred.potential_gain ?? 0))} pts
+                                +{Math.round(pred.potential_gain ?? 0)} pts
                               </span>
                             )}
                             {pred.status === 'lost' && (
@@ -288,7 +293,9 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                   ) : (
                     <div className="rounded-xl border border-dashed border-gray-300 p-4 text-center dark:border-gray-700">
                       <Clock3 className="mx-auto mb-2 h-7 w-7 text-gray-400" />
-                      <p className="text-sm text-gray-500">Iniciá sesión para ver tus predicciones.</p>
+                      <p className="text-sm text-gray-500">
+                        Iniciá sesión para ver tus predicciones.
+                      </p>
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-3 text-sm">

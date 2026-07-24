@@ -86,9 +86,7 @@ export default function ReferralsPage() {
       <div className="container mx-auto px-4 py-12 max-w-lg space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Invitar amigos</h1>
-          <p className="text-gray-500 mt-1">
-            Compartí tu link y ambos ganan puntos extra.
-          </p>
+          <p className="text-gray-500 mt-1">Compartí tu link y ambos ganan puntos extra.</p>
         </div>
 
         <Card>
@@ -104,12 +102,18 @@ export default function ReferralsPage() {
                 className="shrink-0 rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Copiar link"
               >
-                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </button>
             </div>
 
             <div className="flex items-center gap-2 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 px-4 py-3 text-sm">
-              <span className="font-mono font-bold text-blue-700 dark:text-blue-300">{data.referral_code}</span>
+              <span className="font-mono font-bold text-blue-700 dark:text-blue-300">
+                {data.referral_code}
+              </span>
               <span className="text-blue-600 dark:text-blue-400">— tu código personal</span>
             </div>
 
@@ -144,16 +148,27 @@ export default function ReferralsPage() {
           <CardContent>
             <ol className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">1</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                  1
+                </span>
                 <span>Compartí tu link con amigos.</span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">2</span>
-                <span>Tu amigo se registra y recibe <strong>+100 puntos</strong> de bonus.</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                  2
+                </span>
+                <span>
+                  Tu amigo se registra y recibe <strong>+100 puntos</strong> de bonus.
+                </span>
               </li>
               <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">3</span>
-                <span>Cuando tu amigo hace su primera predicción, vos recibís <strong>+200 puntos</strong>.</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                  3
+                </span>
+                <span>
+                  Cuando tu amigo hace su primera predicción, vos recibís{' '}
+                  <strong>+200 puntos</strong>.
+                </span>
               </li>
             </ol>
           </CardContent>

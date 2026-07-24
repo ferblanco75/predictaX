@@ -59,7 +59,9 @@ export function PredictionForm({
       return;
     }
     if (betAmount > Math.floor(availablePoints)) {
-      setPredictionError(`No tenés suficientes puntos (disponible: ${formatPoints(Math.floor(availablePoints))} pts)`);
+      setPredictionError(
+        `No tenés suficientes puntos (disponible: ${formatPoints(Math.floor(availablePoints))} pts)`
+      );
       return;
     }
     if (betAmount > 10000) {
@@ -95,7 +97,10 @@ export function PredictionForm({
             <button
               type="button"
               disabled={disabled}
-              onClick={() => { setPrediction(75); setPredictionError(undefined); }}
+              onClick={() => {
+                setPrediction(75);
+                setPredictionError(undefined);
+              }}
               className={`flex items-center justify-center gap-2 rounded-xl border-2 py-4 text-base font-semibold transition-all ${
                 prediction === 75
                   ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
@@ -108,7 +113,10 @@ export function PredictionForm({
             <button
               type="button"
               disabled={disabled}
-              onClick={() => { setPrediction(25); setPredictionError(undefined); }}
+              onClick={() => {
+                setPrediction(25);
+                setPredictionError(undefined);
+              }}
               className={`flex items-center justify-center gap-2 rounded-xl border-2 py-4 text-base font-semibold transition-all ${
                 prediction === 25
                   ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300'
@@ -132,7 +140,10 @@ export function PredictionForm({
                 <button
                   type="button"
                   className="ml-1 text-blue-600 hover:underline"
-                  onClick={() => { setBetAmount(maxBet); setPredictionError(undefined); }}
+                  onClick={() => {
+                    setBetAmount(maxBet);
+                    setPredictionError(undefined);
+                  }}
                   disabled={disabled}
                 >
                   Máx
@@ -215,7 +226,9 @@ export function PredictionForm({
                 <div>
                   <p className="font-medium">Ya tenés una predicción en este mercado</p>
                   <p className="text-xs mt-0.5 text-blue-700/80 dark:text-blue-300/80">
-                    Tu apuesta anterior: {existingPrediction.probability > 50 ? 'SÍ' : 'NO'} con {formatPoints(existingPrediction.points_wagered)} pts. Confirmar agregará una nueva apuesta.
+                    Tu apuesta anterior: {existingPrediction.probability > 50 ? 'SÍ' : 'NO'} con{' '}
+                    {formatPoints(existingPrediction.points_wagered)} pts. Confirmar agregará una
+                    nueva apuesta.
                   </p>
                 </div>
               </div>
@@ -225,10 +238,16 @@ export function PredictionForm({
               <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
                 <p className="font-medium">¿Confirmar nueva apuesta?</p>
                 <p className="text-xs mt-0.5 text-amber-700/80 dark:text-amber-300/80">
-                  Se descontarán {formatPoints(betAmount)} pts adicionales. Tus apuestas anteriores en este mercado siguen activas.
+                  Se descontarán {formatPoints(betAmount)} pts adicionales. Tus apuestas anteriores
+                  en este mercado siguen activas.
                 </p>
                 <div className="flex gap-2 mt-3">
-                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={handleSubmit} disabled={disabled}>
+                  <Button
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={handleSubmit}
+                    disabled={disabled}
+                  >
                     {disabled ? 'Procesando...' : 'Sí, apostar de nuevo'}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setConfirmingOverride(false)}>
@@ -245,7 +264,11 @@ export function PredictionForm({
                 onClick={handleSubmit}
                 disabled={disabled || prediction === null}
               >
-                {disabled ? 'Procesando...' : prediction === null ? 'Elegí SÍ o NO primero' : `Confirmar — ${prediction === 75 ? 'SÍ' : 'NO'} va a pasar`}
+                {disabled
+                  ? 'Procesando...'
+                  : prediction === null
+                    ? 'Elegí SÍ o NO primero'
+                    : `Confirmar — ${prediction === 75 ? 'SÍ' : 'NO'} va a pasar`}
               </Button>
             )}
 

@@ -88,7 +88,10 @@ function LegalCheckbox({
 
 type OTPStep = 'email' | 'code';
 
-function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; initialStep?: OTPStep } = {}) {
+function OTPLoginForm({
+  initialEmail,
+  initialStep,
+}: { initialEmail?: string; initialStep?: OTPStep } = {}) {
   const [step, setStep] = useState<OTPStep>(initialStep ?? 'email');
   const [email, setEmail] = useState(initialEmail ?? '');
   const [emailError, setEmailError] = useState<string>();
@@ -110,7 +113,10 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
   const handleEmailSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const err = validateEmail(email);
-    if (err) { setEmailError(err); return; }
+    if (err) {
+      setEmailError(err);
+      return;
+    }
     setEmailError(undefined);
     requestOTP.mutate(
       { email },
@@ -127,12 +133,12 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
 
   const handleCodeSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (code.length !== 6) { setCodeError('El código debe tener 6 dígitos'); return; }
+    if (code.length !== 6) {
+      setCodeError('El código debe tener 6 dígitos');
+      return;
+    }
     setCodeError(undefined);
-    verifyOTP.mutate(
-      { email, code },
-      { onError: (err) => setCodeError(err.message) }
-    );
+    verifyOTP.mutate({ email, code }, { onError: (err) => setCodeError(err.message) });
   };
 
   const handleResend = () => {
@@ -155,7 +161,9 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
     return (
       <form onSubmit={handleEmailSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="otp-email" className="text-sm font-medium">Tu email</label>
+          <label htmlFor="otp-email" className="text-sm font-medium">
+            Tu email
+          </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -165,14 +173,18 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
               autoComplete="email"
               className="pl-9"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setEmailError(undefined); }}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError(undefined);
+              }}
               aria-invalid={!!emailError}
               disabled={requestOTP.isPending}
             />
           </div>
           {emailError && (
             <div className="flex items-center gap-1 text-sm text-red-600">
-              <AlertCircle className="h-4 w-4" /><span>{emailError}</span>
+              <AlertCircle className="h-4 w-4" />
+              <span>{emailError}</span>
             </div>
           )}
         </div>
@@ -192,12 +204,18 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
     <form onSubmit={handleCodeSubmit} className="space-y-4">
       <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Código enviado a</p>
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">
+            Código enviado a
+          </p>
           <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">{email}</p>
         </div>
         <button
           type="button"
-          onClick={() => { setStep('email'); setCode(''); setCodeError(undefined); }}
+          onClick={() => {
+            setStep('email');
+            setCode('');
+            setCodeError(undefined);
+          }}
           className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
           aria-label="Cambiar email"
         >
@@ -207,10 +225,10 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label htmlFor="otp-code" className="text-sm font-medium">Código de 6 dígitos</label>
-          {countdown > 0 && (
-            <span className="text-xs text-gray-500">Expira en {countdownStr}</span>
-          )}
+          <label htmlFor="otp-code" className="text-sm font-medium">
+            Código de 6 dígitos
+          </label>
+          {countdown > 0 && <span className="text-xs text-gray-500">Expira en {countdownStr}</span>}
         </div>
         <Input
           id="otp-code"
@@ -223,13 +241,17 @@ function OTPLoginForm({ initialEmail, initialStep }: { initialEmail?: string; in
           autoComplete="one-time-code"
           className="text-center text-2xl font-bold tracking-[0.5em] h-14"
           value={code}
-          onChange={(e) => { setCode(e.target.value.replace(/\D/g, '')); setCodeError(undefined); }}
+          onChange={(e) => {
+            setCode(e.target.value.replace(/\D/g, ''));
+            setCodeError(undefined);
+          }}
           aria-invalid={!!codeError}
           disabled={verifyOTP.isPending}
         />
         {codeError && (
           <div className="flex items-center gap-1 text-sm text-red-600">
-            <AlertCircle className="h-4 w-4" /><span>{codeError}</span>
+            <AlertCircle className="h-4 w-4" />
+            <span>{codeError}</span>
           </div>
         )}
       </div>
@@ -295,8 +317,12 @@ function AuthPageContent() {
   const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = String(formData.get('name') ?? '').trim().toLowerCase();
-    const email = String(formData.get('email') ?? '').trim().toLowerCase();
+    const name = String(formData.get('name') ?? '')
+      .trim()
+      .toLowerCase();
+    const email = String(formData.get('email') ?? '')
+      .trim()
+      .toLowerCase();
     const termsAccepted = formData.get('termsAccepted') === 'on';
     const privacyAccepted = formData.get('privacyAccepted') === 'on';
     const isAdult = formData.get('isAdult') === 'on';
@@ -333,17 +359,28 @@ function AuthPageContent() {
 
   // Map API error to the specific field that caused it
   const rawRegisterError = registerMutation.error?.message ?? '';
-  const registerError = (rawRegisterError && !rawRegisterError.toLowerCase().includes('email') && !rawRegisterError.toLowerCase().includes('usuario'))
-    ? rawRegisterError : null;
-  const registerEmailError = rawRegisterError.toLowerCase().includes('email') ? rawRegisterError : undefined;
-  const registerNameError = rawRegisterError.toLowerCase().includes('usuario') ? rawRegisterError : undefined;
+  const registerError =
+    rawRegisterError &&
+    !rawRegisterError.toLowerCase().includes('email') &&
+    !rawRegisterError.toLowerCase().includes('usuario')
+      ? rawRegisterError
+      : null;
+  const registerEmailError = rawRegisterError.toLowerCase().includes('email')
+    ? rawRegisterError
+    : undefined;
+  const registerNameError = rawRegisterError.toLowerCase().includes('usuario')
+    ? rawRegisterError
+    : undefined;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 text-white">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg" aria-hidden="true" />
+            <div
+              className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg"
+              aria-hidden="true"
+            />
             <span className="text-2xl font-bold">NeuroPredict</span>
           </Link>
         </div>
@@ -375,123 +412,130 @@ function AuthPageContent() {
               <TabsContent value="register">
                 {registeredEmail && (
                   <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-800 dark:text-green-200">
-                    ✅ Cuenta creada. Ingresá el código que enviamos a <strong>{registeredEmail}</strong>
+                    ✅ Cuenta creada. Ingresá el código que enviamos a{' '}
+                    <strong>{registeredEmail}</strong>
                   </div>
                 )}
                 {registeredEmail ? (
                   <OTPLoginForm initialEmail={registeredEmail} initialStep="code" />
                 ) : (
-                <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">
-                      Nombre de usuario
-                    </label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="juanperez"
-                      autoComplete="username"
-                      aria-invalid={!!(registerErrors.name || registerNameError)}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, name: undefined }))}
-                    />
-                    {(registerErrors.name || registerNameError) && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.name ?? registerNameError}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="email-register" className="text-sm font-medium">
-                      Email
-                    </label>
-                    <Input
-                      id="email-register"
-                      name="email"
-                      type="email"
-                      placeholder="tu@email.com"
-                      autoComplete="email"
-                      aria-invalid={!!(registerErrors.email || registerEmailError)}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, email: undefined }))}
-                    />
-                    {(registerErrors.email || registerEmailError) && (
-                      <div className="flex items-center space-x-1 text-sm text-red-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>{registerErrors.email ?? registerEmailError}</span>
-                        {registerEmailError && (
-                          <button
-                            type="button"
-                            className="ml-1 underline text-blue-600 hover:text-blue-800"
-                            onClick={() => {
-                              const tab = document.querySelector('[data-value="login"]') as HTMLElement;
-                              tab?.click();
-                            }}
-                          >
-                            Iniciá sesión
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                    <LegalCheckbox
-                      id="termsAccepted"
-                      label={
-                        <>
-                          Acepto los{' '}
-                          <Link href="/terms" className="text-blue-600 hover:underline">
-                            términos y condiciones
-                          </Link>
-                        </>
-                      }
-                      error={registerErrors.terms}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, terms: undefined }))}
-                    />
-
-                    <LegalCheckbox
-                      id="privacyAccepted"
-                      label={
-                        <>
-                          Acepto la{' '}
-                          <Link href="/privacy" className="text-blue-600 hover:underline">
-                            política de privacidad
-                          </Link>
-                        </>
-                      }
-                      error={registerErrors.privacy}
-                      onChange={() =>
-                        setRegisterErrors((prev) => ({ ...prev, privacy: undefined }))
-                      }
-                    />
-
-                    <LegalCheckbox
-                      id="isAdult"
-                      label="Declaro ser mayor de 18 años y entiendo que NeuroPredict usa puntos virtuales sin valor monetario."
-                      error={registerErrors.age}
-                      onChange={() => setRegisterErrors((prev) => ({ ...prev, age: undefined }))}
-                    />
-
-                    <LegalCheckbox
-                      id="marketingOptIn"
-                      label="Quiero recibir novedades del MVP y mercados del Mundial 2026 por email."
-                      optional
-                    />
-                  </div>
-
-                  {registerError && (
-                    <div className="flex items-center space-x-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>{registerError}</span>
+                  <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="text-sm font-medium">
+                        Nombre de usuario
+                      </label>
+                      <Input
+                        id="name"
+                        name="name"
+                        type="text"
+                        placeholder="juanperez"
+                        autoComplete="username"
+                        aria-invalid={!!(registerErrors.name || registerNameError)}
+                        onChange={() => setRegisterErrors((prev) => ({ ...prev, name: undefined }))}
+                      />
+                      {(registerErrors.name || registerNameError) && (
+                        <div className="flex items-center space-x-1 text-sm text-red-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>{registerErrors.name ?? registerNameError}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
-                    {registerMutation.isPending ? 'Creando cuenta...' : 'Crear cuenta'}
-                  </Button>
-                </form>
+                    <div className="space-y-2">
+                      <label htmlFor="email-register" className="text-sm font-medium">
+                        Email
+                      </label>
+                      <Input
+                        id="email-register"
+                        name="email"
+                        type="email"
+                        placeholder="tu@email.com"
+                        autoComplete="email"
+                        aria-invalid={!!(registerErrors.email || registerEmailError)}
+                        onChange={() =>
+                          setRegisterErrors((prev) => ({ ...prev, email: undefined }))
+                        }
+                      />
+                      {(registerErrors.email || registerEmailError) && (
+                        <div className="flex items-center space-x-1 text-sm text-red-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>{registerErrors.email ?? registerEmailError}</span>
+                          {registerEmailError && (
+                            <button
+                              type="button"
+                              className="ml-1 underline text-blue-600 hover:text-blue-800"
+                              onClick={() => {
+                                const tab = document.querySelector(
+                                  '[data-value="login"]'
+                                ) as HTMLElement;
+                                tab?.click();
+                              }}
+                            >
+                              Iniciá sesión
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                      <LegalCheckbox
+                        id="termsAccepted"
+                        label={
+                          <>
+                            Acepto los{' '}
+                            <Link href="/terms" className="text-blue-600 hover:underline">
+                              términos y condiciones
+                            </Link>
+                          </>
+                        }
+                        error={registerErrors.terms}
+                        onChange={() =>
+                          setRegisterErrors((prev) => ({ ...prev, terms: undefined }))
+                        }
+                      />
+
+                      <LegalCheckbox
+                        id="privacyAccepted"
+                        label={
+                          <>
+                            Acepto la{' '}
+                            <Link href="/privacy" className="text-blue-600 hover:underline">
+                              política de privacidad
+                            </Link>
+                          </>
+                        }
+                        error={registerErrors.privacy}
+                        onChange={() =>
+                          setRegisterErrors((prev) => ({ ...prev, privacy: undefined }))
+                        }
+                      />
+
+                      <LegalCheckbox
+                        id="isAdult"
+                        label="Declaro ser mayor de 18 años y entiendo que NeuroPredict usa puntos virtuales sin valor monetario."
+                        error={registerErrors.age}
+                        onChange={() => setRegisterErrors((prev) => ({ ...prev, age: undefined }))}
+                      />
+
+                      <LegalCheckbox
+                        id="marketingOptIn"
+                        label="Quiero recibir novedades del MVP y mercados del Mundial 2026 por email."
+                        optional
+                      />
+                    </div>
+
+                    {registerError && (
+                      <div className="flex items-center space-x-1 text-sm text-red-600">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>{registerError}</span>
+                      </div>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                      {registerMutation.isPending ? 'Creando cuenta...' : 'Crear cuenta'}
+                    </Button>
+                  </form>
                 )}
               </TabsContent>
             </Tabs>

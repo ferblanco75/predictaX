@@ -27,7 +27,9 @@ export default function Error({
             <AlertTriangle className="h-10 w-10" />
           </div>
 
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-500">Error 500</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-red-500">
+            Error 500
+          </p>
           <h1 className="mt-3 text-3xl font-bold">Algo salió mal</h1>
 
           <p className="mt-4 text-muted-foreground">
