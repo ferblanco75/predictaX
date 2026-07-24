@@ -314,16 +314,14 @@ export default function AdminUsersPage() {
         prev.map((u) => (u.id === pointsModal.userId ? { ...u, points: updated.points } : u))
       );
       if (user?.id && pointsModal.userId === user.id) {
-        useAppStore
-          .getState()
-          .login({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            points: updated.points,
-            token: user.token,
-          });
+        useAppStore.getState().login({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          points: updated.points,
+          token: user.token,
+        });
       }
       setPointsModal({ open: false, userId: '', username: '', currentPoints: 0 });
       setNotice({

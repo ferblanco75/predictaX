@@ -63,7 +63,8 @@ def create_prediction(
     # Validate user has enough points
     if user.points + 0.01 < prediction_data.points_wagered:
         raise InsufficientPointsException(
-            f"Puntos insuficientes. Tenés {int(user.points)} pts, necesitás {int(prediction_data.points_wagered)} pts"
+            f"Puntos insuficientes. Tenés {int(user.points)} pts, "
+            f"necesitás {int(prediction_data.points_wagered)} pts"
         )
 
     # Get market
@@ -73,7 +74,9 @@ def create_prediction(
     if market.status != MarketStatus.ACTIVE:
         raise BadRequestException("Este mercado ya no está activo")
 
-    if market.end_date and market.end_date.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+    if market.end_date and market.end_date.replace(tzinfo=timezone.utc) < datetime.now(
+        timezone.utc
+    ):
         raise BadRequestException("Este mercado ya cerró")
 
     # Store old probability for snapshot comparison
@@ -86,7 +89,10 @@ def create_prediction(
     # payout = points_wagered / (probability_at_bet / 100)
     # Using fee=0 for MVP
     if prob_at_bet > 0:
-        potential_gain = (prediction_data.points_wagered / (prob_at_bet / 100)) - prediction_data.points_wagered
+        potential_gain = (
+            prediction_data.points_wagered / (prob_at_bet / 100)
+            - prediction_data.points_wagered
+        )
     else:
         potential_gain = 0.0
 

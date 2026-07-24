@@ -138,8 +138,9 @@ def verify_otp(db: Session, email: str, code: str) -> User:
         otp.attempts += 1
         db.commit()
         remaining = settings.OTP_MAX_ATTEMPTS - otp.attempts
+        plural = "s" if remaining != 1 else ""
         raise UnauthorizedException(
-            f"Código incorrecto. {remaining} intento{'s' if remaining != 1 else ''} restante{'s' if remaining != 1 else ''}"
+            f"Código incorrecto. {remaining} intento{plural} restante{plural}"
         )
 
     # Mark as used

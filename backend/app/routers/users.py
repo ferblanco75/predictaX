@@ -12,7 +12,6 @@ from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.models.prediction import Prediction
 from app.schemas.user import CookieConsentUpdate, ReferralResponse, UserDeleteRequest, UserResponse
 from app.services import referral_service
 

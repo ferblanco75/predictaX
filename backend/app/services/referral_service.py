@@ -1,8 +1,8 @@
 import secrets
 import string
 
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.models.referral import Referral
 from app.models.user import User
@@ -71,7 +71,9 @@ def award_referrer_bonus_if_eligible(db: Session, user: User) -> None:
 
 def get_referral_stats(db: Session, user: User) -> dict:
     ensure_user_has_code(db, user)
-    referred_count = db.query(func.count(Referral.id)).filter(Referral.referrer_id == user.id).scalar() or 0
+    referred_count = (
+        db.query(func.count(Referral.id)).filter(Referral.referrer_id == user.id).scalar() or 0
+    )
     points_earned = (
         db.query(func.count(Referral.id))
         .filter(Referral.referrer_id == user.id, Referral.referrer_bonus_awarded.is_(True))

@@ -16,7 +16,10 @@ try:
         redis_client = redis.from_url(_url, decode_responses=True)
         redis_client.ping()
     else:
-        logger.warning("Redis not available for rate limiting: invalid or missing REDIS_URL. Using memory fallback.")
+        logger.warning(
+            "Redis not available for rate limiting: invalid or missing REDIS_URL. "
+            "Using memory fallback."
+        )
 except (redis.RedisError, Exception) as exc:
     logger.warning("Redis not available for rate limiting: %s. Using memory fallback.", exc)
     redis_client = None

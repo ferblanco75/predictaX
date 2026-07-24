@@ -186,7 +186,10 @@ def get_overview(db: Session = Depends(get_db)):
 def list_users(
     search: str = Query("", description="Search by email or username"),
     role: str = Query("", description="Filter by role"),
-    sort_by: str = Query("created_at", description="Sort field: created_at, points, predictions_count, username"),
+    sort_by: str = Query(
+        "created_at",
+        description="Sort field: created_at, points, predictions_count, username",
+    ),
     order: str = Query("desc", description="asc or desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -339,8 +342,6 @@ def get_markets_ranking(
     db: Session = Depends(get_db),
 ):
     """Get markets ranked by activity (single query with subquery for prediction counts)."""
-    from sqlalchemy import outerjoin, label
-    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
     pred_count_subq = (
         db.query(
@@ -966,7 +967,11 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
 
         if user_said_yes == outcome_yes:
             pred.status = "won"
-            prob = pred.probability_at_bet if pred.probability_at_bet and pred.probability_at_bet > 0 else 50.0
+            prob = (
+                pred.probability_at_bet
+                if pred.probability_at_bet and pred.probability_at_bet > 0
+                else 50.0
+            )
             payout = round(pred.points_wagered / (prob / 100.0), 2)
             pred.user.points = round(pred.user.points + payout, 2)
             total_paid += payout
@@ -1003,7 +1008,11 @@ def unresolve_market(market_id: str, db: Session = Depends(get_db)):
     predictions = db.query(Prediction).filter(Prediction.market_id == market.id).all()
     for pred in predictions:
         if pred.status == "won":
-            prob = pred.probability_at_bet if pred.probability_at_bet and pred.probability_at_bet > 0 else 50.0
+            prob = (
+                pred.probability_at_bet
+                if pred.probability_at_bet and pred.probability_at_bet > 0
+                else 50.0
+            )
             payout = round(pred.points_wagered / (prob / 100.0), 2)
             pred.user.points = round(pred.user.points - payout, 2)
             points_adjusted += payout
@@ -1052,7 +1061,10 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
     if body.end_date is not None:
         end_date = _to_naive_utc(body.end_date)
         if end_date <= datetime.utcnow():
-            raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
+            raise HTTPException(
+                status_code=400,
+                detail="La fecha de cierre debe ser posterior a ahora",
+            )
         market.end_date = end_date
     if body.category is not None:
         try:
