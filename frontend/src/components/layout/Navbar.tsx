@@ -116,11 +116,12 @@ export function Navbar() {
           </form>
 
           {/* Auth buttons */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             {isLoggedIn && user ? (
               <>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                {/* Points chip — hidden on narrow mobile to save space */}
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                   <Coins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span className="text-sm font-bold text-amber-700 dark:text-amber-400">
                     {user.points.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
@@ -137,13 +138,14 @@ export function Navbar() {
                     <span className="hidden sm:inline text-xs font-semibold">Admin</span>
                   </Link>
                 )}
+                {/* Referrals link — hidden on mobile (available in bottom nav) */}
                 <Link
                   href="/referrals"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
                   title="Invitar amigos"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span className="hidden sm:inline text-xs font-semibold">Invitar</span>
+                  <span className="text-xs font-semibold">Invitar</span>
                 </Link>
                 <Link
                   href="/profile"
@@ -166,7 +168,11 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/auth" className={cn(buttonVariants({ variant: 'ghost' }))}>
+                {/* "Iniciar sesión" hidden on mobile — one button is enough */}
+                <Link
+                  href="/auth"
+                  className={cn(buttonVariants({ variant: 'ghost' }), 'hidden sm:inline-flex')}
+                >
                   Iniciar sesión
                 </Link>
                 <Link href="/auth" className={cn(buttonVariants())}>
