@@ -93,13 +93,16 @@ function MarketsContent() {
     const normalizedSearch = searchQuery.trim().toLowerCase();
     let searchMatch = true;
     if (normalizedSearch) {
-      // Pattern "digits*%" → probability prefix filter (e.g. "5*%" = 50–59%)
-      const probWildcard = normalizedSearch.match(/^(\d+)\*%$/);
-      if (probWildcard) {
-        const prefix = probWildcard[1];
-        searchMatch = String(Math.round(m.probability)).startsWith(prefix);
+      // "75%" → exact probability match
+      const exactProb = normalizedSearch.match(/^(\d+)%$/);
+      // "5*%" → probability prefix filter (e.g. 50–59%)
+      const prefixProb = normalizedSearch.match(/^(\d+)\*%$/);
+      if (exactProb) {
+        searchMatch = Math.round(m.probability) === parseInt(exactProb[1], 10);
+      } else if (prefixProb) {
+        searchMatch = String(Math.round(m.probability)).startsWith(prefixProb[1]);
       } else if (normalizedSearch.includes('%')) {
-        // "%" as text wildcard in title (existing behaviour)
+        // "%" as text wildcard in title (e.g. "presi%")
         const pattern = normalizedSearch
           .split('%')
           .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
