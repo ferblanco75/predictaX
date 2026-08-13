@@ -41,7 +41,7 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@predictax.com")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin1234")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ def crear_poll(titulo: str, descripcion: str, probabilidad: float,
             json=payload,
             timeout=15,
         )
-        if r.status_code == 201:
+        if r.status_code in (200, 201):
             poll_id = r.json().get("id")
             print(f"[crear] ✅ Poll creado: {poll_id} — {titulo!r}")
             return poll_id
