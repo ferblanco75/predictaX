@@ -52,7 +52,7 @@ export function MobileBottomNav() {
               key={item.href}
               href={href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1 rounded-lg transition-colors',
+                'flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-lg transition-colors',
                 isActive
                   ? 'text-blue-600 dark:text-blue-400'
                   : 'text-gray-500 dark:text-gray-400 active:text-gray-900 dark:active:text-gray-100'

@@ -9,6 +9,7 @@ CATEGORIAS: dict[str, dict] = {
         "keywords_include": [
             "milei", "gobierno", "congreso", "elecciones", "senado", "diputados",
             "lula", "maduro", "boric", "petro", "presidente", "ministro",
+            "gobernador", "intendente", "municipio", "provincia",
             "kirchner", "massa", "bullrich", "larreta", "macri", "partido",
             "voto", "reforma", "ley ", "decreto", "oposicion", "oficialismo",
             "protest", "paro", "huelga", "marcha",
@@ -37,9 +38,14 @@ CATEGORIAS: dict[str, dict] = {
             "copa", "torneo", "liga", "gol", "partido", "campeon",
             "atletismo", "natacion", "rugby", "basquet", "handball",
             "olimpiadas", "juegos panamericanos",
+            # clubes europeos frecuentes en trends AR
+            "arsenal", "manchester", "real madrid", "barcelona", "liverpool",
+            "chelsea", "psg", "juventus", "milan", "inter ", "napoli",
+            "atletico", "sevilla", "dortmund", "bayern", "ajax",
+            "aston villa", "tottenham", "newcastle", "west ham",
             # técnicos y jugadores argentinos frecuentes en trends
             "mohamed", "gallardo", "scaloni", "demichelis", "heinze",
-            "cerundolo", "schwartzman", "del potro", "perez", "kicillof",
+            "cerundolo", "schwartzman", "del potro",
             "afa ", "san lorenzo", "independiente", "racing", "huracan",
             "estudiantes", "gimnasia", "velez", "lanus", "belgrano",
             "newells", "central", "talleres", "atletico tucuman",
@@ -64,6 +70,9 @@ CATEGORIAS: dict[str, dict] = {
             "startup", "unicornio", "mercadolibre", "globant", "despegar",
             "satellite", "spacex", "starlink", "5g", "chip", "semiconductor",
             "deepseek", "llama", "gpt",
+            # marcas de dispositivos frecuentes en trends
+            "samsung", "galaxy", "pixel", "xiaomi", "motorola", "huawei",
+            "android", "windows", "playstation", "xbox", "nintendo",
         ],
         "probabilidad_default": 50.0,
     },

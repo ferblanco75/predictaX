@@ -34,4 +34,4 @@ jobs:
           ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASS:     ${{ secrets.ADMIN_PASS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL:   gemini-2.0-flash
+          GEMINI_MODEL:   gemini-3.5-flash
