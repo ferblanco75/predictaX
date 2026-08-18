@@ -24,8 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install requests google-genai python-Levenshtein
-          pip install "https://github.com/yiromo/pytrends-modern/archive/refs/heads/main.tar.gz"
+          pip install requests google-genai python-Levenshtein pytrends-modern
 
       - name: Run auto-polls script
         working-directory: backend
