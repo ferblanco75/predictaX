@@ -25,6 +25,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install requests google-genai python-Levenshtein pytrends-modern
+          python -c "from pytrends_modern.rss import TrendsRSS; print('pytrends-modern OK')"
 
       - name: Run auto-polls script
         working-directory: backend
