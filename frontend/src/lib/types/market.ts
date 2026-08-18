@@ -1,6 +1,6 @@
 export type MarketCategory = 'economia' | 'politica' | 'deportes' | 'tecnologia' | 'crypto';
 
-export type MarketStatus = 'active' | 'resolved';
+export type MarketStatus = 'active' | 'resolved' | 'cancelled';
 
 export type MarketType = 'binary' | 'multiple_choice' | 'numeric';
 
@@ -29,6 +29,8 @@ export interface Market {
   status: MarketStatus;
   history: MarketHistoryPoint[];
   relatedMarkets: string[];
+  statsData?: Record<string, unknown> | null;
+  fixtureId?: number | null;
   // For multiple_choice type
   options?: MultipleChoiceOption[];
 }

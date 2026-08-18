@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class MarketHistoryPoint(BaseModel):
@@ -18,6 +18,14 @@ class MarketCreate(BaseModel):
     description: str = Field(min_length=50)
     category: str  # economia, politica, deportes, tecnologia, crypto
     end_date: datetime
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date_year(cls, value: datetime) -> datetime:
+        max_year = datetime.now().year + 10
+        if value.year > max_year:
+            raise ValueError(f"El año de cierre no puede ser mayor a {max_year}")
+        return value
 
 
 class MarketUpdate(BaseModel):
@@ -42,12 +50,14 @@ class MarketResponse(BaseModel):
     category: str
     type: str
     probability: float
-    volume: str  # Formatted as "$15.1K"
+    volume: str  # Formatted as "15.1K pts"
     participants: int
     endDate: str  # ISO format
     status: str
     history: List[MarketHistoryPoint]
     relatedMarkets: List[str] = []
+    statsData: Optional[Dict[str, Any]] = None
+    fixtureId: Optional[int] = None
 
     class Config:
         from_attributes = True

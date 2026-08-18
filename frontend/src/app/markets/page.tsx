@@ -1,185 +1,357 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Filter } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Filter, Search, X, Coins, PartyPopper } from 'lucide-react';
 import { MarketList } from '@/components/markets/MarketList';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/Pagination';
-import { getAllMarkets, searchMarkets } from '@/lib/api/markets';
+import { useMarkets } from '@/lib/hooks/useMarkets';
 import { categories } from '@/lib/data/categories';
 import { useAppStore } from '@/lib/stores/app-store';
-import type { MarketCategory, MarketStatus } from '@/lib/types';
+import type { MarketCategory } from '@/lib/types';
 
 const MARKETS_PER_PAGE = 12;
 
-export default function MarketsPage() {
-  const { selectedCategory, selectedStatus, searchQuery, setCategory, setStatus, resetFilters } =
-    useAppStore();
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+function MarketsContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const {
+    selectedCategory,
+    selectedStatus,
+    searchQuery,
+    setCategory,
+    setStatus,
+    setSearchQuery,
+    resetFilters,
+  } = useAppStore();
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(
+      typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('page') ?? '1')
+        : '1'
+    );
+    return isNaN(p) || p < 1 ? 1 : p;
+  });
+  const [showWelcome, setShowWelcome] = useState(false);
+  const { user } = useAppStore();
 
-  // Simulate initial loading (disabled for build)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsLoading(true);
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCurrentPage(1);
-  }, [selectedCategory, selectedStatus, searchQuery]);
-
-  // Filter markets
-  const filteredMarkets = (() => {
-    // First apply search filter
-    const searchResults = searchQuery ? searchMarkets(searchQuery) : getAllMarkets();
-
-    // Then apply category and status filters
-    return searchResults.filter((market) => {
-      const categoryMatch = selectedCategory === 'all' || market.category === selectedCategory;
-      const statusMatch = selectedStatus === 'all' || market.status === selectedStatus;
-      return categoryMatch && statusMatch;
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) params.delete('page');
+    else params.set('page', String(page));
+    router.replace(params.size > 0 ? `/markets?${params.toString()}` : '/markets', {
+      scroll: false,
     });
-  })();
+  };
 
-  const allMarkets = getAllMarkets();
+  // Show welcome banner for new users (?welcome=1) and clear the param
+  useEffect(() => {
+    if (searchParams.get('welcome') === '1') {
+      setShowWelcome(true);
+      const clean = new URLSearchParams(searchParams.toString());
+      clean.delete('welcome');
+      router.replace(clean.size > 0 ? `/markets?${clean.toString()}` : '/markets', {
+        scroll: false,
+      });
+    }
+  }, [searchParams, router]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredMarkets.length / MARKETS_PER_PAGE);
-  const startIndex = (currentPage - 1) * MARKETS_PER_PAGE;
-  const endIndex = startIndex + MARKETS_PER_PAGE;
-  const paginatedMarkets = filteredMarkets.slice(startIndex, endIndex);
+  // Sync category from URL param (?categoria=mundial) only for known categories.
+  useEffect(() => {
+    const q = searchParams.get('q') ?? '';
+    setSearchQuery(q);
+    setCurrentPage(1);
+  }, [searchParams, setSearchQuery]);
+
+  useEffect(() => {
+    const cat = searchParams.get('categoria');
+    if (!cat) return;
+
+    const validCategory = categories.some((category) => category.id === cat);
+    if (validCategory) {
+      setCategory(cat as MarketCategory);
+      return;
+    }
+
+    const cleanParams = new URLSearchParams(searchParams.toString());
+    cleanParams.delete('categoria');
+    setCategory('all');
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  }, [router, searchParams, setCategory]);
+
+  const { data: allMarkets = [], isLoading } = useMarkets({
+    status: selectedStatus === 'all' ? undefined : (selectedStatus as 'active' | 'resolved'),
+    limit: 100,
+  });
+
+  const filtered = allMarkets.filter((m) => {
+    const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    let searchMatch = true;
+    if (normalizedSearch) {
+      // "75%" → exact probability match
+      const exactProb = normalizedSearch.match(/^(\d+)%$/);
+      // "5*%" → probability prefix filter (e.g. 50–59%)
+      const prefixProb = normalizedSearch.match(/^(\d+)\*%$/);
+      if (exactProb) {
+        searchMatch = Math.round(m.probability) === parseInt(exactProb[1], 10);
+      } else if (prefixProb) {
+        searchMatch = String(Math.round(m.probability)).startsWith(prefixProb[1]);
+      } else if (normalizedSearch.includes('%')) {
+        // "%" as text wildcard in title (e.g. "presi%")
+        const pattern = normalizedSearch
+          .split('%')
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*');
+        searchMatch = new RegExp(pattern, 'i').test(m.title);
+      } else {
+        searchMatch = m.title.toLowerCase().includes(normalizedSearch);
+      }
+    }
+    return catMatch && searchMatch;
+  });
+
+  const clearSearch = () => {
+    const cleanParams = new URLSearchParams(searchParams.toString());
+    cleanParams.delete('q');
+    setSearchQuery('');
+    setCurrentPage(1);
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  };
+
+  const totalPages = Math.ceil(filtered.length / MARKETS_PER_PAGE);
+  const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
+  const paginated = filtered.slice(
+    (safeCurrentPage - 1) * MARKETS_PER_PAGE,
+    safeCurrentPage * MARKETS_PER_PAGE
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Mercados de predicción</h1>
-          <p className="text-gray-600">
-            Explora todos los mercados disponibles y participa con tus predicciones
+        {/* Welcome banner for new users */}
+        {showWelcome && user && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border border-green-200 dark:border-green-800 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-100">
+                  ¡Bienvenido, {user.username}!
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
+                  Recibiste
+                  <Coins className="h-3.5 w-3.5 inline mx-0.5" />
+                  <strong>1.000 puntos</strong> para empezar a predecir.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 text-xl leading-none"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-1">Mercados de predicción</h1>
+          <p className="text-gray-500 text-sm">
+            Explorá todos los polls disponibles y participá con tus predicciones
           </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 flex-shrink-0">
+          {/* Sidebar */}
+          <aside className="w-full lg:w-56 flex-shrink-0">
             <Card className="sticky top-20">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Filter className="h-5 w-5" />
-                  <h2 className="font-semibold text-lg">Filtros</h2>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="h-4 w-4" />
+                  <h2 className="font-semibold">Filtros</h2>
                 </div>
 
-                {/* Category filter */}
-                <div className="mb-6">
-                  <h3 className="font-medium text-sm mb-3 text-gray-700">Categoría</h3>
-                  <div className="space-y-2">
+                <div className="relative mb-5">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar... (ej: 5*%)"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-8 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {searchQuery && (
                     <button
-                      onClick={() => setCategory('all')}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="mb-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                    Categoría
+                  </h3>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        setCategory('all');
+                        setCurrentPage(1);
+                        router.push('/markets');
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
                         selectedCategory === 'all'
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'hover:bg-gray-100'
+                          ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`}
                     >
-                      Todos ({allMarkets.length})
+                      Todos
                     </button>
-                    {categories.map((category) => (
+                    {categories.map((cat) => (
                       <button
-                        key={category.id}
-                        onClick={() => setCategory(category.id)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                          selectedCategory === category.id
-                            ? 'bg-blue-100 text-blue-700 font-medium'
-                            : 'hover:bg-gray-100'
+                        key={cat.id}
+                        onClick={() => {
+                          setCategory(cat.id as MarketCategory);
+                          setCurrentPage(1);
+                          router.push('/markets');
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 min-h-[44px] ${
+                          selectedCategory === cat.id
+                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                         }`}
                       >
-                        {category.name} ({category.count})
+                        {cat.name}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Status filter */}
                 <div>
-                  <h3 className="font-medium text-sm mb-3 text-gray-700">Estado</h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setStatus('all')}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        selectedStatus === 'all'
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      Todos
-                    </button>
-                    <button
-                      onClick={() => setStatus('active')}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        selectedStatus === 'active'
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      Activos
-                    </button>
-                    <button
-                      onClick={() => setStatus('resolved')}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        selectedStatus === 'resolved'
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      Resueltos
-                    </button>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                    Estado
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: 'all', label: 'Todos' },
+                      { value: 'active', label: 'Activos' },
+                      { value: 'resolved', label: 'Resueltos' },
+                    ].map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => {
+                          setStatus(s.value as 'all' | 'active' | 'resolved');
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
+                          selectedStatus === s.value
+                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
+
+                {(selectedCategory !== 'all' || selectedStatus !== 'all' || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setCurrentPage(1);
+                      router.push('/markets');
+                    }}
+                    className="mt-4 w-full text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
               </CardContent>
             </Card>
           </aside>
 
-          {/* Markets Grid */}
+          {/* Markets grid */}
           <div className="flex-1">
-            {/* Results count */}
-            <div className="mb-6">
-              <p className="text-gray-600">
-                {filteredMarkets.length} {filteredMarkets.length === 1 ? 'mercado' : 'mercados'}
-                {searchQuery && ` para "${searchQuery}"`}
-              </p>
+            <div className="mb-4 text-sm text-gray-500">
+              {filtered.length} {filtered.length === 1 ? 'poll' : 'polls'}
+              {searchQuery && (
+                <span>
+                  {' '}
+                  para <strong>&quot;{searchQuery}&quot;</strong>
+                </span>
+              )}
+              {selectedCategory !== 'all' && (
+                <span>
+                  {' '}
+                  en{' '}
+                  <strong>
+                    {categories.find((c) => c.id === selectedCategory)?.name ?? selectedCategory}
+                  </strong>
+                </span>
+              )}
             </div>
 
-            {/* Markets grid */}
             <MarketList
-              markets={paginatedMarkets}
+              markets={paginated}
               isLoading={isLoading}
-              onClearFilters={resetFilters}
+              onClearFilters={() => {
+                resetFilters();
+                setCurrentPage(1);
+                router.push('/markets');
+              }}
             />
 
-            {/* Pagination */}
-            {!isLoading && totalPages > 1 && (
-              <div className="mt-8">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+            {!isLoading && filtered.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-center text-sm text-gray-500">
+                  Mostrando {(safeCurrentPage - 1) * MARKETS_PER_PAGE + 1}–
+                  {Math.min(safeCurrentPage * MARKETS_PER_PAGE, filtered.length)} de{' '}
+                  {filtered.length} mercados
+                </p>
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 py-8">
+            <div className="h-64 bg-green-100 dark:bg-green-950 rounded-2xl animate-pulse mb-8" />
+            <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-64 animate-pulse mb-8" />
+          </div>
+        </div>
+      }
+    >
+      <MarketsContent />
+    </Suspense>
   );
 }

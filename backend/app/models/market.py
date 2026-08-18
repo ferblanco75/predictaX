@@ -13,7 +13,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -28,6 +28,7 @@ class MarketCategory(str, enum.Enum):
     DEPORTES = "deportes"
     TECNOLOGIA = "tecnologia"
     CRYPTO = "crypto"
+    MUNDIAL = "mundial"
 
 
 class MarketStatus(str, enum.Enum):
@@ -63,6 +64,8 @@ class Market(Base):
     status = Column(Enum(MarketStatus), default=MarketStatus.ACTIVE, index=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolution_value = Column(Boolean, nullable=True)
+    stats_data = Column(JSONB, nullable=True)
+    fixture_id = Column(Integer, nullable=True)
     created_by = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True
     )

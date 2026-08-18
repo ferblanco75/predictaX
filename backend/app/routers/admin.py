@@ -3,11 +3,11 @@ Admin router — protected endpoints for platform metrics and management.
 All endpoints require admin role.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
 
@@ -32,16 +32,50 @@ class UserPointsUpdate(BaseModel):
 class MarketResolveRequest(BaseModel):
     resolution_value: bool  # True = YES, False = NO
 
+def _validate_end_date_year(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return value
+    max_year = datetime.now().year + 10
+    if value.year > max_year:
+        raise ValueError(f"El año de cierre no puede ser mayor a {max_year}")
+    return value
+
 class MarketEditRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     end_date: Optional[datetime] = None
+    category: Optional[str] = None
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, value: Optional[datetime]) -> Optional[datetime]:
+        return _validate_end_date_year(value)
+
+class MarketCreateRequest(BaseModel):
+    title: str
+    description: str
+    category: str
+    type: str = "binary"
+    end_date: datetime
+    probability: float = 50.0
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, value: datetime) -> datetime:
+        return _validate_end_date_year(value)
 
 router = APIRouter(
     prefix="/api/admin",
     tags=["Admin"],
     dependencies=[Depends(get_current_admin)],
 )
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """Strip tzinfo (converting to UTC first) so it can be compared with datetime.utcnow()."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 # --------------- Overview ---------------
@@ -99,6 +133,7 @@ def get_overview(db: Session = Depends(get_db)):
     ai_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     ai_cache_hits_today = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -139,8 +174,8 @@ def get_overview(db: Session = Depends(get_db)):
             "cache_hit_rate": cache_hit_rate,
             "avg_latency_ms": int(avg_latency) if avg_latency else 0,
             "quota_used": quota_used,
-            "quota_limit": 250,
-            "quota_remaining": max(0, 250 - quota_used),
+            "quota_limit": ai_service.DAILY_QUOTA_LIMIT,
+            "quota_remaining": max(0, ai_service.DAILY_QUOTA_LIMIT - quota_used),
         },
     }
 
@@ -151,11 +186,16 @@ def get_overview(db: Session = Depends(get_db)):
 def list_users(
     search: str = Query("", description="Search by email or username"),
     role: str = Query("", description="Filter by role"),
+    sort_by: str = Query(
+        "created_at",
+        description="Sort field: created_at, points, predictions_count, username",
+    ),
+    order: str = Query("desc", description="asc or desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    """List all users with search and filters."""
+    """List all users with search, filters, and sorting."""
     query = db.query(User)
 
     if search:
@@ -166,7 +206,30 @@ def list_users(
         query = query.filter(User.role == role)
 
     total = query.count()
-    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+
+    sort_col = {
+        "points": User.points,
+        "username": User.username,
+        "created_at": User.created_at,
+    }.get(sort_by, User.created_at)
+
+    if order == "asc":
+        query = query.order_by(sort_col.asc())
+    else:
+        query = query.order_by(sort_col.desc())
+
+    users = query.offset(offset).limit(limit).all()
+
+    user_ids = [u.id for u in users]
+    pred_counts: dict = {}
+    if user_ids:
+        rows_pc = (
+            db.query(Prediction.user_id, func.count(Prediction.id).label("cnt"))
+            .filter(Prediction.user_id.in_(user_ids))
+            .group_by(Prediction.user_id)
+            .all()
+        )
+        pred_counts = {str(r.user_id): r.cnt for r in rows_pc}
 
     return {
         "data": [
@@ -177,7 +240,7 @@ def list_users(
                 "role": u.role,
                 "points": u.points,
                 "is_active": u.is_active,
-                "predictions_count": len(u.predictions),
+                "predictions_count": pred_counts.get(str(u.id), 0),
                 "created_at": u.created_at.isoformat() if u.created_at else None,
             }
             for u in users
@@ -225,6 +288,48 @@ def get_user_detail(user_id: str, db: Session = Depends(get_db)):
     }
 
 
+@router.get("/users/{user_id}/stats")
+def get_user_stats(user_id: str, db: Session = Depends(get_db)):
+    """Prediction stats for a specific user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    preds = db.query(Prediction).filter(Prediction.user_id == user_id).all()
+
+    won = [p for p in preds if p.status == "won"]
+    lost = [p for p in preds if p.status == "lost"]
+    pending = [p for p in preds if p.status == "pending"]
+
+    points_won = sum(
+        round(p.points_wagered / ((p.probability_at_bet or 50) / 100), 2) - p.points_wagered
+        for p in won
+    )
+    points_lost = sum(p.points_wagered for p in lost)
+
+    from collections import Counter
+    if preds:
+        markets = db.query(Market).filter(
+            Market.id.in_([p.market_id for p in preds])
+        ).all()
+        market_cats = {str(m.id): m.category.value for m in markets}
+        cat_counts = Counter(market_cats.get(str(p.market_id), "unknown") for p in preds)
+        favorite_category = cat_counts.most_common(1)[0][0] if cat_counts else None
+    else:
+        favorite_category = None
+
+    return {
+        "total_predictions": len(preds),
+        "won": len(won),
+        "lost": len(lost),
+        "pending": len(pending),
+        "points_won": round(points_won, 2),
+        "points_lost": round(points_lost, 2),
+        "net": round(points_won - points_lost, 2),
+        "favorite_category": favorite_category,
+    }
+
+
 # --------------- Markets ---------------
 
 @router.get("/metrics/markets/ranking")
@@ -236,34 +341,49 @@ def get_markets_ranking(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    """Get markets ranked by activity."""
-    markets = db.query(Market).filter(Market.status == MarketStatus.ACTIVE).all()
+    """Get markets ranked by activity (single query with subquery for prediction counts)."""
 
-    result = []
-    for m in markets:
-        pred_count = db.query(func.count(Prediction.id)).filter(
-            Prediction.market_id == m.id
-        ).scalar()
-        result.append({
+    pred_count_subq = (
+        db.query(
+            Prediction.market_id,
+            func.count(Prediction.id).label("pred_count"),
+        )
+        .group_by(Prediction.market_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Market,
+            func.coalesce(pred_count_subq.c.pred_count, 0).label("pred_count"),
+        )
+        .outerjoin(pred_count_subq, Market.id == pred_count_subq.c.market_id)
+        .filter(Market.status == MarketStatus.ACTIVE)
+        .all()
+    )
+
+    sort_col = {
+        "most_active": lambda x: -x[1],
+        "least_active": lambda x: x[1],
+        "most_volume": lambda x: -float(x[0].volume),
+        "most_participants": lambda x: -x[0].participants_count,
+    }.get(sort, lambda x: -x[1])
+
+    rows.sort(key=sort_col)
+
+    return [
+        {
             "id": str(m.id),
             "title": m.title,
             "category": m.category.value,
             "probability": float(m.probability_market),
-            "predictions_count": pred_count,
+            "predictions_count": int(pred_count),
             "volume": float(m.volume),
             "participants": m.participants_count,
             "end_date": m.end_date.isoformat() if m.end_date else None,
-        })
-
-    sort_key = {
-        "most_active": lambda x: -x["predictions_count"],
-        "least_active": lambda x: x["predictions_count"],
-        "most_volume": lambda x: -x["volume"],
-        "most_participants": lambda x: -x["participants"],
-    }.get(sort, lambda x: -x["predictions_count"])
-
-    result.sort(key=sort_key)
-    return result[:limit]
+        }
+        for m, pred_count in rows[:limit]
+    ]
 
 
 # --------------- Predictions ---------------
@@ -306,6 +426,7 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     today_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     today_cache_hits = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -314,6 +435,7 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     today_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     today_avg_latency = db.query(func.avg(AIUsageLog.response_time_ms)).filter(
         func.date(AIUsageLog.created_at) == today,
@@ -325,16 +447,26 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
     week_requests = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
     week_tokens = db.query(func.coalesce(func.sum(AIUsageLog.total_tokens), 0)).filter(
         func.date(AIUsageLog.created_at) >= week_ago,
         AIUsageLog.cache_hit.is_(False),
+        AIUsageLog.status == "success",
     ).scalar()
 
     # Errors
     today_errors = db.query(func.count(AIUsageLog.id)).filter(
         func.date(AIUsageLog.created_at) == today,
         AIUsageLog.status == "error",
+    ).scalar()
+    today_rate_limited = db.query(func.count(AIUsageLog.id)).filter(
+        func.date(AIUsageLog.created_at) == today,
+        AIUsageLog.status == "rate_limited",
+    ).scalar()
+    week_rate_limited = db.query(func.count(AIUsageLog.id)).filter(
+        func.date(AIUsageLog.created_at) >= week_ago,
+        AIUsageLog.status == "rate_limited",
     ).scalar()
 
     # Top markets analyzed
@@ -350,9 +482,15 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
         .all()
     )
 
+    top_market_ids = [row.market_id for row in top_markets]
+    markets_map: dict = {}
+    if top_market_ids:
+        markets_fetched = db.query(Market).filter(Market.id.in_(top_market_ids)).all()
+        markets_map = {str(m.id): m for m in markets_fetched}
+
     top_markets_data = []
     for row in top_markets:
-        market = db.query(Market).filter(Market.id == row.market_id).first()
+        market = markets_map.get(str(row.market_id))
         top_markets_data.append({
             "market_id": str(row.market_id),
             "title": market.title if market else "Unknown",
@@ -368,16 +506,18 @@ def get_ai_usage_summary(db: Session = Depends(get_db)):
             "tokens": int(today_tokens),
             "avg_latency_ms": int(today_avg_latency) if today_avg_latency else 0,
             "errors": today_errors,
+            "rate_limited": today_rate_limited,
         },
         "this_week": {
             "requests": week_requests,
             "tokens": int(week_tokens),
+            "rate_limited": week_rate_limited,
         },
         "quota": {
-            "daily_limit": 250,
+            "daily_limit": ai_service.DAILY_QUOTA_LIMIT,
             "used_today": quota_used,
-            "remaining": max(0, 250 - quota_used),
-            "usage_percent": round(quota_used / 250 * 100, 1),
+            "remaining": max(0, ai_service.DAILY_QUOTA_LIMIT - quota_used),
+            "usage_percent": round(quota_used / ai_service.DAILY_QUOTA_LIMIT * 100, 1),
         },
         "cache_hit_rate": round(
             today_cache_hits / (today_requests + today_cache_hits), 2
@@ -397,10 +537,17 @@ def get_ai_usage_history(
     daily = (
         db.query(
             func.date(AIUsageLog.created_at).label("day"),
-            func.count(case((AIUsageLog.cache_hit.is_(False), 1))).label("requests"),
+            func.count(case((
+                AIUsageLog.cache_hit.is_(False) & (AIUsageLog.status == "success"),
+                1,
+            ))).label("requests"),
             func.count(case((AIUsageLog.cache_hit.is_(True), 1))).label("cache_hits"),
+            func.count(case((AIUsageLog.status == "rate_limited", 1))).label("rate_limited"),
             func.coalesce(func.sum(
-                case((AIUsageLog.cache_hit.is_(False), AIUsageLog.total_tokens), else_=0)
+                case((
+                    AIUsageLog.cache_hit.is_(False) & (AIUsageLog.status == "success"),
+                    AIUsageLog.total_tokens,
+                ), else_=0)
             ), 0).label("tokens"),
         )
         .filter(func.date(AIUsageLog.created_at) >= start_date)
@@ -414,6 +561,7 @@ def get_ai_usage_history(
             "date": str(row.day),
             "requests": row.requests,
             "cache_hits": row.cache_hits,
+            "rate_limited": row.rate_limited,
             "tokens": int(row.tokens),
         }
         for row in daily
@@ -444,9 +592,15 @@ def get_top_active_users(
         .all()
     )
 
+    top_user_ids = [row.user_id for row in top]
+    users_map: dict = {}
+    if top_user_ids:
+        users_fetched = db.query(User).filter(User.id.in_(top_user_ids)).all()
+        users_map = {str(u.id): u for u in users_fetched}
+
     result = []
     for row in top:
-        user = db.query(User).filter(User.id == row.user_id).first()
+        user = users_map.get(str(row.user_id))
         if user:
             result.append({
                 "id": str(user.id),
@@ -700,10 +854,23 @@ def get_recent_activity(
         .all()
     )
 
+    pred_user_ids = list({p.user_id for p in recent_predictions})
+    pred_market_ids = list({p.market_id for p in recent_predictions})
+
+    users_by_id: dict = {}
+    if pred_user_ids:
+        fetched_users = db.query(User).filter(User.id.in_(pred_user_ids)).all()
+        users_by_id = {str(u.id): u for u in fetched_users}
+
+    markets_by_id: dict = {}
+    if pred_market_ids:
+        fetched_markets = db.query(Market).filter(Market.id.in_(pred_market_ids)).all()
+        markets_by_id = {str(m.id): m for m in fetched_markets}
+
     feed = []
     for p in recent_predictions:
-        user = db.query(User).filter(User.id == p.user_id).first()
-        market = db.query(Market).filter(Market.id == p.market_id).first()
+        user = users_by_id.get(str(p.user_id))
+        market = markets_by_id.get(str(p.market_id))
         feed.append({
             "type": "prediction",
             "user": user.username if user else "unknown",
@@ -747,29 +914,72 @@ def update_user_role(user_id: str, body: UserRoleUpdate, db: Session = Depends(g
 
 @router.patch("/users/{user_id}/points")
 def update_user_points(user_id: str, body: UserPointsUpdate, db: Session = Depends(get_db)):
-    """Adjust a user's points balance."""
+    """Adjust a user's points balance. No-op if the new value matches the current one."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.points == body.points:
+        return {"id": str(user.id), "points": user.points, "changed": False}
     user.points = body.points
     db.commit()
     db.refresh(user)
-    return {"id": str(user.id), "points": user.points}
+    return {"id": str(user.id), "points": user.points, "changed": True}
 
 
 # --------------- Market Management Actions ---------------
 
 @router.post("/markets/{market_id}/resolve")
 def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Depends(get_db)):
-    """Resolve a market with YES (True) or NO (False)."""
+    """
+    Resolve a market with YES (True) or NO (False).
+
+    Payout logic (fee=0 MVP):
+      - winner prediction: user receives points_wagered / (probability_at_bet / 100)
+        i.e. they get back their stake plus the gain
+      - loser prediction: points were already deducted at bet time, nothing extra
+      - predictions without probability_at_bet (legacy): refunded at 1:1
+    """
     market = db.query(Market).filter(Market.id == market_id).first()
     if not market:
         raise HTTPException(status_code=404, detail="Mercado no encontrado")
     if market.status != MarketStatus.ACTIVE:
         raise HTTPException(status_code=400, detail="Solo se pueden resolver mercados activos")
+
     market.status = MarketStatus.RESOLVED
     market.resolution_value = body.resolution_value
     market.resolved_at = datetime.utcnow()
+
+    # Pay out winners
+    predictions = db.query(Prediction).filter(
+        Prediction.market_id == market.id,
+        Prediction.status == "pending",
+    ).all()
+
+    winners = 0
+    losers = 0
+    total_paid = 0.0
+
+    for pred in predictions:
+        # A prediction is "correct" if the user predicted > 50% and result is YES,
+        # or predicted <= 50% and result is NO.
+        user_said_yes = pred.probability > 50
+        outcome_yes = body.resolution_value
+
+        if user_said_yes == outcome_yes:
+            pred.status = "won"
+            prob = (
+                pred.probability_at_bet
+                if pred.probability_at_bet and pred.probability_at_bet > 0
+                else 50.0
+            )
+            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            pred.user.points = round(pred.user.points + payout, 2)
+            total_paid += payout
+            winners += 1
+        else:
+            pred.status = "lost"
+            losers += 1
+
     db.commit()
     db.refresh(market)
     return {
@@ -777,6 +987,50 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
         "status": market.status,
         "resolution_value": market.resolution_value,
         "resolved_at": market.resolved_at.isoformat(),
+        "winners": winners,
+        "losers": losers,
+        "total_paid_pts": round(total_paid, 2),
+    }
+
+
+@router.post("/markets/{market_id}/unresolve")
+def unresolve_market(market_id: str, db: Session = Depends(get_db)):
+    """Revert a resolved market back to active, undoing payouts to winners."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    if market.status != MarketStatus.RESOLVED:
+        raise HTTPException(status_code=400, detail="Solo se pueden revertir mercados resueltos")
+
+    reverted = 0
+    points_adjusted = 0.0
+
+    predictions = db.query(Prediction).filter(Prediction.market_id == market.id).all()
+    for pred in predictions:
+        if pred.status == "won":
+            prob = (
+                pred.probability_at_bet
+                if pred.probability_at_bet and pred.probability_at_bet > 0
+                else 50.0
+            )
+            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            pred.user.points = round(pred.user.points - payout, 2)
+            points_adjusted += payout
+            pred.status = "pending"
+            reverted += 1
+        elif pred.status == "lost":
+            pred.status = "pending"
+
+    market.status = MarketStatus.ACTIVE
+    market.resolution_value = None
+    market.resolved_at = None
+    db.commit()
+
+    return {
+        "id": str(market.id),
+        "status": market.status,
+        "reverted_predictions": reverted,
+        "points_adjusted": round(points_adjusted, 2),
     }
 
 
@@ -805,12 +1059,98 @@ def edit_market(market_id: str, body: MarketEditRequest, db: Session = Depends(g
     if body.description is not None:
         market.description = body.description
     if body.end_date is not None:
-        market.end_date = body.end_date
+        end_date = _to_naive_utc(body.end_date)
+        if end_date <= datetime.utcnow():
+            raise HTTPException(
+                status_code=400,
+                detail="La fecha de cierre debe ser posterior a ahora",
+            )
+        market.end_date = end_date
+    if body.category is not None:
+        try:
+            market.category = MarketCategory(body.category.lower())
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Categoría inválida: {body.category}")
     db.commit()
     db.refresh(market)
     return {
         "id": str(market.id),
         "title": market.title,
         "description": market.description,
+        "category": market.category,
         "end_date": market.end_date.isoformat(),
     }
+
+
+@router.post("/markets")
+def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
+    """Create a new market/poll."""
+    if not (1 <= body.probability <= 99):
+        raise HTTPException(status_code=400, detail="La probabilidad debe estar entre 1% y 99%")
+
+    end_date = _to_naive_utc(body.end_date)
+    if end_date <= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="La fecha de cierre debe ser posterior a ahora")
+
+    try:
+        category = MarketCategory(body.category.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Categoría inválida: {body.category}")
+
+    from app.models.market import MarketType as MT
+    try:
+        market_type = MT(body.type.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Tipo inválido: {body.type}")
+
+    market = Market(
+        title=body.title,
+        description=body.description,
+        category=category,
+        type=market_type,
+        end_date=end_date,
+        probability_market=body.probability,
+        status=MarketStatus.ACTIVE,
+    )
+    db.add(market)
+    db.commit()
+    db.refresh(market)
+    return {
+        "id": str(market.id),
+        "title": market.title,
+        "category": market.category,
+        "type": market.type,
+        "status": market.status,
+        "end_date": market.end_date.isoformat(),
+        "probability": float(market.probability_market),
+    }
+
+
+@router.delete("/markets/{market_id}")
+def delete_market(market_id: str, db: Session = Depends(get_db)):
+    """Delete a market and all its predictions (CASCADE)."""
+    market = db.query(Market).filter(Market.id == market_id).first()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado no encontrado")
+    predictions_count = db.query(Prediction).filter(Prediction.market_id == market.id).count()
+    db.delete(market)
+    db.commit()
+    return {"id": market_id, "deleted": True, "predictions_deleted": predictions_count}
+
+
+@router.post("/markets/expire-past")
+def expire_past_markets(db: Session = Depends(get_db)):
+    """Cancel all active markets whose end_date has already passed."""
+    now = datetime.utcnow()
+    expired = db.query(Market).filter(
+        Market.status == MarketStatus.ACTIVE,
+        Market.end_date < now,
+    ).all()
+
+    count = len(expired)
+    for market in expired:
+        market.status = MarketStatus.CANCELLED
+
+    db.commit()
+    return {"expired": count, "message": f"{count} mercado(s) expirado(s) cancelados"}
+

@@ -1,30 +1,31 @@
 #!/bin/bash
-# Bandit — Static security analysis for Python code
+# Bandit — Static security analysis for Python code.
 # Usage: ./scripts/security/run-bandit.sh
-# Requires: Docker, backend container running
 
-set -e
+set -euo pipefail
 
-REPORT_DIR="$(cd "$(dirname "$0")/../../reports/security" && pwd)"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+REPORT_DIR="${REPORT_DIR:-$(cd "$(dirname "$0")/../../reports/security" && pwd)}"
+TIMESTAMP="${TIMESTAMP:-$(date +%Y%m%d_%H%M%S)}"
+SERVICE="${BACKEND_SERVICE:-backend}"
+FAIL_ON_FINDINGS="${FAIL_ON_FINDINGS:-false}"
+
+mkdir -p "$REPORT_DIR"
 
 echo "=== Bandit — Python Static Security Analysis ==="
 echo "Target: backend/app/"
+echo "Report: $REPORT_DIR/bandit-$TIMESTAMP.json"
 echo ""
 
-# Install bandit if not present and run
-docker compose exec backend sh -c "
-  pip install -q bandit 2>/dev/null
-  echo '--- Medium and High severity ---'
-  bandit -r app/ -ll -f screen 2>/dev/null
-  echo ''
-  echo '--- Full JSON report ---'
-  bandit -r app/ -f json -o /app/tests/bandit-report.json 2>/dev/null || true
-"
+docker compose exec -T -u root "$SERVICE" python -m pip install -q --root-user-action=ignore bandit
 
-# Copy report out
-docker compose cp backend:/app/tests/bandit-report.json "$REPORT_DIR/bandit-$TIMESTAMP.json" 2>/dev/null || true
+SCAN_STATUS=0
+docker compose exec -T "$SERVICE" python -m bandit -r app/ -ll -f screen || SCAN_STATUS=$?
+docker compose exec -T "$SERVICE" python -m bandit -r app/ -f json > "$REPORT_DIR/bandit-$TIMESTAMP.json" || true
 
 echo ""
 echo "=== Bandit scan complete ==="
 echo "JSON report: $REPORT_DIR/bandit-$TIMESTAMP.json"
+
+if [ "$FAIL_ON_FINDINGS" = "true" ] && [ "$SCAN_STATUS" -ne 0 ]; then
+  exit "$SCAN_STATUS"
+fi

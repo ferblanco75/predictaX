@@ -21,6 +21,7 @@ class Prediction(Base):
         UUID(as_uuid=True), ForeignKey("markets.id", ondelete="CASCADE"), nullable=False, index=True
     )
     probability = Column(Float, nullable=False)
+    probability_at_bet = Column(Float, nullable=True)  # market probability when bet was placed
     points_wagered = Column(Float, nullable=False)
     potential_gain = Column(Float, nullable=True)
     status = Column(String, default="pending", nullable=False)

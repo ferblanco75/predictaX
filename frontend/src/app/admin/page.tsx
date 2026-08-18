@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAdminToken } from '@/lib/hooks/useAdminToken';
+import { AdminEmptyState } from '@/components/admin/AdminState';
 import {
   getOverview,
   getTopActiveUsers,
@@ -163,7 +164,7 @@ function timeAgo(timestamp: string): string {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAppStore();
+  const token = useAdminToken();
   const [data, setData] = useState<Overview | null>(null);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -172,12 +173,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!user?.token) return;
+    if (!token) return;
     Promise.all([
-      getOverview(user.token),
-      getTopActiveUsers(user.token, 30, 5),
-      getRecentActivity(user.token, 10),
-      getCategoryInterest(user.token, 30),
+      getOverview(token),
+      getTopActiveUsers(token, 30, 5),
+      getRecentActivity(token, 10),
+      getCategoryInterest(token, 30),
     ])
       .then(([overview, users, feed, cats]) => {
         setData(overview);
@@ -189,8 +190,8 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
 
     const interval = setInterval(() => {
-      if (!user?.token) return;
-      Promise.all([getOverview(user.token), getRecentActivity(user.token, 10)])
+      if (!token) return;
+      Promise.all([getOverview(token), getRecentActivity(token, 10)])
         .then(([overview, feed]) => {
           setData(overview);
           setActivity(feed);
@@ -198,7 +199,7 @@ export default function AdminDashboard() {
         .catch(() => {});
     }, 30000);
     return () => clearInterval(interval);
-  }, [user?.token]);
+  }, [token]);
 
   if (loading) {
     return (
@@ -222,7 +223,14 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <AdminEmptyState
+        title="Sin métricas disponibles"
+        message="El dashboard todavía no tiene datos suficientes para mostrar."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -257,7 +265,7 @@ export default function AdminDashboard() {
         <KPICard
           title="Predicciones Hoy"
           value={data.predictions.today}
-          subtitle={`${data.predictions.total} total / $${data.predictions.volume_today.toLocaleString()} vol. hoy`}
+          subtitle={`${data.predictions.total} total / ${data.predictions.volume_today.toLocaleString()} pts hoy`}
           icon={BarChart3}
           color="bg-purple-500"
         />
@@ -314,7 +322,9 @@ export default function AdminDashboard() {
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Volumen total</span>
-              <span className="font-medium">${data.predictions.volume_total.toLocaleString()}</span>
+              <span className="font-medium">
+                {data.predictions.volume_total.toLocaleString()} pts
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-500">Nuevos usuarios (mes)</span>
@@ -360,8 +370,10 @@ export default function AdminDashboard() {
                     <div className="text-xs text-gray-400">{u.predictions_count} predicciones</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium">${u.total_wagered.toLocaleString()}</div>
-                    <div className="text-xs text-gray-400">apostado</div>
+                    <div className="text-sm font-medium">
+                      {u.total_wagered.toLocaleString()} pts
+                    </div>
+                    <div className="text-xs text-gray-400">usados</div>
                   </div>
                 </div>
               ))}
@@ -420,7 +432,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium">${c.volume.toLocaleString()}</div>
+                    <div className="text-sm font-medium">{c.volume.toLocaleString()} pts</div>
                     <div className="text-xs text-gray-400">volumen</div>
                   </div>
                 </div>

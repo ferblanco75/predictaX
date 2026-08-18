@@ -1,13 +1,25 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 async function adminFetch(endpoint: string, token: string) {
-  const res = await fetch(`${API_URL}/admin${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    throw new Error(`Admin API error: ${res.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(`${API_URL}/admin${endpoint}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Admin API error: ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('La solicitud tardó demasiado. Verificá tu conexión e intentá de nuevo.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 async function adminMutate(
@@ -37,14 +49,24 @@ export async function getOverview(token: string) {
 
 export async function getUsers(
   token: string,
-  params?: { search?: string; limit?: number; offset?: number }
+  params?: { search?: string; limit?: number; offset?: number; sort_by?: string; order?: string }
 ) {
   const query = new URLSearchParams();
   if (params?.search) query.set('search', params.search);
   if (params?.limit) query.set('limit', String(params.limit));
   if (params?.offset) query.set('offset', String(params.offset));
+  if (params?.sort_by) query.set('sort_by', params.sort_by);
+  if (params?.order) query.set('order', params.order);
   const qs = query.toString();
   return adminFetch(`/users${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getUserStats(token: string, userId: string) {
+  return adminFetch(`/users/${userId}/stats`, token);
+}
+
+export async function unresolveMarket(token: string, marketId: string) {
+  return adminMutate(`/markets/${marketId}/unresolve`, token, 'POST');
 }
 
 export async function getMarketsRanking(token: string, sort = 'most_active', limit = 20) {
@@ -116,7 +138,29 @@ export async function cancelMarket(token: string, marketId: string) {
 export async function editMarket(
   token: string,
   marketId: string,
-  data: { title?: string; description?: string; end_date?: string }
+  data: { title?: string; description?: string; end_date?: string; category?: string }
 ) {
   return adminMutate(`/markets/${marketId}`, token, 'PATCH', data);
+}
+
+export async function createMarket(
+  token: string,
+  data: {
+    title: string;
+    description: string;
+    category: string;
+    type: string;
+    end_date: string;
+    probability?: number;
+  }
+) {
+  return adminMutate('/markets', token, 'POST', data);
+}
+
+export async function deleteMarket(token: string, marketId: string) {
+  return adminMutate(`/markets/${marketId}`, token, 'DELETE');
+}
+
+export async function expirePastMarkets(token: string) {
+  return adminMutate('/markets/expire-past', token, 'POST');
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Navbar } from '@/components/layout/Navbar';
@@ -6,8 +6,10 @@ import { Footer } from '@/components/layout/Footer';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import NextTopLoader from 'nextjs-toploader';
-import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics';
-import { Analytics } from '@vercel/analytics/react';
+import { CookieConsentManager } from '@/components/privacy/CookieConsentManager';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { SessionValidator } from '@/components/providers/SessionValidator';
+import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,47 +21,72 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
+  applicationName: 'NeuroPredict',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'NeuroPredict',
+  },
+  icons: {
+    icon: '/icons/icon-192.png',
+    apple: '/icons/apple-touch-icon.png',
+  },
   title: {
-    default: 'PredictaX - Mercados de Predicción de América Latina',
-    template: '%s | PredictaX',
+    default: 'NeuroPredict - Mercados de predicción en América Latina',
+    template: '%s | NeuroPredict',
   },
   description:
-    'Participa en mercados de predicción sobre economía, política, deportes y tecnología en América Latina. Decisiones informadas con inteligencia artificial.',
+    'Participa en polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
   keywords: [
     'mercados de predicción',
+    'predicciones',
     'pronósticos',
-    'América Latina',
     'economía',
     'política',
     'deportes',
+    'fútbol',
     'criptomonedas',
+    'tecnología',
+    'América Latina',
   ],
-  authors: [{ name: 'PredictaX' }],
-  creator: 'PredictaX',
+  authors: [{ name: 'NeuroPredict' }],
+  creator: 'NeuroPredict',
   openGraph: {
     type: 'website',
     locale: 'es_LA',
-    url: 'https://predictax.com',
-    siteName: 'PredictaX',
-    title: 'PredictaX - Mercados de Predicción de América Latina',
+    url: canonicalUrl('/'),
+    siteName: 'NeuroPredict',
+    title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PredictaX - Mercados de Predicción',
+        alt: 'NeuroPredict - Mercados de Predicción',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PredictaX - Mercados de Predicción',
+    title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
-      'Participa en mercados de predicción sobre economía, política, deportes y tecnología.',
+      'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -79,7 +106,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col overflow-x-hidden" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider
             attribute="class"
@@ -98,13 +125,14 @@ export default function RootLayout({
               speed={200}
               shadow="0 0 10px #3b82f6,0 0 5px #3b82f6"
             />
+            <SessionValidator />
             <Navbar />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
             <Footer />
+            <MobileBottomNav />
           </ThemeProvider>
         </QueryProvider>
-        <GoogleAnalytics />
-        <Analytics />
+        <CookieConsentManager />
       </body>
     </html>
   );

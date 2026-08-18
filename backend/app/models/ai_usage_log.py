@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -11,6 +11,11 @@ class AIUsageLog(Base):
     """Track all AI/LLM API usage for monitoring and quota management"""
 
     __tablename__ = "ai_usage_log"
+    __table_args__ = (
+        Index("ix_ai_usage_log_cache_hit_created_at", "cache_hit", "created_at"),
+        Index("ix_ai_usage_log_status_created_at", "status", "created_at"),
+        Index("ix_ai_usage_log_market_id_created_at", "market_id", "created_at"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

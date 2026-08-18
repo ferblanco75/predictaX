@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"]|'/g, (char) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[char];
+  });
+}
 
 /**
  * POST /api/waitlist
@@ -17,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { email, nombre, razon } = body;
 
     // Validation
-    if (!email || !nombre) {
+    if (!email || !nombre || typeof email !== 'string' || typeof nombre !== 'string') {
       return NextResponse.json({ error: 'Email y nombre son requeridos' }, { status: 400 });
     }
 
@@ -36,6 +46,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate razon length if provided
+    if (razon && typeof razon !== 'string') {
+      return NextResponse.json({ error: 'Razón inválida' }, { status: 400 });
+    }
+
     if (razon && razon.length > 500) {
       return NextResponse.json(
         { error: 'La razón no puede exceder 500 caracteres' },
@@ -65,11 +79,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Destinatario de email no configurado' }, { status: 500 });
     }
 
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const safeNombre = escapeHtml(nombre.trim());
+    const safeEmail = escapeHtml(email.trim());
+    const safeRazon = razon
+      ? escapeHtml(razon.trim())
+      : '<em style="color: #9ca3af;">No especificada</em>';
+
     // Send email notification using Resend
     const { data, error } = await resend.emails.send({
-      from: 'PredictaX Waitlist <onboarding@resend.dev>',
+      from: 'NeuroPredict Waitlist <onboarding@resend.dev>',
       to: recipientEmail,
-      subject: `Nueva inscripción waitlist: ${nombre}`,
+      subject: `Nueva inscripción waitlist: ${nombre.trim()}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -81,7 +102,7 @@ export async function POST(request: NextRequest) {
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
               <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Nueva Inscripción</h1>
-              <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Lista de Espera PredictaX</p>
+              <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 16px;">Lista de Espera NeuroPredict</p>
             </div>
 
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
@@ -90,17 +111,17 @@ export async function POST(request: NextRequest) {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold; width: 40%;">Nombre:</td>
-                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${nombre}</td>
+                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${safeNombre}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Email:</td>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">
-                    <a href="mailto:${email}" style="color: #3b82f6; text-decoration: none;">${email}</a>
+                    <a href="mailto:${safeEmail}" style="color: #3b82f6; text-decoration: none;">${safeEmail}</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Razón:</td>
-                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${razon || '<em style="color: #9ca3af;">No especificada</em>'}</td>
+                  <td style="padding: 12px; background: white; border: 1px solid #e5e7eb;">${safeRazon}</td>
                 </tr>
                 <tr>
                   <td style="padding: 12px; background: white; border: 1px solid #e5e7eb; font-weight: bold;">Fecha:</td>
@@ -122,8 +143,8 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px;">
-              <p style="margin: 0;">Este email fue generado automáticamente por PredictaX</p>
-              <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} PredictaX - Todos los derechos reservados</p>
+              <p style="margin: 0;">Este email fue generado automáticamente por NeuroPredict</p>
+              <p style="margin: 5px 0 0 0;">© ${new Date().getFullYear()} NeuroPredict - Todos los derechos reservados</p>
             </div>
           </body>
         </html>
