@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
           <CardContent className="space-y-5">
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
               Si necesitás recuperar acceso, escribinos desde el email de tu cuenta o volvé a
-              registrarte en la lista de espera para que podamos ayudarte manualmente.
+              registrarte nuevamente para que podamos ayudarte manualmente.
             </div>
 
             <div className="grid gap-3">
@@ -56,10 +56,10 @@ export default function ForgotPasswordPage() {
                 Contactar soporte
               </Link>
               <Link
-                href="/waitlist"
+                href="/auth"
                 className="inline-flex h-8 w-full items-center justify-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
               >
-                Ir a lista de espera
+                Crear una cuenta
               </Link>
               <Link href="/auth" className="text-center text-sm text-blue-600 hover:underline">
                 Ya recordé mi contraseña

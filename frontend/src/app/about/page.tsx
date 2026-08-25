@@ -323,9 +323,9 @@ export default function AboutPage() {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Sé parte de nuestra comunidad y accede primero a nuevas funciones
           </p>
-          <Link href="/waitlist">
+          <Link href="/auth">
             <Button size="lg" variant="secondary" className="text-lg px-8">
-              Únete a la lista de espera
+              Crear una cuenta
             </Button>
           </Link>
         </div>

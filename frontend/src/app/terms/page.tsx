@@ -21,7 +21,7 @@ const sections = [
   {
     title: '1. Descripción del servicio',
     content:
-      'NeuroPredict es una plataforma MVP de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan con puntos virtuales en mercados sobre Mundial 2026, fútbol, economía, política, tecnología, cripto y otros temas disponibles en la plataforma.',
+      'NeuroPredict es una plataforma MVP de mercados de predicción orientada a entretenimiento, análisis y aprendizaje. Los usuarios participan con puntos virtuales en mercados sobre deportes, economía, política, tecnología, cripto y otros temas disponibles en la plataforma.',
   },
   {
     title: '2. Elegibilidad y cuenta',
@@ -79,8 +79,8 @@ export default function TermsPage() {
               Términos y Condiciones
             </h1>
             <p className="mt-5 text-lg text-blue-100">
-              Reglas básicas para usar NeuroPredict durante el lanzamiento Mundial 2026 y futuras
-              experiencias de mercados de predicción.
+              Reglas básicas para usar NeuroPredict y participar en experiencias de mercados de
+              predicción.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-blue-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">

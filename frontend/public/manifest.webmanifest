@@ -1,7 +1,7 @@
 {
   "name": "NeuroPredict - Mercados de Predicción",
   "short_name": "NeuroPredict",
-  "description": "Polls y mercados de predicción del Mundial 2026 y América Latina",
+  "description": "Polls y mercados de predicción sobre América Latina",
   "start_url": "/markets",
   "display": "standalone",
   "background_color": "#0a0a0a",

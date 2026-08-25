@@ -35,7 +35,6 @@ export function HomePageClient() {
     Trophy,
     Smartphone,
     Bitcoin,
-    mundial: Trophy,
   };
 
   return (
