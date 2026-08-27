@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   Search,
   TrendingUp,
+  User as UserIcon,
   Users,
   UserPlus,
   Trophy,
@@ -168,7 +169,13 @@ export function Navbar() {
               </>
             ) : (
               <>
-                {/* "Iniciar sesión" hidden on mobile — one button is enough */}
+                <Link
+                  href="/auth"
+                  className={cn(buttonVariants({ variant: 'ghost' }), 'sm:hidden px-2')}
+                  aria-label="Iniciar sesión"
+                >
+                  <UserIcon className="h-4 w-4" />
+                </Link>
                 <Link
                   href="/auth"
                   className={cn(buttonVariants({ variant: 'ghost' }), 'hidden sm:inline-flex')}
