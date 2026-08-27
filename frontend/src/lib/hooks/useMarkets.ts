@@ -9,10 +9,11 @@ interface UseMarketsParams {
   status?: MarketStatus | 'all';
   limit?: number;
   offset?: number;
+  initialData?: Market[];
 }
 
 export function useMarkets(params: UseMarketsParams = {}) {
-  const { category, status = 'active', limit = 20, offset = 0 } = params;
+  const { category, status = 'active', limit = 20, offset = 0, initialData } = params;
 
   return useQuery<Market[]>({
     queryKey: ['markets', { category, status, limit, offset }],
@@ -25,10 +26,11 @@ export function useMarkets(params: UseMarketsParams = {}) {
       const res = await api.get<Market[]>(`/markets?${query}`);
       return res.data;
     },
+    initialData,
   });
 }
 
-export function useMarket(id: string, options?: { enabled?: boolean }) {
+export function useMarket(id: string, options?: { enabled?: boolean; initialData?: Market }) {
   return useQuery<Market>({
     queryKey: ['market', id],
     queryFn: async () => {
@@ -36,5 +38,6 @@ export function useMarket(id: string, options?: { enabled?: boolean }) {
       return res.data;
     },
     enabled: options?.enabled !== undefined ? options.enabled && !!id : !!id,
+    initialData: options?.initialData,
   });
 }

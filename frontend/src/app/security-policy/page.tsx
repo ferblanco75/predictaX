@@ -62,8 +62,7 @@ export default function SecurityPolicyPage() {
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Security Policy</h1>
             <p className="mt-5 text-lg text-emerald-100">
-              Canal oficial para reportar vulnerabilidades de seguridad en NeuroPredict durante el
-              MVP Mundial 2026.
+              Canal oficial para reportar vulnerabilidades de seguridad en el MVP de NeuroPredict.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-emerald-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
