@@ -93,5 +93,5 @@ KEYWORDS_EXCLUIR: list[str] = [
     "lu24", "infobae", "clarin", "lanacion", "pagina 12",
 ]
 
-MAX_POLLS_POR_DIA = 5
+MAX_POLLS_POR_DIA = 3
 DIAS_DURACION_POLL = 30
