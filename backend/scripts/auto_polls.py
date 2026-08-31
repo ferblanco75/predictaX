@@ -34,6 +34,7 @@ from scripts.trends_config import (
     KEYWORDS_EXCLUIR,
     MAX_POLLS_POR_DIA,
 )
+from scripts.rss_medios import get_topics_from_rss
 
 # ── Configuración desde variables de entorno ──────────────────────────────────
 
@@ -320,30 +321,45 @@ def main() -> None:
         print(f"[auth] ERROR: No se pudo autenticar: {e}")
         sys.exit(1)
 
-    # Tendencias
-    topics = get_trending_topics(geo="AR")
-    if not topics:
-        print("[main] No se obtuvieron trending topics. Saliendo.")
+    # Fuente 1: Google Trends
+    trends_topics = get_trending_topics(geo="AR")
+    # [(tema, categoria | None)] — clasificamos para saber cuáles ya tienen categoría
+    agenda: list[tuple[str, str | None]] = [(t, None) for t in trends_topics]
+
+    # Fuente 2: RSS medios argentinos (solo si Google Trends no llenó el cupo)
+    print("\n[main] Consultando RSS de medios argentinos...")
+    rss_topics = get_topics_from_rss(excluir_topics=trends_topics)
+    # Los topics de RSS ya traen categoría asignada por sección del feed
+    agenda += [(titulo, categoria) for titulo, categoria in rss_topics]
+
+    if not agenda:
+        print("[main] No se obtuvieron temas de ninguna fuente. Saliendo.")
         sys.exit(0)
+
+    print(f"\n[main] Agenda total: {len(agenda)} temas ({len(trends_topics)} trends + {len(rss_topics)} rss)")
 
     # Procesar cada tema
     creados = 0
     descartados = 0
     errores = 0
 
-    for tema in topics:
+    for tema, categoria_precargada in agenda:
         if creados >= MAX_POLLS_POR_DIA:
             print(f"[main] Límite diario alcanzado ({MAX_POLLS_POR_DIA} polls). Parando.")
             break
 
         print(f"\n[main] Procesando: {tema!r}")
 
-        # Clasificar
-        clasificacion = clasificar_tema(tema)
-        if clasificacion is None:
-            descartados += 1
-            continue
-        categoria, prob_default = clasificacion
+        # Clasificar — si viene de RSS ya tiene categoría, si viene de Trends la determinamos
+        if categoria_precargada:
+            categoria = categoria_precargada
+            print(f"[clasificar] {tema!r} → {categoria} (desde RSS)")
+        else:
+            clasificacion = clasificar_tema(tema)
+            if clasificacion is None:
+                descartados += 1
+                continue
+            categoria, _ = clasificacion
 
         # Generar con Gemini
         poll_data = generar_poll_con_gemini(tema, categoria)

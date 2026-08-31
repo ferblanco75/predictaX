@@ -1,0 +1,349 @@
+'use client';
+
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useRouter } from 'next/navigation';
+import { Filter, Search, X, Coins, PartyPopper } from 'lucide-react';
+
+import { MarketList } from '@/components/markets/MarketList';
+import { Card, CardContent } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/Pagination';
+import { useMarkets } from '@/lib/hooks/useMarkets';
+import { categories } from '@/lib/data/categories';
+import { useAppStore } from '@/lib/stores/app-store';
+import type { Market, MarketCategory } from '@/lib/types';
+
+const MARKETS_PER_PAGE = 12;
+
+interface MarketsPageClientProps {
+  initialMarkets?: Market[];
+  initialPage: number;
+  initialQuery: string;
+  initialCategory?: string;
+  showWelcomeInitially: boolean;
+}
+
+export function MarketsPageClient({
+  initialMarkets,
+  initialPage,
+  initialQuery,
+  initialCategory,
+  showWelcomeInitially,
+}: MarketsPageClientProps) {
+  const router = useRouter();
+  const {
+    selectedCategory,
+    selectedStatus,
+    searchQuery,
+    setCategory,
+    setStatus,
+    setSearchQuery,
+    resetFilters,
+  } = useAppStore();
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const { user } = useAppStore();
+  const isMounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
+  const showWelcome = isMounted && showWelcomeInitially && !welcomeDismissed;
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    const params = new URLSearchParams(window.location.search);
+    if (page === 1) params.delete('page');
+    else params.set('page', String(page));
+    router.replace(params.size > 0 ? `/markets?${params.toString()}` : '/markets', {
+      scroll: false,
+    });
+  };
+
+  useEffect(() => {
+    if (showWelcomeInitially) {
+      const clean = new URLSearchParams(window.location.search);
+      clean.delete('welcome');
+      const cleanUrl = clean.size > 0 ? `/markets?${clean.toString()}` : '/markets';
+      window.history.replaceState(window.history.state, '', cleanUrl);
+    }
+  }, [showWelcomeInitially]);
+
+  useEffect(() => {
+    setSearchQuery(initialQuery);
+  }, [initialQuery, setSearchQuery]);
+
+  useEffect(() => {
+    const cat = initialCategory;
+    if (!cat) return;
+
+    const validCategory = categories.some((category) => category.id === cat);
+    if (validCategory) {
+      setCategory(cat as MarketCategory);
+      return;
+    }
+
+    const cleanParams = new URLSearchParams(window.location.search);
+    cleanParams.delete('categoria');
+    setCategory('all');
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  }, [initialCategory, router, setCategory]);
+
+  const { data: allMarkets = [], isLoading } = useMarkets({
+    status: selectedStatus === 'all' ? undefined : (selectedStatus as 'active' | 'resolved'),
+    limit: 100,
+    initialData:
+      selectedStatus === 'all' || selectedStatus === 'active' ? initialMarkets : undefined,
+  });
+
+  const filtered = allMarkets.filter((m) => {
+    const catMatch = selectedCategory === 'all' || m.category === selectedCategory;
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    let searchMatch = true;
+    if (normalizedSearch) {
+      // "75%" → exact probability match
+      const exactProb = normalizedSearch.match(/^(\d+)%$/);
+      // "5*%" → probability prefix filter (e.g. 50–59%)
+      const prefixProb = normalizedSearch.match(/^(\d+)\*%$/);
+      if (exactProb) {
+        searchMatch = Math.round(m.probability) === parseInt(exactProb[1], 10);
+      } else if (prefixProb) {
+        searchMatch = String(Math.round(m.probability)).startsWith(prefixProb[1]);
+      } else if (normalizedSearch.includes('%')) {
+        // "%" as text wildcard in title (e.g. "presi%")
+        const pattern = normalizedSearch
+          .split('%')
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*');
+        searchMatch = new RegExp(pattern, 'i').test(m.title);
+      } else {
+        searchMatch = m.title.toLowerCase().includes(normalizedSearch);
+      }
+    }
+    return catMatch && searchMatch;
+  });
+
+  const clearSearch = () => {
+    const cleanParams = new URLSearchParams(window.location.search);
+    cleanParams.delete('q');
+    setSearchQuery('');
+    setCurrentPage(1);
+    router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
+      scroll: false,
+    });
+  };
+
+  const totalPages = Math.ceil(filtered.length / MARKETS_PER_PAGE);
+  const safeCurrentPage = Math.min(currentPage, Math.max(totalPages, 1));
+  const paginated = filtered.slice(
+    (safeCurrentPage - 1) * MARKETS_PER_PAGE,
+    safeCurrentPage * MARKETS_PER_PAGE
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome banner for new users */}
+        {showWelcome && user && (
+          <div className="mb-6 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border border-green-200 dark:border-green-800 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-900 dark:text-green-100">
+                  ¡Bienvenido, {user.username}!
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-1">
+                  Recibiste
+                  <Coins className="h-3.5 w-3.5 inline mx-0.5" />
+                  <strong>1.000 puntos</strong> para empezar a predecir.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setWelcomeDismissed(true)}
+              className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 text-xl leading-none"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-1">Mercados de predicción</h1>
+          <p className="text-gray-500 text-sm">
+            Explorá todos los polls disponibles y participá con tus predicciones
+          </p>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="w-full lg:w-56 flex-shrink-0">
+            <Card className="sticky top-20">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="h-4 w-4" />
+                  <h2 className="font-semibold">Filtros</h2>
+                </div>
+
+                <div className="relative mb-5">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar... (ej: 5*%)"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-8 pr-9 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="mb-5">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                    Categoría
+                  </h3>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        setCategory('all');
+                        setCurrentPage(1);
+                        router.push('/markets');
+                      }}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
+                        selectedCategory === 'all'
+                          ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setCategory(cat.id as MarketCategory);
+                          setCurrentPage(1);
+                          router.push('/markets');
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors font-medium flex items-center gap-1.5 min-h-[44px] ${
+                          selectedCategory === cat.id
+                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                    Estado
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      { value: 'all', label: 'Todos' },
+                      { value: 'active', label: 'Activos' },
+                      { value: 'resolved', label: 'Resueltos' },
+                    ].map((s) => (
+                      <button
+                        key={s.value}
+                        onClick={() => {
+                          setStatus(s.value as 'all' | 'active' | 'resolved');
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] flex items-center ${
+                          selectedStatus === s.value
+                            ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-medium'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(selectedCategory !== 'all' || selectedStatus !== 'all' || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setCurrentPage(1);
+                      router.push('/markets');
+                    }}
+                    className="mt-4 w-full text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
+              </CardContent>
+            </Card>
+          </aside>
+
+          {/* Markets grid */}
+          <div className="flex-1">
+            <div className="mb-4 text-sm text-gray-500">
+              {filtered.length} {filtered.length === 1 ? 'poll' : 'polls'}
+              {searchQuery && (
+                <span>
+                  {' '}
+                  para <strong>&quot;{searchQuery}&quot;</strong>
+                </span>
+              )}
+              {selectedCategory !== 'all' && (
+                <span>
+                  {' '}
+                  en{' '}
+                  <strong>
+                    {categories.find((c) => c.id === selectedCategory)?.name ?? selectedCategory}
+                  </strong>
+                </span>
+              )}
+            </div>
+
+            <MarketList
+              markets={paginated}
+              isLoading={isLoading}
+              onClearFilters={() => {
+                resetFilters();
+                setCurrentPage(1);
+                router.push('/markets');
+              }}
+            />
+
+            {!isLoading && filtered.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <p className="text-center text-sm text-gray-500">
+                  Mostrando {(safeCurrentPage - 1) * MARKETS_PER_PAGE + 1}–
+                  {Math.min(safeCurrentPage * MARKETS_PER_PAGE, filtered.length)} de{' '}
+                  {filtered.length} mercados
+                </p>
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={safeCurrentPage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

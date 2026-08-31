@@ -243,3 +243,32 @@ def test_payout_calculation(client, db, user_headers, sample_market):
     # sample_market.probability_market = 55.0
     expected_gain = 200 / (55.0 / 100) - 200  # = 163.64
     assert data["potential_gain"] == pytest.approx(expected_gain, abs=0.01)
+
+
+def test_market_probability_reflects_yes_no_ratio(
+    client, db, user_headers, sample_market
+):
+    """300 pts SÍ + 100 pts NO → probability_market = 75.0%."""
+    second_headers = _register_second_user(client)
+
+    _bet(client, user_headers, sample_market.id, probability=75, points=300)
+    _bet(client, second_headers, sample_market.id, probability=25, points=100)
+
+    db.refresh(sample_market)
+    assert float(sample_market.probability_market) == pytest.approx(75.0, abs=0.01)
+
+
+def test_market_probability_all_no(client, db, user_headers, sample_market):
+    """Solo apuestas NO → probability_market = 0.0%."""
+    _bet(client, user_headers, sample_market.id, probability=25, points=200)
+
+    db.refresh(sample_market)
+    assert float(sample_market.probability_market) == pytest.approx(0.0, abs=0.01)
+
+
+def test_market_probability_all_yes(client, db, user_headers, sample_market):
+    """Solo apuestas SÍ → probability_market = 100.0%."""
+    _bet(client, user_headers, sample_market.id, probability=75, points=500)
+
+    db.refresh(sample_market)
+    assert float(sample_market.probability_market) == pytest.approx(100.0, abs=0.01)

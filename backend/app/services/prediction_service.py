@@ -14,24 +14,28 @@ from app.services import market_service, referral_service, snapshot_service
 
 def calculate_market_probability(predictions: List[Prediction]) -> float:
     """
-    Calculate market probability as weighted average of all predictions.
+    Calculate market probability as the ratio of points bet on YES over total points.
+
+    A prediction is YES if probability > 50 (frontend sends 75), NO otherwise (25).
+    This produces the full [0, 100] range instead of the old weighted-average
+    approach which was mathematically capped at [25, 75].
 
     Args:
         predictions: List of predictions for a market
 
     Returns:
-        Weighted average probability (0-100)
+        Probability in [0, 100]. Returns 50.0 if there are no bets.
     """
     if not predictions:
-        return 50.0  # Default to 50% if no predictions
+        return 50.0
 
     total_points = sum(p.points_wagered for p in predictions)
 
     if total_points == 0:
         return 50.0
 
-    weighted_prob = sum(p.probability * p.points_wagered for p in predictions)
-    return weighted_prob / total_points
+    yes_points = sum(p.points_wagered for p in predictions if p.probability > 50)
+    return round(yes_points / total_points * 100, 2)
 
 
 def create_prediction(

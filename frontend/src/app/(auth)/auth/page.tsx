@@ -1,6 +1,14 @@
 'use client';
 
-import { type FormEvent, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import {
+  type FormEvent,
+  type ReactNode,
+  startTransition,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -281,7 +289,7 @@ function LogoutBanner() {
   useEffect(() => {
     const stored = sessionStorage.getItem('neuropredict_logout_reason');
     if (stored === 'manual' || stored === 'expired') {
-      setReason(stored);
+      startTransition(() => setReason(stored));
       sessionStorage.removeItem('neuropredict_logout_reason');
     }
   }, []);
@@ -520,7 +528,7 @@ function AuthPageContent() {
 
                       <LegalCheckbox
                         id="marketingOptIn"
-                        label="Quiero recibir novedades del MVP y mercados del Mundial 2026 por email."
+                        label="Quiero recibir novedades del MVP y nuevos mercados por email."
                         optional
                       />
                     </div>

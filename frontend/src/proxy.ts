@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const SENSITIVE_QUERY_PARAMS = new Set(['email', 'nombre', 'password', 'passwordConfirm', 'razon']);
-const MARKET_CATEGORIES = new Set([
-  'mundial',
-  'economia',
-  'politica',
-  'deportes',
-  'tecnologia',
-  'crypto',
-]);
+const MARKET_CATEGORIES = new Set(['economia', 'politica', 'deportes', 'tecnologia', 'crypto']);
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

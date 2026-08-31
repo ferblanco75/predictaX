@@ -61,6 +61,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/metodologia" className="hover:text-gray-900 dark:hover:text-gray-100">
+                  Metodología
+                </Link>
+              </li>
+              <li>
                 <Link href="/auth" className="hover:text-gray-900 dark:hover:text-gray-100">
                   Registrarse
                 </Link>

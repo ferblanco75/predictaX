@@ -72,7 +72,7 @@ const EMPTY_CREATE: CreateModalState = {
   open: false,
   title: '',
   description: '',
-  category: 'mundial',
+  category: 'deportes',
   type: 'binary',
   end_date: '',
   probability: 50,
@@ -109,7 +109,6 @@ const categoryColors: Record<string, string> = {
   deportes: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
   tecnologia: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-400',
   crypto: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400',
-  mundial: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-400',
 };
 
 export default function AdminMarketsPage() {
@@ -823,13 +822,11 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setEditModal((prev) => ({ ...prev, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
+                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -907,7 +904,7 @@ export default function AdminMarketsPage() {
                 type="text"
                 value={createModal.title}
                 onChange={(e) => setCreateModal((p) => ({ ...p, title: e.target.value }))}
-                placeholder="¿Ganará Argentina el Mundial 2026?"
+                placeholder="¿Ganará el equipo local la final?"
                 className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 autoFocus
               />
@@ -940,13 +937,11 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setCreateModal((p) => ({ ...p, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['mundial', 'economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
+                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

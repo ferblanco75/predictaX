@@ -75,9 +75,9 @@ export const metadata: Metadata = {
       'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
+        url: '/icons/icon-512.png',
+        width: 512,
+        height: 512,
         alt: 'NeuroPredict - Mercados de Predicción',
       },
     ],
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
       'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
-    images: ['/og-image.png'],
+    images: ['/icons/icon-512.png'],
   },
   robots: {
     index: true,

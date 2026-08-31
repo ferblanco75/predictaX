@@ -446,10 +446,10 @@ Nota: Mercado histórico resuelto - ejemplo de evento pasado con alta probabilid
   },
   {
     id: '20',
-    title: 'Argentina clasificará al Mundial 2026 en top 3 de Sudamérica',
-    description: `Las Eliminatorias Sudamericanas para el Mundial 2026 están en curso. Argentina, como campeona del mundo, busca clasificar con comodidad.
+    title: 'Argentina terminará entre los tres mejores de las Eliminatorias Sudamericanas',
+    description: `Las Eliminatorias Sudamericanas están en curso. Argentina busca terminar el torneo clasificatorio entre los primeros puestos.
 
-Resolución: SÍ si Argentina termina en las primeras 3 posiciones de la tabla de Eliminatorias CONMEBOL para el Mundial 2026.
+Resolución: SÍ si Argentina termina en las primeras 3 posiciones de la tabla de Eliminatorias CONMEBOL.
 
 Factores: rendimiento de Scaloni, lesiones, calendario, altura de La Paz, y forma de Brasil.`,
     category: 'deportes',
@@ -474,7 +474,7 @@ Factores: rendimiento de Scaloni, lesiones, calendario, altura de La Paz, y form
 
 Este mercado se resolverá como SÍ si un jugador de nacionalidad brasileña gana el Balón de Oro 2026 (entregado en octubre/noviembre 2026).
 
-Candidatos principales: Vinicius Jr, Rodrygo, y emergentes. Factores: Champions League, Mundial clubes, estadísticas individuales.`,
+Candidatos principales: Vinicius Jr, Rodrygo, y emergentes. Factores: Champions League, torneos internacionales y estadísticas individuales.`,
     category: 'deportes',
     type: 'binary' as const,
     probability: 31,

@@ -13,7 +13,6 @@ import { MarketDetailClient } from './MarketDetailClient';
 import { generateMarketStructuredData } from '@/lib/utils/structured-data';
 import { useMarket } from '@/lib/hooks/useMarkets';
 import { useUserPredictions } from '@/lib/hooks/useUserPredictions';
-import { getRelatedMarkets } from '@/lib/api/markets';
 import type { Market } from '@/lib/types';
 
 interface MarketDetailPageProps {
@@ -31,7 +30,7 @@ function formatEndDate(endDate: string): string {
 export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const [copied, setCopied] = useState(false);
   const { isLoggedIn } = useAppStore();
-  const { data: fetchedMarket, isLoading, isError } = useMarket(id);
+  const { data: fetchedMarket, isLoading } = useMarket(id, { initialData: initialMarket });
   const { data: allPredictions = [] } = useUserPredictions();
   const market = fetchedMarket ?? initialMarket;
   const myPredictions = allPredictions.filter((p) => p.market_id === id);
@@ -55,7 +54,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
     );
   }
 
-  if (!market || isError) {
+  if (!market) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -72,7 +71,6 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
     );
   }
 
-  const relatedMarkets = getRelatedMarkets(market.id);
   const categoryColor = getCategoryColor(market.category);
   const endDate = formatEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
@@ -310,42 +308,6 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                   </div>
                 </CardContent>
               </Card>
-
-              {relatedMarkets.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Mercados relacionados</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {relatedMarkets.map((relatedMarket) => (
-                      <Link
-                        key={relatedMarket.id}
-                        href={`/markets/${relatedMarket.id}`}
-                        className="block group"
-                      >
-                        <div className="border rounded-lg p-3 hover:border-blue-500 transition-colors dark:border-gray-700">
-                          <h4 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600 mb-2">
-                            {relatedMarket.title}
-                          </h4>
-                          <div className="flex items-center justify-between">
-                            <span className="text-2xl font-bold">{relatedMarket.probability}%</span>
-                            <Badge
-                              variant="secondary"
-                              className="capitalize text-xs"
-                              style={{
-                                backgroundColor: `${getCategoryColor(relatedMarket.category)}20`,
-                                color: getCategoryColor(relatedMarket.category),
-                              }}
-                            >
-                              {relatedMarket.category}
-                            </Badge>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         </div>

@@ -177,6 +177,6 @@ WAITLIST_EMAIL_TO=admin@predictax.com
 
 Ver `frontend/.env.example` para la lista completa con descripciones.
 
-## Licencia
+## Licencias
 
 Proyecto privado.

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FileQuestion, Home, Search, Shield, Trophy } from 'lucide-react';
+import { Compass, FileQuestion, Home, Search, Shield } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const suggestedLinks = [
   { href: '/markets', label: 'Todos los mercados' },
-  { href: '/markets/category/mundial', label: 'Mundial 2026' },
+  { href: '/markets/category/politica', label: 'Política' },
   { href: '/markets/category/economia', label: 'Economía' },
   { href: '/markets/category/crypto', label: 'Crypto' },
 ];
@@ -44,15 +44,15 @@ export default function NotFound() {
                 tenga un error.
               </p>
               <div className="mt-8 flex items-center gap-3 rounded-xl bg-white/10 p-4 text-sm text-blue-100">
-                <Trophy className="h-5 w-5 flex-none" />
-                Los mercados del Mundial 2026 siguen disponibles desde la sección de categorías.
+                <Compass className="h-5 w-5 flex-none" />
+                Explorá las categorías para encontrar otros mercados disponibles.
               </div>
             </div>
 
             <div className="p-8 md:p-12">
               <h2 className="text-2xl font-semibold">Buscá un mercado</h2>
               <p className="mt-2 text-muted-foreground">
-                Probá con una palabra clave como Argentina, dólar, Bitcoin o Mundial.
+                Probá con una palabra clave como Argentina, dólar, Bitcoin o tecnología.
               </p>
 
               <form onSubmit={handleSearch} className="mt-6 flex flex-col gap-3 sm:flex-row">
