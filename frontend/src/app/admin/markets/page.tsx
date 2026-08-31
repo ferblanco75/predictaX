@@ -822,13 +822,11 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setEditModal((prev) => ({ ...prev, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
+                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -939,13 +937,11 @@ export default function AdminMarketsPage() {
                   onChange={(e) => setCreateModal((p) => ({ ...p, category: e.target.value }))}
                   className="w-full border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800"
                 >
-                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map(
-                    (c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    )
-                  )}
+                  {['economia', 'politica', 'deportes', 'tecnologia', 'crypto'].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
