@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -9,6 +11,11 @@ from app.services import auth_service
 
 # HTTP Bearer token authentication
 security = HTTPBearer()
+
+# Same scheme but non-raising: missing/invalid credentials resolve to None
+# instead of a 401, for endpoints that behave differently when logged in
+# but must not require auth (e.g. the chatbot).
+security_optional = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
@@ -71,6 +78,47 @@ def get_current_user(
             detail="User account is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    return user
+
+
+def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """
+    Dependency to get the current user if authenticated, without requiring it.
+
+    Usage in routers:
+        @router.post("/chatbot")
+        def chat(current_user: Optional[User] = Depends(get_current_user_optional)):
+            if current_user:
+                ...  # personalized behavior
+            else:
+                ...  # public behavior
+
+    Returns:
+        The current user, or None if there's no token, the token is
+        invalid/expired, or the user is missing/inactive. Never raises.
+    """
+    if credentials is None:
+        return None
+
+    payload = decode_token(credentials.credentials)
+    if payload is None:
+        return None
+
+    user_id = payload.get("sub")
+    if user_id is None:
+        return None
+
+    try:
+        user = auth_service.get_user_by_id(db, user_id)
+    except Exception:
+        return None
+
+    if not user.is_active or user.deleted_at is not None:
+        return None
 
     return user
 
