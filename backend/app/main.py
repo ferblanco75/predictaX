@@ -7,7 +7,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 from app.core.tracking import log_activity
-from app.routers import admin, auth, football, markets, predictions, users
+from app.routers import admin, auth, chatbot, football, markets, predictions, users
 from app.schemas.common import HealthResponse
 
 try:
@@ -75,6 +75,7 @@ TRACKING_PREFIX_EXCLUDES = (
     "/api/admin/metrics",
     "/api/admin/ai/usage",
     "/api/admin/activity",
+    "/api/chatbot",
 )
 
 
@@ -119,6 +120,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(markets.router, prefix="/api/markets", tags=["Markets"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
+app.include_router(chatbot.router, prefix="/api/chatbot", tags=["Chatbot"])
 app.include_router(admin.router)  # prefix defined in router
 app.include_router(football.router)  # prefix defined in router
 

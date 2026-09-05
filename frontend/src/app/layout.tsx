@@ -9,6 +9,7 @@ import NextTopLoader from 'nextjs-toploader';
 import { CookieConsentManager } from '@/components/privacy/CookieConsentManager';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SessionValidator } from '@/components/providers/SessionValidator';
+import { ChatWidget } from '@/components/chatbot/ChatWidget';
 import { canonicalUrl, SITE_URL } from '@/lib/site';
 
 const geistSans = Geist({
@@ -130,6 +131,7 @@ export default function RootLayout({
             <main className="flex-1 pb-16 md:pb-0">{children}</main>
             <Footer />
             <MobileBottomNav />
+            <ChatWidget />
           </ThemeProvider>
         </QueryProvider>
         <CookieConsentManager />
