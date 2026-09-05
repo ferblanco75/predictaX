@@ -32,6 +32,17 @@ PLATFORM_INFO_CACHE_TTL = 24 * 60 * 60
 MAX_FUNCTION_CALL_ROUNDS = 4
 MAX_TOOL_RESULT_ITEMS = 10
 
+# Marker the model is instructed to prefix its reply with when the user's
+# question is unrelated to PredictaX. The backend intercepts it and swaps in
+# OFF_TOPIC_REPLY, so the redirect message is deterministic instead of
+# depending on the model rephrasing it well every time.
+OFF_TOPIC_MARKER = "[OFF_TOPIC]"
+OFF_TOPIC_REPLY = (
+    "Ese no es un tema relacionado con NeuroPredict. Puedo ayudarte con tus predicciones, "
+    "mercados activos, probabilidades o cómo funciona la plataforma — ¿querés preguntarme "
+    "algo de eso?"
+)
+
 
 class ChatbotRateLimitError(RuntimeError):
     """Raised when a chatbot request is intentionally throttled."""
@@ -122,8 +133,8 @@ def check_chatbot_rate_limit(requester_id: Optional[str]) -> None:
         logger.warning(f"Chatbot rate limit check failed open: {e}")
 
 
-def _tool_get_user_predictions(db: Session, user: User) -> list[dict]:
-    """Active/recent predictions for the authenticated user, with market context."""
+def _tool_get_user_predictions(db: Session, user: User) -> dict:
+    """Current balance and active/recent predictions for the authenticated user."""
     rows = (
         db.query(Prediction, Market)
         .join(Market, Prediction.market_id == Market.id)
@@ -132,7 +143,7 @@ def _tool_get_user_predictions(db: Session, user: User) -> list[dict]:
         .limit(MAX_TOOL_RESULT_ITEMS)
         .all()
     )
-    return [
+    predictions = [
         {
             "market_title": market.title,
             "market_category": market.category.value,
@@ -145,6 +156,7 @@ def _tool_get_user_predictions(db: Session, user: User) -> list[dict]:
         }
         for prediction, market in rows
     ]
+    return {"points_balance": user.points, "predictions": predictions}
 
 
 def _tool_get_market_info(db: Session, query: str) -> Optional[dict]:
@@ -240,8 +252,8 @@ _GET_PLATFORM_INFO_DECLARATION = types.FunctionDeclaration(
 _GET_USER_PREDICTIONS_DECLARATION = types.FunctionDeclaration(
     name="get_user_predictions",
     description=(
-        "Devuelve las predicciones (apuestas) del usuario autenticado que está chateando, "
-        "con el mercado asociado y el estado actual."
+        "Devuelve el puntaje/balance actual del usuario autenticado y sus predicciones "
+        "(apuestas), con el mercado asociado y el estado actual de cada una."
     ),
 )
 
@@ -257,29 +269,60 @@ def _build_tools(has_user: bool) -> list[types.Tool]:
     return [types.Tool(functionDeclarations=declarations)]
 
 
+_OFF_TOPIC_RULES = f"""
+ALCANCE ESTRICTO: solo respondés preguntas relacionadas con PredictaX/NeuroPredict: qué es la
+plataforma, su metodología, mercados de predicción, probabilidades, y (si el usuario está
+autenticado) sus propias predicciones, estado de esas predicciones y su puntaje/balance.
+
+Si la pregunta NO tiene relación con esos temas (clima, cultura general, tareas de programación
+ajenas a la plataforma, noticias no relacionadas a un mercado, chusmerío, pedidos de opinión
+personal, etc.), NO la respondas. En su lugar, tu respuesta completa debe empezar exactamente
+con el texto "{OFF_TOPIC_MARKER}" seguido de una breve frase cortés redirigiendo al usuario a
+los temas de la plataforma. No agregues nada más en esos casos.
+
+Ejemplos:
+- Usuario: "¿qué tiempo hace hoy en Buenos Aires?"
+  Respuesta: "{OFF_TOPIC_MARKER} No es algo que pueda ayudarte a resolver acá, pero sí puedo
+  contarte sobre mercados o tus predicciones."
+- Usuario: "escribime un poema"
+  Respuesta: "{OFF_TOPIC_MARKER} Eso no es un tema de la plataforma. ¿Querés que te muestre
+  los mercados activos?"
+- Usuario: "¿quién ganó el mundial de 2022?" (sin relación a ningún mercado de PredictaX)
+  Respuesta: "{OFF_TOPIC_MARKER} Ese dato no está relacionado con nuestros mercados. ¿Te
+  interesa ver si hay algún mercado activo de deportes?"
+- Usuario: "¿cuánto es 340 * 12?"
+  Respuesta: "{OFF_TOPIC_MARKER} No es algo relacionado con NeuroPredict, pero puedo ayudarte
+  con tus predicciones o mercados."
+""".strip()
+
+
 def _build_system_prompt(user: Optional[User]) -> str:
     base = (
         "Sos el asistente virtual de PredictaX, una plataforma de mercados de predicción "
         "para América Latina. Respondé siempre en español rioplatense, de forma breve y clara. "
-        "Usá las funciones disponibles para consultar datos reales en vez de inventar cifras."
+        "Usá las funciones disponibles para consultar datos reales en vez de inventar cifras.\n\n"
+        f"{_OFF_TOPIC_RULES}"
     )
     if user:
         return (
             f"{base}\n\nEl usuario que te escribe está autenticado como '{user.username}'. "
-            "Podés usar get_user_predictions para ver sus apuestas activas, además de "
-            "get_market_info, list_active_markets y get_platform_info."
+            "Podés usar get_user_predictions para ver su puntaje/balance y sus apuestas "
+            "activas, además de get_market_info, list_active_markets y get_platform_info. "
+            "Un pedido de su puntaje, sus predicciones, el estado de sus predicciones o "
+            "mercados/probabilidades SÍ está dentro de tu alcance."
         )
     return (
         f"{base}\n\nEl usuario que te escribe NO está autenticado. No tenés acceso a datos "
         "personales de ningún usuario. Solo podés usar get_market_info, list_active_markets "
-        "y get_platform_info. Si te preguntan por 'mis apuestas' o datos personales, explicá "
-        "que necesitan iniciar sesión primero."
+        "y get_platform_info. Si te preguntan por 'mis apuestas', su puntaje u otros datos "
+        "personales, explicá que necesitan iniciar sesión primero (esto no es off-topic, "
+        "es un caso aparte: no uses el marcador de rechazo para esto)."
     )
 
 
 def _execute_tool(db: Session, user: Optional[User], name: str, args: dict) -> dict:
     if name == "get_user_predictions" and user is not None:
-        return {"predictions": _tool_get_user_predictions(db, user)}
+        return _tool_get_user_predictions(db, user)
     if name == "get_market_info":
         result = _tool_get_market_info(db, args.get("query", ""))
         return {"market": result} if result else {"market": None, "note": "No encontrado"}
@@ -360,6 +403,9 @@ def send_message(
             contents.append(types.Content(role="user", parts=response_parts))
         else:
             final_text = "No pude terminar de procesar tu consulta. Probá reformularla."
+
+        if final_text.strip().startswith(OFF_TOPIC_MARKER):
+            final_text = OFF_TOPIC_REPLY
 
         elapsed_ms = int((time.time() - start_time) * 1000)
         tokens = getattr(response, "usage_metadata", None)
