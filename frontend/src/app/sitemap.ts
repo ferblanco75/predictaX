@@ -22,6 +22,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${CANONICAL_BASE_URL}/metodologia`,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${CANONICAL_BASE_URL}/terms`,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${CANONICAL_BASE_URL}/privacy`,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
+    {
+      url: `${CANONICAL_BASE_URL}/security-policy`,
+      changeFrequency: 'yearly',
+      priority: 0.3,
+    },
   ];
 
   const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
