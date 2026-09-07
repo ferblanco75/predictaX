@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 
 import { HomePageClient } from '@/components/home/HomePageClient';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { canonicalUrl } from '@/lib/site';
+import { generateOrganizationStructuredData } from '@/lib/utils/structured-data';
 
 export const metadata: Metadata = {
   alternates: {
@@ -13,5 +15,12 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <HomePageClient />;
+  const organizationData = generateOrganizationStructuredData();
+
+  return (
+    <>
+      <JsonLd data={organizationData} />
+      <HomePageClient />
+    </>
+  );
 }
