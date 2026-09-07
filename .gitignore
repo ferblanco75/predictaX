@@ -24,6 +24,19 @@ frontend/.env*.local
 /.env
 backend/.env
 
+# Credentials / API keys (red de contención — no dependas de recordar agregarlos)
+.api_key
+*.api_key
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+*-credentials.json
+.secrets
+secrets.json
+
 # IDEs
 .vscode/
 .idea/
