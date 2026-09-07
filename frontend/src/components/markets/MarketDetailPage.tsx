@@ -6,13 +6,18 @@ import Link from 'next/link';
 import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getCategoryColor } from '@/lib/data/categories';
+import { getCategoryColor, getCategoryById } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
-import { generateMarketStructuredData } from '@/lib/utils/structured-data';
+import {
+  generateMarketStructuredData,
+  generateBreadcrumbStructuredData,
+} from '@/lib/utils/structured-data';
 import { useMarket } from '@/lib/hooks/useMarkets';
 import { useUserPredictions } from '@/lib/hooks/useUserPredictions';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { canonicalUrl } from '@/lib/site';
 import type { Market } from '@/lib/types';
 
 interface MarketDetailPageProps {
@@ -74,6 +79,15 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const categoryColor = getCategoryColor(market.category);
   const endDate = formatEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
+  const category = getCategoryById(market.category);
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: 'Inicio', url: canonicalUrl('/') },
+    { name: 'Mercados', url: canonicalUrl('/markets') },
+    ...(category
+      ? [{ name: category.name, url: canonicalUrl(`/markets/category/${category.id}`) }]
+      : []),
+    { name: market.title, url: canonicalUrl(`/markets/${market.id}`) },
+  ]);
   const statusConfig = {
     active: {
       label: 'Activo',
@@ -123,11 +137,8 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-        suppressHydrationWarning
-      />
+      <JsonLd data={structuredData} />
+      <JsonLd data={breadcrumbData} />
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
