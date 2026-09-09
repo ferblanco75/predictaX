@@ -33,6 +33,9 @@ jobs:
       SECRET_KEY: test-secret-key-for-ci-only
       REDIS_URL: redis://localhost:6379/0
       GEMINI_API_KEY: ""
+      # CI runs tests, not production — DEBUG=true skips the SECRET_KEY
+      # strength check added for #254, which only applies when DEBUG=False.
+      DEBUG: "true"
 
     steps:
       - uses: actions/checkout@v4
