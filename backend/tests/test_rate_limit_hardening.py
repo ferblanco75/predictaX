@@ -47,8 +47,26 @@ def test_get_client_ip_returns_connection_address():
     assert get_client_ip(request_no_client) == "unknown"
 
 
-def test_ai_rate_limit_fails_closed_when_redis_unavailable(monkeypatch):
+def test_ai_rate_limit_fails_open_when_redis_never_configured(monkeypatch):
+    """No Redis at all (e.g. REDIS_URL missing in prod) is an infra gap, not
+    an outage — must not take down /ai-analysis for every user."""
     monkeypatch.setattr(ai_service, "redis_client", None)
+
+    ai_service.check_ai_rate_limit("some-market-id", "user:123")  # must not raise
+
+
+def test_chatbot_rate_limit_fails_open_when_redis_never_configured(monkeypatch):
+    monkeypatch.setattr(chatbot_service, "redis_client", None)
+
+    chatbot_service.check_chatbot_rate_limit("user:123")  # must not raise
+
+
+def test_ai_rate_limit_fails_closed_on_redis_outage_mid_request(monkeypatch):
+    """A connection that existed and then errors mid-operation is a real
+    outage — the only cost control on this endpoint, so it must deny."""
+    broken_redis = MagicMock()
+    broken_redis.incr.side_effect = ConnectionError("connection reset")
+    monkeypatch.setattr(ai_service, "redis_client", broken_redis)
 
     try:
         ai_service.check_ai_rate_limit("some-market-id", "user:123")
@@ -57,8 +75,10 @@ def test_ai_rate_limit_fails_closed_when_redis_unavailable(monkeypatch):
         pass
 
 
-def test_chatbot_rate_limit_fails_closed_when_redis_unavailable(monkeypatch):
-    monkeypatch.setattr(chatbot_service, "redis_client", None)
+def test_chatbot_rate_limit_fails_closed_on_redis_outage_mid_request(monkeypatch):
+    broken_redis = MagicMock()
+    broken_redis.incr.side_effect = ConnectionError("connection reset")
+    monkeypatch.setattr(chatbot_service, "redis_client", broken_redis)
 
     try:
         chatbot_service.check_chatbot_rate_limit("user:123")
