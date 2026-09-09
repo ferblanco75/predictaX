@@ -52,10 +52,12 @@ def create_test_db():
 
 @pytest.fixture(autouse=True)
 def isolate_auth_rate_limits():
-    """Isolate auth rate limit counters between tests."""
+    """Isolate auth and OTP rate limit counters between tests."""
     clear_rate_limits("rate_limit:auth:")
+    clear_rate_limits("rate_limit:otp:")
     yield
     clear_rate_limits("rate_limit:auth:")
+    clear_rate_limits("rate_limit:otp:")
 
 
 @pytest.fixture()
@@ -88,10 +90,21 @@ def client(db):
 
 
 @pytest.fixture()
-def registered_user(client):
-    """Register a test user and return user data."""
+def registered_user(client, db):
+    """Register a test user and return user data.
+
+    Real accounts only become email_verified by completing OTP login (#252).
+    Most tests using this fixture exercise unrelated behavior on an already
+    "normal" account, so mark it verified here rather than forcing every
+    caller to go through the OTP flow.
+    """
+    from app.models.user import User
+
     response = client.post("/api/auth/register", json=USER_DATA)
     assert response.status_code == 201
+    user = db.query(User).filter(User.email == USER_DATA["email"]).first()
+    user.email_verified = True
+    db.commit()
     return response.json()
 
 
@@ -122,6 +135,7 @@ def admin_user(client, db):
     from app.models.user import User
     user = db.query(User).filter(User.email == ADMIN_DATA["email"]).first()
     user.role = "admin"
+    user.email_verified = True
     db.commit()
     db.refresh(user)
 

@@ -143,6 +143,12 @@ async def startup_event():
     logger.info(f"Environment: {'Production' if not settings.DEBUG else 'Development'}")
     logger.info(f"CORS Origins: {settings.CORS_ORIGINS}")
 
+    if not settings.DEBUG and not settings.RESEND_API_KEY:
+        raise RuntimeError(
+            "RESEND_API_KEY is not set. Refusing to start in production without email "
+            "delivery configured — OTP codes must never fall back to being logged."
+        )
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

@@ -1,6 +1,16 @@
+from unittest.mock import MagicMock
+
 from fastapi.testclient import TestClient
 
 from app.services import chatbot_service
+
+
+def _fake_gemini_response(text: str) -> MagicMock:
+    response = MagicMock()
+    response.function_calls = None
+    response.text = text
+    response.usage_metadata = None
+    return response
 
 
 def test_chatbot_rate_limit_returns_429(client: TestClient, monkeypatch):
@@ -112,12 +122,13 @@ def test_get_user_predictions_tool_only_returns_own_predictions(db, sample_marke
     db.add(prediction)
     db.commit()
 
-    results = chatbot_service._tool_get_user_predictions(db, user)
+    result = chatbot_service._tool_get_user_predictions(db, user)
 
-    assert len(results) == 1
-    assert results[0]["market_title"] == sample_market.title
-    assert results[0]["predicted_side"] == "SI"
-    assert results[0]["points_wagered"] == 100.0
+    assert result["points_balance"] == user.points
+    assert len(result["predictions"]) == 1
+    assert result["predictions"][0]["market_title"] == sample_market.title
+    assert result["predictions"][0]["predicted_side"] == "SI"
+    assert result["predictions"][0]["points_wagered"] == 100.0
 
 
 def test_build_tools_excludes_user_predictions_when_no_user():
@@ -136,3 +147,64 @@ def test_build_tools_includes_user_predictions_when_authenticated():
 def test_execute_tool_ignores_get_user_predictions_without_user(db):
     result = chatbot_service._execute_tool(db, None, "get_user_predictions", {})
     assert "error" in result
+
+
+def test_send_message_off_topic_public_returns_standard_reply(db, monkeypatch):
+    fake_client = MagicMock()
+    fake_client.models.generate_content.return_value = _fake_gemini_response(
+        f"{chatbot_service.OFF_TOPIC_MARKER} No es un tema de la plataforma."
+    )
+    monkeypatch.setattr(chatbot_service, "gemini_client", fake_client)
+
+    reply = chatbot_service.send_message(db, "¿qué tiempo hace hoy?", [], user=None)
+
+    assert reply == chatbot_service.OFF_TOPIC_REPLY
+    assert chatbot_service.OFF_TOPIC_MARKER not in reply
+
+
+def test_send_message_off_topic_authenticated_returns_standard_reply(
+    db, registered_user, monkeypatch
+):
+    from app.models.user import User
+
+    user = db.query(User).filter(User.id == registered_user["id"]).first()
+
+    fake_client = MagicMock()
+    fake_client.models.generate_content.return_value = _fake_gemini_response(
+        f"{chatbot_service.OFF_TOPIC_MARKER} Eso no tiene que ver con NeuroPredict."
+    )
+    monkeypatch.setattr(chatbot_service, "gemini_client", fake_client)
+
+    reply = chatbot_service.send_message(db, "escribime un poema", [], user=user)
+
+    assert reply == chatbot_service.OFF_TOPIC_REPLY
+
+
+def test_send_message_on_topic_passes_through_unchanged(db, monkeypatch):
+    fake_client = MagicMock()
+    fake_client.models.generate_content.return_value = _fake_gemini_response(
+        "Hay 5 mercados activos en la categoría deportes."
+    )
+    monkeypatch.setattr(chatbot_service, "gemini_client", fake_client)
+
+    reply = chatbot_service.send_message(db, "¿qué mercados de deportes hay?", [], user=None)
+
+    assert reply == "Hay 5 mercados activos en la categoría deportes."
+
+
+def test_send_message_authenticated_methodology_question_not_blocked(
+    db, registered_user, monkeypatch
+):
+    from app.models.user import User
+
+    user = db.query(User).filter(User.id == registered_user["id"]).first()
+
+    fake_client = MagicMock()
+    fake_client.models.generate_content.return_value = _fake_gemini_response(
+        "El porcentaje se calcula en 4 pasos..."
+    )
+    monkeypatch.setattr(chatbot_service, "gemini_client", fake_client)
+
+    reply = chatbot_service.send_message(db, "¿cómo se calcula el porcentaje?", [], user=user)
+
+    assert reply == "El porcentaje se calcula en 4 pasos..."

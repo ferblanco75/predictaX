@@ -18,7 +18,7 @@ frontend/out/
 frontend/build/
 frontend/dist/
 frontend/.env.local
-frontend/.env*.local
+frontend/.env.*.local
 
 # Backend secrets
 /.env

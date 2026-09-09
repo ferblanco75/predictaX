@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.request_ip import get_client_ip
 from app.core.security import decode_token
 from app.dependencies import get_current_user_optional
 from app.models.user import User
@@ -26,12 +27,7 @@ def _get_requester_id(request: Request, user: Optional[User]) -> str:
         if user_id:
             return f"user:{user_id}"
 
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",", 1)[0].strip()
-    else:
-        client_ip = request.client.host if request.client else "unknown"
-    return f"ip:{client_ip}"
+    return f"ip:{get_client_ip(request)}"
 
 
 @router.post("", response_model=ChatResponse)

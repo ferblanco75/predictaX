@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.request_ip import get_client_ip
 from app.core.security import decode_token
 from app.schemas.market import MarketHistoryPoint, MarketResponse
 from app.services import ai_service, market_service
@@ -21,12 +22,7 @@ def _get_ai_requester_id(request: Request) -> str:
         if user_id:
             return f"user:{user_id}"
 
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",", 1)[0].strip()
-    else:
-        client_ip = request.client.host if request.client else "unknown"
-    return f"ip:{client_ip}"
+    return f"ip:{get_client_ip(request)}"
 
 
 @router.get("", response_model=List[MarketResponse])

@@ -7,7 +7,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import case, distinct, func
 from sqlalchemy.orm import Session
 
@@ -40,8 +40,19 @@ def _validate_end_date_year(value: Optional[datetime]) -> Optional[datetime]:
         raise ValueError(f"El año de cierre no puede ser mayor a {max_year}")
     return value
 
+def _reject_angle_brackets(value: Optional[str]) -> Optional[str]:
+    """Defense in depth for #251: market copy renders inside a raw
+    dangerouslySetInnerHTML JSON-LD block on the frontend. Reject the
+    characters that let content escape that block, regardless of source
+    (admin panel or auto_polls.py)."""
+    if value is None:
+        return value
+    if "<" in value or ">" in value:
+        raise ValueError("El texto no puede contener los caracteres '<' o '>'")
+    return value
+
 class MarketEditRequest(BaseModel):
-    title: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = None
     end_date: Optional[datetime] = None
     category: Optional[str] = None
@@ -51,8 +62,13 @@ class MarketEditRequest(BaseModel):
     def validate_end_date(cls, value: Optional[datetime]) -> Optional[datetime]:
         return _validate_end_date_year(value)
 
+    @field_validator("title", "description")
+    @classmethod
+    def validate_no_angle_brackets(cls, value: Optional[str]) -> Optional[str]:
+        return _reject_angle_brackets(value)
+
 class MarketCreateRequest(BaseModel):
-    title: str
+    title: str = Field(max_length=500)
     description: str
     category: str
     type: str = "binary"
@@ -63,6 +79,11 @@ class MarketCreateRequest(BaseModel):
     @classmethod
     def validate_end_date(cls, value: datetime) -> datetime:
         return _validate_end_date_year(value)
+
+    @field_validator("title", "description")
+    @classmethod
+    def validate_no_angle_brackets(cls, value: str) -> str:
+        return _reject_angle_brackets(value)
 
 router = APIRouter(
     prefix="/api/admin",

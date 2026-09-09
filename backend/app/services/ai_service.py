@@ -210,8 +210,17 @@ def _get_generation_lock_key(market_id: str) -> str:
 
 
 def check_ai_rate_limit(market_id: str, requester_id: Optional[str]) -> None:
-    """Throttle repeated AI analysis POSTs by requester and market."""
-    if not redis_client or not requester_id:
+    """Throttle repeated AI analysis POSTs by requester and market.
+
+    Fails closed (#255): if Redis is unavailable, this raises instead of
+    silently letting every request through unthrottled. A Redis outage
+    should degrade the AI endpoints, not remove their only cost control.
+    """
+    if not redis_client:
+        raise AIRateLimitError(
+            "El servicio de IA no está disponible temporalmente. Intentá de nuevo en unos minutos."
+        )
+    if not requester_id:
         return
 
     try:
@@ -252,7 +261,10 @@ def check_ai_rate_limit(market_id: str, requester_id: Optional[str]) -> None:
     except AIRateLimitError:
         raise
     except Exception as e:
-        logger.warning(f"AI rate limit check failed open: {e}")
+        logger.error(f"AI rate limit check failed closed: {e}")
+        raise AIRateLimitError(
+            "El servicio de IA no está disponible temporalmente. Intentá de nuevo en unos minutos."
+        )
 
 
 def _acquire_generation_lock(market_id: str) -> tuple[bool, Optional[str]]:

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import enforce_rate_limit
+from app.core.request_ip import get_client_ip
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.user import (
@@ -22,8 +23,14 @@ router = APIRouter()
 
 
 def _auth_rate_limit_key(action: str, request: Request) -> str:
-    client_host = request.client.host if request.client else "unknown"
+    client_host = get_client_ip(request)
     return f"auth:{action}:{client_host}"
+
+
+def _auth_email_rate_limit_key(action: str, email: str) -> str:
+    """Key by email as well as IP (#255) — an attacker spread across many IPs
+    should still be throttled when targeting a single account."""
+    return f"auth:{action}:email:{email.strip().lower()}"
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -73,6 +80,11 @@ def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db
         settings.AUTH_LOGIN_RATE_LIMIT_MAX,
         settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
     )
+    enforce_rate_limit(
+        _auth_email_rate_limit_key("login", credentials.email),
+        settings.AUTH_LOGIN_RATE_LIMIT_MAX,
+        settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
     user = auth_service.authenticate_user(db, credentials.email, credentials.password)
     access_token = auth_service.create_user_token(user)
 
@@ -104,6 +116,11 @@ def request_otp(body: OTPRequest, request: Request, db: Session = Depends(get_db
         settings.OTP_RATE_LIMIT_WINDOW_SECONDS,
     )
     result = otp_service.request_otp(db, body.email)
+    if not result["email_sent"] and not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No pudimos enviar el código. Intentá de nuevo en unos minutos.",
+        )
     return result
 
 

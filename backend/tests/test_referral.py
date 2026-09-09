@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from app.models.user import User
+
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
 REFERRAL_URL = "/api/users/me/referral"
@@ -23,14 +25,21 @@ REFERRED_DATA = {
 }
 
 
+def _verify_email(db, email: str) -> None:
+    user = db.query(User).filter(User.email == email).first()
+    user.email_verified = True
+    db.commit()
+
+
 def _auth_header(client: TestClient, email: str, password: str) -> dict:
     resp = client.post(LOGIN_URL, json={"email": email, "password": password})
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_referral_endpoint_generates_code(client: TestClient):
+def test_referral_endpoint_generates_code(client: TestClient, db):
     client.post(REGISTER_URL, json=REFERRER_DATA)
+    _verify_email(db, REFERRER_DATA["email"])
     headers = _auth_header(client, REFERRER_DATA["email"], REFERRER_DATA["password"])
 
     resp = client.get(REFERRAL_URL, headers=headers)
@@ -42,8 +51,9 @@ def test_referral_endpoint_generates_code(client: TestClient):
     assert data["points_earned"] == 0
 
 
-def test_referral_code_is_stable(client: TestClient):
+def test_referral_code_is_stable(client: TestClient, db):
     client.post(REGISTER_URL, json=REFERRER_DATA)
+    _verify_email(db, REFERRER_DATA["email"])
     headers = _auth_header(client, REFERRER_DATA["email"], REFERRER_DATA["password"])
 
     code1 = client.get(REFERRAL_URL, headers=headers).json()["referral_code"]
@@ -51,9 +61,10 @@ def test_referral_code_is_stable(client: TestClient):
     assert code1 == code2
 
 
-def test_register_with_valid_referral_code(client: TestClient):
+def test_register_with_valid_referral_code(client: TestClient, db):
     # Referrer registers and gets code
     client.post(REGISTER_URL, json=REFERRER_DATA)
+    _verify_email(db, REFERRER_DATA["email"])
     headers = _auth_header(client, REFERRER_DATA["email"], REFERRER_DATA["password"])
     code = client.get(REFERRAL_URL, headers=headers).json()["referral_code"]
 
@@ -71,9 +82,10 @@ def test_register_with_invalid_referral_code_still_works(client: TestClient):
     assert resp.json()["points"] == 1000.0
 
 
-def test_referrer_sees_referred_count(client: TestClient):
+def test_referrer_sees_referred_count(client: TestClient, db):
     # Referrer registers and gets code
     client.post(REGISTER_URL, json=REFERRER_DATA)
+    _verify_email(db, REFERRER_DATA["email"])
     headers = _auth_header(client, REFERRER_DATA["email"], REFERRER_DATA["password"])
     code = client.get(REFERRAL_URL, headers=headers).json()["referral_code"]
 

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 
 from app.models.prediction import Prediction
@@ -8,6 +10,41 @@ def test_data_export_requires_auth(client: TestClient):
     response = client.get("/api/users/me/data-export")
 
     assert response.status_code == 403
+
+
+def test_leaderboard_is_public_but_leaks_no_pii(client: TestClient, db, registered_user):
+    """Regression test for #250: leaderboard must never expose email/role/consent data."""
+    response = client.get("/api/users/leaderboard")
+
+    assert response.status_code == 200
+    entries = response.json()
+    assert len(entries) >= 1
+
+    for entry in entries:
+        assert set(entry.keys()) == {"id", "username", "points", "avatar_url"}
+        assert "email" not in entry
+        assert "role" not in entry
+        assert "terms_accepted_at" not in entry
+        assert "deleted_at" not in entry
+
+
+def test_leaderboard_excludes_deleted_users(client: TestClient, db, registered_user):
+    user = db.query(User).filter(User.id == registered_user["id"]).first()
+    user.deleted_at = datetime.now(timezone.utc)
+    user.is_active = False
+    db.commit()
+
+    response = client.get("/api/users/leaderboard")
+
+    assert response.status_code == 200
+    usernames = [entry["username"] for entry in response.json()]
+    assert user.username not in usernames
+
+
+def test_leaderboard_limit_capped_at_100(client: TestClient):
+    response = client.get("/api/users/leaderboard?limit=99999")
+
+    assert response.status_code == 422
 
 
 def test_data_export_includes_profile_consents_and_predictions(

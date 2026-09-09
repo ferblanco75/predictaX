@@ -1,7 +1,10 @@
 from typing import List, Union
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_SECRET_KEY_PLACEHOLDER = "your-super-secret-key-change-this"
+_MIN_SECRET_KEY_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -71,6 +74,22 @@ class Settings(BaseSettings):
             except (json.JSONDecodeError, ValueError):
                 return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+
+    @model_validator(mode="after")
+    def validate_secret_key_in_production(self) -> "Settings":
+        if self.DEBUG:
+            return self
+        if self.SECRET_KEY == _SECRET_KEY_PLACEHOLDER:
+            raise ValueError(
+                "SECRET_KEY is set to the published .env.example placeholder. "
+                "Generate a real one: openssl rand -hex 32"
+            )
+        if len(self.SECRET_KEY) < _MIN_SECRET_KEY_LENGTH:
+            raise ValueError(
+                f"SECRET_KEY must be at least {_MIN_SECRET_KEY_LENGTH} characters in "
+                "production. Generate one: openssl rand -hex 32"
+            )
+        return self
 
 
 settings = Settings()
