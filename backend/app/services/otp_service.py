@@ -34,7 +34,7 @@ def _send_otp_email(email: str, code: str) -> bool:
     """Send OTP code via Resend. Returns True on success, False if not configured."""
     resend = _get_resend()
     if not resend:
-        logger.warning("RESEND_API_KEY not set — OTP code for %s: %s", email, code)
+        logger.warning("RESEND_API_KEY not set — OTP email for %s was not sent", email)
         return False
 
     html = f"""
@@ -162,9 +162,21 @@ def verify_otp(db: Session, email: str, code: str) -> User:
             email=email,
             username=username,
             hashed_password="",  # OTP users have no password
+            email_verified=True,
             points=1000.0,
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.email_verified:
+        # #252: this account has a password nobody has ever logged in with —
+        # either the real owner registered but always signs in via OTP, or an
+        # attacker pre-registered this email hoping to hijack it. Either way,
+        # whoever can complete the OTP flow for this address is the real
+        # owner (they control the inbox), so this is the moment to invalidate
+        # any pre-existing password and close the hijacking window for good.
+        user.hashed_password = ""
+        user.email_verified = True
         db.commit()
         db.refresh(user)
 

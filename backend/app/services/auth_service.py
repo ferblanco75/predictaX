@@ -31,13 +31,17 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     if db.query(User).filter(User.username == user_data.username).first():
         raise BadRequestException("Este nombre de usuario ya está en uso. Elegí otro.")
 
-    # Create new user
+    # Create new user. Accounts created with a password are not email_verified
+    # until the real owner claims them via OTP login (see otp_service.verify_otp,
+    # #252) — the frontend's only login path is OTP, so a password set at
+    # registration is never enough on its own to establish a usable session.
     now = datetime.now(timezone.utc)
     hashed_password = get_password_hash(user_data.password) if user_data.password else ""
     db_user = User(
         email=user_data.email,
         username=user_data.username,
         hashed_password=hashed_password,
+        email_verified=not user_data.password,
         terms_accepted_at=now,
         privacy_accepted_at=now,
         age_confirmed_at=now,
@@ -70,13 +74,21 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     """
     user = db.query(User).filter(User.email == email).first()
 
-    if not user:
+    if not user or not user.hashed_password:
         raise UnauthorizedException("Invalid email or password")
 
     if not verify_password(password, user.hashed_password):
         raise UnauthorizedException("Invalid email or password")
 
-    if not user.is_active or user.deleted_at is not None:
+    if user.deleted_at is not None:
+        raise UnauthorizedException("Invalid email or password")
+
+    if not user.email_verified:
+        raise BadRequestException(
+            "Confirmá tu email antes de iniciar sesión. Revisá el código que te enviamos."
+        )
+
+    if not user.is_active:
         raise UnauthorizedException("Invalid email or password")
 
     return user

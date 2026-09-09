@@ -143,6 +143,12 @@ def generar_poll_con_gemini(tema: str, categoria: str) -> dict | None:
         print("ERROR: google-genai no está instalado. Ejecutá: pip install google-genai")
         sys.exit(1)
 
+    # #256: 'tema' viene de RSS/Trends externos y se interpola sin escapar
+    # dentro de un prompt delimitado por comillas — una comilla o salto de
+    # línea en el título de una noticia podría cerrar el delimitador y
+    # agregar instrucciones falsas al prompt. Se limpia antes de interpolar.
+    tema = tema.replace('"', "'").replace("\n", " ").replace("\r", " ").strip()
+
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     schema = types.Schema(
@@ -199,6 +205,14 @@ Respondé SOLO con el JSON, sin texto adicional."""
             titulo = str(result.get("titulo", "")).strip()
             descripcion = str(result.get("descripcion", "")).strip()
             probabilidad = float(result.get("probabilidad", 50))
+
+            # #251: el título/descripción viajan a un bloque JSON-LD renderizado
+            # con dangerouslySetInnerHTML en el frontend. El backend ya rechaza
+            # '<'/'>' en /api/admin/markets, pero conviene limpiar acá para no
+            # perder un poll válido por un carácter suelto copiado de una fuente
+            # externa (RSS, Trends) en vez de que el POST falle con 422.
+            titulo = titulo.replace("<", "").replace(">", "")
+            descripcion = descripcion.replace("<", "").replace(">", "")
 
             if not titulo or not descripcion:
                 raise ValueError("Gemini devolvió título o descripción vacíos")

@@ -14,9 +14,13 @@ SECOND_USER_DATA = {
 }
 
 
-def _register_second_user(client: TestClient) -> dict[str, str]:
+def _register_second_user(client: TestClient, db) -> dict[str, str]:
     response = client.post("/api/auth/register", json=SECOND_USER_DATA)
     assert response.status_code == 201
+
+    user = db.query(User).filter(User.email == SECOND_USER_DATA["email"]).first()
+    user.email_verified = True
+    db.commit()
 
     login_response = client.post(
         "/api/auth/login",
@@ -103,7 +107,7 @@ def test_user_predictions_are_scoped_to_current_user(
     sample_market,
 ):
     first_user = db.query(User).filter(User.email == "test@predictax.com").first()
-    second_headers = _register_second_user(client)
+    second_headers = _register_second_user(client, db)
     prediction = Prediction(
         user_id=first_user.id,
         market_id=sample_market.id,
@@ -249,7 +253,7 @@ def test_market_probability_reflects_yes_no_ratio(
     client, db, user_headers, sample_market
 ):
     """300 pts SÍ + 100 pts NO → probability_market = 75.0%."""
-    second_headers = _register_second_user(client)
+    second_headers = _register_second_user(client, db)
 
     _bet(client, user_headers, sample_market.id, probability=75, points=300)
     _bet(client, second_headers, sample_market.id, probability=25, points=100)

@@ -12,7 +12,12 @@ from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.schemas.user import CookieConsentUpdate, ReferralResponse, UserDeleteRequest, UserResponse
+from app.schemas.user import (
+    CookieConsentUpdate,
+    LeaderboardEntry,
+    ReferralResponse,
+    UserDeleteRequest,
+)
 from app.services import referral_service
 
 router = APIRouter()
@@ -26,23 +31,25 @@ def _deleted_user_identifier(user_id) -> str:
     return f"deleted-{user_id}"
 
 
-@router.get("/leaderboard", response_model=List[UserResponse])
+@router.get("/leaderboard", response_model=List[LeaderboardEntry])
 def get_leaderboard(
     limit: int = Query(10, ge=1, le=100, description="Number of top users"),
     db: Session = Depends(get_db),
 ):
     """
-    Get top users by points (leaderboard).
+    Get top users by points (leaderboard). Public endpoint — must never expose
+    PII (email), role, or consent history. See LeaderboardEntry.
 
     Args:
         limit: Number of top users to return
         db: Database session
 
     Returns:
-        List of top users ordered by points
+        List of top users ordered by points, excluding inactive/deleted accounts
     """
     users = (
         db.query(User)
+        .filter(User.is_active.is_(True), User.deleted_at.is_(None))
         .order_by(User.points.desc())
         .limit(limit)
         .all()
@@ -267,7 +274,12 @@ def delete_current_user_account(
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     """Anonymize and deactivate the authenticated user's account."""
-    if not verify_password(delete_request.password, current_user.hashed_password):
+    # OTP-only accounts have no password to verify — the JWT already proves
+    # identity for them. Password accounts still confirm via password, since
+    # a stolen/left-open session should not be enough to delete the account.
+    if current_user.hashed_password and not verify_password(
+        delete_request.password, current_user.hashed_password
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid password",

@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.core.security import create_access_token, decode_token
+from app.models.user import User
 
 REGISTER_URL = "/api/auth/register"
 LOGIN_URL = "/api/auth/login"
@@ -111,8 +112,25 @@ def test_register_short_password(client: TestClient):
     assert response.status_code == 422
 
 
-def test_login(client: TestClient):
+def _register_and_verify(client: TestClient, db, user_data: dict = USER_DATA):
+    client.post(REGISTER_URL, json=user_data)
+    user = db.query(User).filter(User.email == user_data["email"]).first()
+    user.email_verified = True
+    db.commit()
+
+
+def test_login_blocked_until_email_verified(client: TestClient):
+    """See #252: a freshly registered password account cannot log in yet."""
     client.post(REGISTER_URL, json=USER_DATA)
+    response = client.post(
+        LOGIN_URL,
+        json={"email": USER_DATA["email"], "password": USER_DATA["password"]},
+    )
+    assert response.status_code == 400
+
+
+def test_login(client: TestClient, db):
+    _register_and_verify(client, db)
     response = client.post(
         LOGIN_URL,
         json={"email": USER_DATA["email"], "password": USER_DATA["password"]},
@@ -213,9 +231,9 @@ def test_decode_token_rejects_invalid_token():
     assert decode_token("invalid.token.here") is None
 
 
-def test_protected_route(client: TestClient):
+def test_protected_route(client: TestClient, db):
     # Register and login to get token
-    client.post(REGISTER_URL, json=USER_DATA)
+    _register_and_verify(client, db)
     login_resp = client.post(
         LOGIN_URL,
         json={"email": USER_DATA["email"], "password": USER_DATA["password"]},
@@ -240,8 +258,8 @@ def test_protected_route_invalid_token(client: TestClient):
     assert response.status_code == 401
 
 
-def test_logout(client: TestClient):
-    client.post(REGISTER_URL, json=USER_DATA)
+def test_logout(client: TestClient, db):
+    _register_and_verify(client, db)
     login_resp = client.post(
         LOGIN_URL,
         json={"email": USER_DATA["email"], "password": USER_DATA["password"]},

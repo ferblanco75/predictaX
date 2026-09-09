@@ -6,6 +6,36 @@ import { MessageCircle, Send, X } from 'lucide-react';
 import { useAppStore } from '@/lib/stores/app-store';
 import { useSendChatMessage, type ChatMessage } from '@/lib/hooks/useChatbot';
 
+// Versioned key so a future shape change can invalidate old stored sessions.
+// sessionStorage (not localStorage) is deliberate: the conversation clears
+// when the browser tab closes, so it never becomes long-lived stored
+// personal data (#238, relevant to #241/#242 privacy policy scope).
+const STORAGE_KEY = 'neuropredict_chatwidget_v1';
+const MAX_STORED_MESSAGES = 30;
+
+function loadStoredMessages(): ChatMessage[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredMessages(messages: ChatMessage[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED_MESSAGES)));
+  } catch {
+    // Storage full or unavailable (private browsing) — conversation just
+    // won't survive a reload, which is a safe degradation.
+  }
+}
+
 function welcomeMessage(isLoggedIn: boolean, username?: string): ChatMessage {
   if (isLoggedIn) {
     return {
@@ -16,7 +46,7 @@ function welcomeMessage(isLoggedIn: boolean, username?: string): ChatMessage {
   return {
     role: 'assistant',
     content:
-      'Hola, soy el asistente de PredictaX. Puedo contarte qué es la plataforma y cómo se calculan las probabilidades. Iniciá sesión para preguntarme por tus propias predicciones.',
+      'Hola, soy el asistente de NeuroPredict. Puedo contarte qué es la plataforma y cómo se calculan las probabilidades. Iniciá sesión para preguntarme por tus propias predicciones.',
   };
 }
 
@@ -24,14 +54,39 @@ export function ChatWidget() {
   const { isLoggedIn, user } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hasRestoredFromStorage, setHasRestoredFromStorage] = useState(false);
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sendMessage = useSendChatMessage();
 
+  // Restore a conversation left over from earlier in this browser tab, once.
   useEffect(() => {
+    const stored = loadStoredMessages();
+    if (stored && stored.length > 0) {
+      setMessages(stored);
+    } else {
+      setMessages([welcomeMessage(isLoggedIn, user?.username)]);
+    }
+    setHasRestoredFromStorage(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auth state changing (login/logout) resets to a fresh welcome message —
+  // continuing a public conversation as if it were personal (or vice versa)
+  // would be confusing and is not worth persisting across that transition.
+  const previousIsLoggedIn = useRef(isLoggedIn);
+  useEffect(() => {
+    if (!hasRestoredFromStorage) return;
+    if (previousIsLoggedIn.current === isLoggedIn) return;
+    previousIsLoggedIn.current = isLoggedIn;
     setMessages([welcomeMessage(isLoggedIn, user?.username)]);
-  }, [isLoggedIn, user?.username]);
+  }, [isLoggedIn, user?.username, hasRestoredFromStorage]);
+
+  useEffect(() => {
+    if (!hasRestoredFromStorage) return;
+    saveStoredMessages(messages);
+  }, [messages, hasRestoredFromStorage]);
 
   useEffect(() => {
     if (isOpen) {
@@ -56,7 +111,9 @@ export function ChatWidget() {
     const trimmed = input.trim();
     if (!trimmed || sendMessage.isPending) return;
 
-    const history = messages;
+    // Backend caps history at 20 entries (schemas/chatbot.py); keep some
+    // headroom so this message + the new one never push it over that limit.
+    const history = messages.slice(-18);
     const userMessage: ChatMessage = { role: 'user', content: trimmed };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -92,7 +149,7 @@ export function ChatWidget() {
             className="absolute bottom-16 right-0 flex h-[28rem] w-[min(22rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900"
           >
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-              <span className="text-sm font-semibold">Asistente PredictaX</span>
+              <span className="text-sm font-semibold">Asistente NeuroPredict</span>
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label="Cerrar chat"

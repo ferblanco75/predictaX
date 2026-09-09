@@ -119,6 +119,18 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class LeaderboardEntry(BaseModel):
+    """Public leaderboard entry — no PII, no role, no consent history."""
+
+    id: UUID
+    username: str
+    points: float
+    avatar_url: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class Token(BaseModel):
     """Schema for JWT token response"""
 
