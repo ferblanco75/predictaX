@@ -212,14 +212,20 @@ def _get_generation_lock_key(market_id: str) -> str:
 def check_ai_rate_limit(market_id: str, requester_id: Optional[str]) -> None:
     """Throttle repeated AI analysis POSTs by requester and market.
 
-    Fails closed (#255): if Redis is unavailable, this raises instead of
-    silently letting every request through unthrottled. A Redis outage
-    should degrade the AI endpoints, not remove their only cost control.
+    Fails closed on a Redis *outage* (#255): a connection that existed and
+    then fails mid-request is a real degradation, and this is the only cost
+    control on the AI endpoint, so it must deny requests.
+
+    Fails open if Redis was never configured/reachable (redis_client is None
+    from startup) — that's an infra gap, not a transient outage, and
+    shouldn't take AI analysis down for every user. Logs loudly either way.
     """
     if not redis_client:
-        raise AIRateLimitError(
-            "El servicio de IA no está disponible temporalmente. Intentá de nuevo en unos minutos."
+        logger.warning(
+            "AI rate limiting disabled: no Redis connection configured. "
+            "This request is NOT throttled."
         )
+        return
     if not requester_id:
         return
 

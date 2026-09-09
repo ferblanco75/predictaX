@@ -122,14 +122,21 @@ def _get_rate_key(requester_id: str) -> str:
 def check_chatbot_rate_limit(requester_id: Optional[str]) -> None:
     """Throttle repeated chatbot messages per requester (user id or IP).
 
-    Fails closed (#255): without Redis, this is the only guard against
-    unbounded Gemini usage, so an outage must deny requests rather than
-    silently remove the limit.
+    Fails closed on a Redis *outage* (#255): if a connection existed and an
+    operation against it fails mid-request, that is a real degradation and
+    the only guard against unbounded Gemini usage, so it must deny requests.
+
+    Fails open if Redis was never configured/reachable at all (redis_client
+    is None from startup) — that is an infra gap (missing REDIS_URL/Redis
+    service), not a transient outage, and should not take down the chatbot
+    for every user. Logs loudly so it's visible in monitoring either way.
     """
     if not redis_client:
-        raise ChatbotRateLimitError(
-            "El asistente no está disponible temporalmente. Intentá de nuevo en unos minutos."
+        logger.warning(
+            "Chatbot rate limiting disabled: no Redis connection configured. "
+            "This request is NOT throttled."
         )
+        return
     if not requester_id:
         return
 
