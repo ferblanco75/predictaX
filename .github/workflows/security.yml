@@ -124,6 +124,7 @@ jobs:
           GEMINI_API_KEY=
           GEMINI_MODEL=gemini-3.6-flash
           RENDER=false
+          RESEND_API_KEY=ci-only-dummy-resend-key
           EOF
 
       - name: Start backend stack
