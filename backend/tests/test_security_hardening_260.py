@@ -8,22 +8,34 @@ from fastapi.testclient import TestClient
 from app.core.tracking import log_activity
 
 
-def test_log_activity_truncates_oversized_endpoint(db):
+def test_log_activity_truncates_oversized_endpoint():
     """A padded path must not raise past log_activity's try/except (#260
-    finding 1) — that was how an attacker evaded tracking entirely."""
-    huge_endpoint = "GET /api/markets/" + ("x" * 5000)
-    log_activity(action="api_request", endpoint=huge_endpoint, status_code=200)
+    finding 1) — that was how an attacker evaded tracking entirely.
 
+    log_activity opens its own SessionLocal() independent of the `db` test
+    fixture's transactional session, so this reads back with a fresh one.
+    """
+    from app.core.database import SessionLocal
     from app.models.activity_log import ActivityLog
 
-    log = (
-        db.query(ActivityLog)
-        .filter(ActivityLog.action == "api_request", ActivityLog.status_code == 200)
-        .order_by(ActivityLog.created_at.desc())
-        .first()
-    )
-    assert log is not None
-    assert len(log.endpoint) <= 200
+    marker = "oversized-endpoint-test-marker"
+    huge_endpoint = f"GET /api/markets/{marker}/" + ("x" * 5000)
+    log_activity(action=marker, endpoint=huge_endpoint, status_code=200)
+
+    verify_db = SessionLocal()
+    try:
+        log = (
+            verify_db.query(ActivityLog)
+            .filter(ActivityLog.action == marker)
+            .order_by(ActivityLog.created_at.desc())
+            .first()
+        )
+        assert log is not None
+        assert len(log.endpoint) <= 200
+    finally:
+        verify_db.query(ActivityLog).filter(ActivityLog.action == marker).delete()
+        verify_db.commit()
+        verify_db.close()
 
 
 def test_oversized_request_body_rejected_with_413(client: TestClient):
@@ -40,7 +52,9 @@ def test_market_predictions_endpoint_is_paginated(client: TestClient, db, sample
     from app.models.prediction import Prediction
     from app.models.user import User
 
-    user = User(email="pagination-test@predictax.com", username="paginationuser")
+    user = User(
+        email="pagination-test@predictax.com", username="paginationuser", hashed_password=""
+    )
     db.add(user)
     db.commit()
 
@@ -90,7 +104,9 @@ def test_site_performance_computes_percentiles_in_sql(client: TestClient, admin_
     response = client.get("/api/admin/metrics/performance?days=7", headers=admin_headers)
     assert response.status_code == 200
     summary = response.json()["summary"]
-    assert summary["p50"] > 0
+    assert summary["p50_ms"] > 0
+    assert summary["p95_ms"] > 0
+    assert summary["p99_ms"] > 0
 
 
 def test_list_markets_invalid_category_returns_422(client: TestClient):
