@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -86,16 +86,23 @@ def get_user_predictions(
 
 
 @router.get("/market/{market_id}", response_model=List[PublicMarketPredictionResponse])
-def get_market_predictions(market_id: UUID, db: Session = Depends(get_db)):
+def get_market_predictions(
+    market_id: UUID,
+    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    db: Session = Depends(get_db),
+):
     """
-    Get all predictions for a specific market.
+    Get predictions for a specific market (public, paginated).
 
     Args:
         market_id: Market ID
+        limit: Maximum number of predictions to return
+        offset: Pagination offset
         db: Database session
 
     Returns:
-        List of market's predictions
+        Page of the market's predictions
     """
-    predictions = prediction_service.get_market_predictions(db, market_id)
+    predictions = prediction_service.get_market_predictions(db, market_id, limit, offset)
     return predictions
