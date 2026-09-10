@@ -1,7 +1,6 @@
 """Regression tests for #260: DoS surface and security-log evasion."""
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 
