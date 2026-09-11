@@ -86,9 +86,14 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend
-# Allow all Vercel preview deployments via regex pattern
+# #259: the old regex (https://.*\.vercel\.app) authorised *any* Vercel
+# deployment on the internet — anyone can claim a free *.vercel.app subdomain
+# in minutes and it would be allowed to make credentialed cross-origin
+# requests. Anchored to this project's actual preview naming instead
+# (predicta-x-<suffix>-fernandoblancos-projects.vercel.app), which still
+# covers PR previews hitting the production API for QA before merge.
 cors_origins = settings.CORS_ORIGINS
-cors_origin_regex = r"https://.*\.vercel\.app"
+cors_origin_regex = r"https://predicta-x-[a-z0-9-]+-fernandoblancos-projects\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,

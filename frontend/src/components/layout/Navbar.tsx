@@ -159,7 +159,6 @@ export function Navbar() {
                   size="sm"
                   onClick={() => {
                     logout();
-                    localStorage.removeItem('token');
                     sessionStorage.setItem('neuropredict_logout_reason', 'manual');
                     router.push('/auth');
                   }}
