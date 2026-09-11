@@ -109,20 +109,22 @@ docker compose up -d
 ```
 
 ### Puertos por defecto (todos configurables en `.env`)
-| Servicio | Puerto local | Interno |
-|----------|-------------|---------|
-| Frontend | **3001** | 3000 |
-| Backend | **8001** | 8000 |
-| PostgreSQL | **5433** | 5432 |
-| Redis | **6380** | 6379 |
-| Prometheus | 9090 | 9090 |
-| Grafana | **3005** | 3000 |
-| Alertmanager | 9093 | 9093 |
-| Node Exporter | 9100 | 9100 |
-| Postgres Exporter | 9187 | 9187 |
-| Redis Exporter | 9121 | 9121 |
+| Servicio | Puerto local | Interno | Alcanzable desde |
+|----------|-------------|---------|-------------------|
+| Frontend | **3001** | 3000 | Red local (para probar desde otro dispositivo) |
+| Backend | **8001** | 8000 | Red local (para probar desde otro dispositivo) |
+| PostgreSQL | **5433** | 5432 | Solo localhost (`127.0.0.1`) |
+| Redis | **6380** | 6379 | Solo localhost (`127.0.0.1`) |
+| Prometheus | 9090 | 9090 | Solo localhost (`127.0.0.1`) |
+| Grafana | **3005** | 3000 | Solo localhost (`127.0.0.1`) |
+| Alertmanager | 9093 | 9093 | Solo localhost (`127.0.0.1`) |
+| Node Exporter | 9100 | 9100 | Solo localhost (`127.0.0.1`) |
+| Postgres Exporter | 9187 | 9187 | Solo localhost (`127.0.0.1`) |
+| Redis Exporter | 9121 | 9121 | Solo localhost (`127.0.0.1`) |
 
 > **IMPORTANTE:** Los puertos 3000, 3002, 3003 ya están ocupados por otros servicios locales del usuario. NO tocar ni intentar usarlos. Si Grafana u otro servicio colisiona, cambiar a otro puerto en `.env`.
+
+> **Seguridad (#261):** desde el hardening de docker-compose, toda la infraestructura interna (DB, cache, observabilidad) solo escucha en `127.0.0.1` — no es alcanzable desde la red local/WiFi, aunque Compose publique el puerto. Solo frontend y backend quedan en `0.0.0.0` a propósito, para poder probar la app desde otro dispositivo en la misma red. `GRAFANA_PASSWORD` es obligatoria en `.env` (sin fallback a `admin`).
 
 ### Variables de entorno locales
 El usuario tiene un `.env` en la raíz del proyecto con los overrides de puertos:
