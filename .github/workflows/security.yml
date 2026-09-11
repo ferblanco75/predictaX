@@ -128,6 +128,12 @@ jobs:
           EOF
 
       - name: Start backend stack
+        # GRAFANA_PASSWORD is required by docker-compose.yml (#261) even
+        # though this job never starts the grafana service — Compose
+        # validates every service's interpolated variables when parsing the
+        # file, regardless of which services are actually being brought up.
+        env:
+          GRAFANA_PASSWORD: ci-only-unused-value
         run: docker compose up -d postgres redis backend
 
       - name: Wait for backend health
