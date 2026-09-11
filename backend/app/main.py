@@ -1,8 +1,9 @@
 import logging
 import time
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.background import BackgroundTask
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
@@ -19,6 +20,38 @@ except ImportError:
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+MAX_REQUEST_BODY_BYTES = 1 * 1024 * 1024  # 1 MB
+
+
+class BodySizeLimitMiddleware(BaseHTTPMiddleware):
+    """Reject oversized request bodies before they reach route handlers.
+
+    #260: Starlette reads the full body into memory before Pydantic
+    validates anything, so a ChatRequest's max_length constraints don't
+    protect against a multi-hundred-MB POST — that alone can exhaust
+    Render's free-tier 512MB container.
+
+    This checks the declared Content-Length only — cheap, and covers any
+    honest client. It does not defend against a request that lies about its
+    length and streams more bytes than declared; consuming the stream
+    ourselves to catch that reliably requires rewriting this as raw ASGI
+    middleware instead of BaseHTTPMiddleware (which mangles the body for
+    downstream handlers when you touch request._receive). Left as-is for
+    now — Render's own proxy also caps request size ahead of this process.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length is not None:
+            try:
+                if int(content_length) > MAX_REQUEST_BODY_BYTES:
+                    return Response(status_code=413, content="Request body too large")
+            except ValueError:
+                pass
+
+        return await call_next(request)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -53,9 +86,14 @@ app = FastAPI(
 )
 
 # CORS configuration for frontend
-# Allow all Vercel preview deployments via regex pattern
+# #259: the old regex (https://.*\.vercel\.app) authorised *any* Vercel
+# deployment on the internet — anyone can claim a free *.vercel.app subdomain
+# in minutes and it would be allowed to make credentialed cross-origin
+# requests. Anchored to this project's actual preview naming instead
+# (predicta-x-<suffix>-fernandoblancos-projects.vercel.app), which still
+# covers PR previews hitting the production API for QA before merge.
 cors_origins = settings.CORS_ORIGINS
-cors_origin_regex = r"https://.*\.vercel\.app"
+cors_origin_regex = r"https://predicta-x-[a-z0-9-]+-fernandoblancos-projects\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
@@ -67,6 +105,7 @@ app.add_middleware(
 )
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
 
 TRACKING_EXACT_EXCLUDES = {"/api/health", "/api/metrics", "/api/openapi.json"}
 TRACKING_PREFIX_EXCLUDES = (
@@ -97,7 +136,14 @@ class TrackingMiddleware(BaseHTTPMiddleware):
 
         path = request.url.path
         if should_track_api_request(path):
-            log_activity(
+            # #260: log_activity() is synchronous (opens a DB session,
+            # inserts, commits) — running it inline here blocked the event
+            # loop and held a second pool connection for the whole request.
+            # Deferring it to a BackgroundTask lets the response return
+            # first; the insert then runs after the client has the reply.
+            existing_task = response.background
+            log_task = BackgroundTask(
+                log_activity,
                 action="api_request",
                 endpoint=f"{request.method} {path}",
                 ip_address=request.client.host if request.client else None,
@@ -105,6 +151,14 @@ class TrackingMiddleware(BaseHTTPMiddleware):
                 response_time_ms=elapsed_ms,
                 status_code=response.status_code,
             )
+            if existing_task is not None:
+                async def _run_both(current=existing_task, tracking=log_task):
+                    await current()
+                    await tracking()
+
+                response.background = BackgroundTask(_run_both)
+            else:
+                response.background = log_task
         return response
 
 app.add_middleware(TrackingMiddleware)

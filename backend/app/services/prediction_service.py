@@ -166,20 +166,27 @@ def get_user_predictions(db: Session, user_id: UUID) -> List[Prediction]:
     )
 
 
-def get_market_predictions(db: Session, market_id: UUID) -> List[Prediction]:
+def get_market_predictions(
+    db: Session, market_id: UUID, limit: int = 50, offset: int = 0
+) -> List[Prediction]:
     """
-    Get all predictions for a market.
+    Get a page of predictions for a market (#260: this is a public,
+    unauthenticated endpoint — must never return an unbounded result set).
 
     Args:
         db: Database session
         market_id: Market ID
+        limit: Maximum number of predictions to return
+        offset: Pagination offset
 
     Returns:
-        List of predictions
+        Page of predictions
     """
     return (
         db.query(Prediction)
         .filter(Prediction.market_id == market_id)
         .order_by(Prediction.created_at.desc())
+        .limit(limit)
+        .offset(offset)
         .all()
     )

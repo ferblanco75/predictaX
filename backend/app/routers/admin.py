@@ -636,7 +636,7 @@ def get_top_active_users(
 
 @router.get("/metrics/users/inactive")
 def get_inactive_users(
-    days: int = Query(30, description="Users with no predictions in X days"),
+    days: int = Query(30, ge=1, le=365, description="Users with no predictions in X days"),
     db: Session = Depends(get_db),
 ):
     """Users who registered but have no predictions in the given period."""
@@ -765,22 +765,32 @@ def get_site_performance(
     ).count()
     errors_5xx = base_q.filter(ActivityLog.status_code >= 500).count()
 
-    response_times = (
-        db.query(ActivityLog.response_time_ms)
+    # #260: compute percentiles in SQL instead of pulling every response_time_ms
+    # row into memory — that scaled with activity_log's size (see #243).
+    percentiles_row = (
+        db.query(
+            func.percentile_cont(0.50)
+            .within_group(ActivityLog.response_time_ms)
+            .label("p50"),
+            func.percentile_cont(0.95)
+            .within_group(ActivityLog.response_time_ms)
+            .label("p95"),
+            func.percentile_cont(0.99)
+            .within_group(ActivityLog.response_time_ms)
+            .label("p99"),
+            func.avg(ActivityLog.response_time_ms).label("avg_ms"),
+        )
         .filter(
             func.date(ActivityLog.created_at) >= start_date,
             ActivityLog.action == "api_request",
             ActivityLog.response_time_ms.isnot(None),
         )
-        .order_by(ActivityLog.response_time_ms)
-        .all()
+        .one()
     )
-    times = [r.response_time_ms for r in response_times]
-
-    p50 = times[len(times) // 2] if times else 0
-    p95 = times[int(len(times) * 0.95)] if times else 0
-    p99 = times[int(len(times) * 0.99)] if times else 0
-    avg_time = sum(times) / len(times) if times else 0
+    p50 = round(percentiles_row.p50) if percentiles_row.p50 is not None else 0
+    p95 = round(percentiles_row.p95) if percentiles_row.p95 is not None else 0
+    p99 = round(percentiles_row.p99) if percentiles_row.p99 is not None else 0
+    avg_time = round(percentiles_row.avg_ms, 1) if percentiles_row.avg_ms is not None else 0
 
     slowest = (
         db.query(

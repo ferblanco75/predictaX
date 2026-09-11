@@ -108,8 +108,15 @@ def logout(current_user: User = Depends(get_current_user)):
 def request_otp(body: OTPRequest, request: Request, db: Session = Depends(get_db)):
     """
     Request an OTP code sent to the given email address.
-    Rate limited to 3 requests per email per hour.
+    Rate limited to 3 requests per email per hour, and by IP (#260) so an
+    attacker iterating over addresses can't send unlimited mail from our
+    domain and burn Resend quota/reputation.
     """
+    enforce_rate_limit(
+        f"otp:request:ip:{get_client_ip(request)}",
+        settings.OTP_REQUEST_IP_RATE_LIMIT_MAX,
+        settings.OTP_RATE_LIMIT_WINDOW_SECONDS,
+    )
     enforce_rate_limit(
         f"otp:request:{body.email}",
         settings.OTP_RATE_LIMIT_MAX,
@@ -125,11 +132,20 @@ def request_otp(body: OTPRequest, request: Request, db: Session = Depends(get_db
 
 
 @router.post("/otp/verify", response_model=OTPVerifyResponse)
-def verify_otp(body: OTPVerify, db: Session = Depends(get_db)):
+def verify_otp(body: OTPVerify, request: Request, db: Session = Depends(get_db)):
     """
     Verify an OTP code and return a JWT token.
     Creates the user automatically if the email is new.
+
+    Rate limited by IP (#260): this endpoint had no limit at all — the code
+    itself is protected by OTP_MAX_ATTEMPTS, but it was still an unmetered
+    public endpoint doing DB queries/commits per request.
     """
+    enforce_rate_limit(
+        f"otp:verify:ip:{get_client_ip(request)}",
+        settings.OTP_VERIFY_RATE_LIMIT_MAX,
+        settings.OTP_VERIFY_RATE_LIMIT_WINDOW_SECONDS,
+    )
     user, is_new_user = otp_service.verify_otp(db, body.email, body.code)
     access_token = auth_service.create_user_token(user)
     return OTPVerifyResponse(access_token=access_token, is_new_user=is_new_user)

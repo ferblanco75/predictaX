@@ -128,6 +128,12 @@ jobs:
           EOF
 
       - name: Start backend stack
+        # GRAFANA_PASSWORD is required by docker-compose.yml (#261) even
+        # though this job never starts the grafana service — Compose
+        # validates every service's interpolated variables when parsing the
+        # file, regardless of which services are actually being brought up.
+        env:
+          GRAFANA_PASSWORD: ci-only-unused-value
         run: docker compose up -d postgres redis backend
 
       - name: Wait for backend health
@@ -172,7 +178,7 @@ jobs:
         run: docker build -t predictax-backend ./backend
 
       - name: Run Trivy table report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: predictax-backend
           format: table
@@ -180,7 +186,7 @@ jobs:
           exit-code: '0'
 
       - name: Run Trivy JSON report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         if: always()
         with:
           image-ref: predictax-backend
@@ -207,7 +213,7 @@ jobs:
         run: docker build -t predictax-frontend --target dev ./frontend
 
       - name: Run Trivy table report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: predictax-frontend
           format: table
@@ -215,7 +221,7 @@ jobs:
           exit-code: '0'
 
       - name: Run Trivy JSON report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         if: always()
         with:
           image-ref: predictax-frontend

@@ -78,6 +78,10 @@ def get_my_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # #260: intentionally unbounded — the aggregate stats below (win_rate,
+    # total_wagered, etc.) must reflect every prediction the user has ever
+    # made, and this is an authenticated endpoint scoped to the caller's own
+    # data, not a public one an attacker can point at an arbitrary target.
     predictions = (
         db.query(Prediction)
         .filter(Prediction.user_id == current_user.id)
@@ -145,6 +149,7 @@ def export_current_user_data(
         db.query(Prediction)
         .filter(Prediction.user_id == current_user.id)
         .order_by(Prediction.created_at.desc())
+        .limit(1000)
         .all()
     )
     activity_logs = (

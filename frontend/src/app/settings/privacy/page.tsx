@@ -70,7 +70,6 @@ export default function PrivacySettingsPage() {
           confirm_delete: true,
         },
       });
-      localStorage.removeItem('token');
       logout();
       router.push('/');
     } catch {

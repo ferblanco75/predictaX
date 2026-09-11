@@ -17,11 +17,13 @@ RUN pip install --no-cache-dir --upgrade pip==26.1.1 wheel==0.46.2 \
     && pip install --no-cache-dir poetry==2.3.4
 
 # Copy dependency files
-COPY pyproject.toml ./
+COPY pyproject.toml poetry.lock ./
 
-# Install dependencies (no dev dependencies in production)
+# Install dependencies (no dev dependencies in production).
+# #257: --sync ensures the resolved environment matches poetry.lock exactly,
+# rather than re-resolving caret ranges fresh on every build.
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-root --only main
+    && poetry install --no-interaction --no-ansi --no-root --only main --sync
 
 # Copy application code
 COPY . .

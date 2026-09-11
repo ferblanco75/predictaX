@@ -34,16 +34,20 @@ def log_activity(
             resource_type=resource_type,
             resource_id=resource_id,
             metadata_json=json.dumps(metadata, ensure_ascii=False) if metadata else None,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            endpoint=endpoint,
+            # #260: an oversized value here must never raise past this
+            # try/except silently — that let an attacker pad a path to evade
+            # tracking entirely (INSERT fails, exception swallowed, request
+            # untraced). Truncate to the column width up front instead.
+            ip_address=(ip_address or "")[:45] or None,
+            user_agent=(user_agent or "")[:500] or None,
+            endpoint=(endpoint or "")[:200] or None,
             response_time_ms=response_time_ms,
             status_code=status_code,
         )
         db.add(log)
         db.commit()
     except Exception as e:
-        logger.warning(f"Failed to log activity: {e}")
+        logger.error(f"Failed to log activity (action={action!r}): {e}")
     finally:
         if db:
             db.close()

@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     OTP_MAX_ATTEMPTS: int = 3
     OTP_RATE_LIMIT_MAX: int = 3  # max OTP requests per email per window
     OTP_RATE_LIMIT_WINDOW_SECONDS: int = 3600  # 1 hour
+    # #260: /otp/request was only throttled by email — an attacker iterating
+    # over addresses had no limit at all. /otp/verify had no limit whatsoever.
+    OTP_REQUEST_IP_RATE_LIMIT_MAX: int = 10  # per IP per window (shared IPs need headroom)
+    OTP_VERIFY_RATE_LIMIT_MAX: int = 10  # per IP per window
+    OTP_VERIFY_RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # Render.com detection
     RENDER: bool = False

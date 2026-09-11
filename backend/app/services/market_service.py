@@ -35,8 +35,8 @@ def format_volume(amount: float) -> str:
 
 def get_markets(
     db: Session,
-    category: Optional[str] = None,
-    status: Optional[str] = None,
+    category: Optional[MarketCategory] = None,
+    status: Optional[MarketStatus] = None,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[List[Market], int]:
@@ -56,10 +56,10 @@ def get_markets(
     query = db.query(Market)
 
     if category:
-        query = query.filter(Market.category == MarketCategory(category))
+        query = query.filter(Market.category == category)
 
     if status:
-        query = query.filter(Market.status == MarketStatus(status))
+        query = query.filter(Market.status == status)
 
     # Get total count before pagination
     total = query.count()
@@ -70,7 +70,7 @@ def get_markets(
     return markets, total
 
 
-def get_market_by_id(db: Session, market_id: int) -> Market:
+def get_market_by_id(db: Session, market_id) -> Market:
     """
     Get market by ID.
 

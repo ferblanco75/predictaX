@@ -1,4 +1,5 @@
 from typing import List, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.request_ip import get_client_ip
 from app.core.security import decode_token
+from app.models.market import MarketCategory, MarketStatus
 from app.schemas.market import MarketHistoryPoint, MarketResponse
 from app.services import ai_service, market_service
 
@@ -27,8 +29,8 @@ def _get_ai_requester_id(request: Request) -> str:
 
 @router.get("", response_model=List[MarketResponse])
 def list_markets(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    status: Optional[str] = Query("active", description="Filter by status"),
+    category: Optional[MarketCategory] = Query(None, description="Filter by category"),
+    status: Optional[MarketStatus] = Query(MarketStatus.ACTIVE, description="Filter by status"),
     limit: int = Query(20, ge=1, le=100, description="Maximum results"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     db: Session = Depends(get_db),
@@ -63,7 +65,7 @@ def list_markets(
 
 
 @router.get("/{market_id}", response_model=MarketResponse)
-def get_market(market_id: str, db: Session = Depends(get_db)):
+def get_market(market_id: UUID, db: Session = Depends(get_db)):
     """
     Get market by ID.
 
@@ -82,7 +84,7 @@ def get_market(market_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{market_id}/history", response_model=List[MarketHistoryPoint])
-def get_market_history(market_id: str, db: Session = Depends(get_db)):
+def get_market_history(market_id: UUID, db: Session = Depends(get_db)):
     """
     Get market probability history for charts.
 
@@ -104,7 +106,7 @@ def get_market_history(market_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{market_id}/ai-analysis", tags=["AI"])
-def analyze_market(market_id: str, request: Request, db: Session = Depends(get_db)):
+def analyze_market(market_id: UUID, request: Request, db: Session = Depends(get_db)):
     """
     Generate AI analysis for a market using Google Gemini.
 
@@ -134,7 +136,7 @@ def analyze_market(market_id: str, request: Request, db: Session = Depends(get_d
 
 
 @router.get("/{market_id}/ai-analysis", tags=["AI"])
-def get_market_analysis(market_id: str, db: Session = Depends(get_db)):
+def get_market_analysis(market_id: UUID, db: Session = Depends(get_db)):
     """
     Get cached AI analysis for a market. Returns 404 if no analysis exists.
 
