@@ -26,7 +26,7 @@ Plataforma de mercados de predicción para América Latina (similar a Polymarket
 - **Google Analytics** (ya instalado)
 - **Vercel Analytics** (ya instalado)
 - **Resend** (emails — ya instalado, falta API key)
-- **axios** fijado a `1.13.6` (supply chain attack mitigation — NO actualizar hasta que se resuelva issue #56)
+- **axios** fijado a `1.20.0` sin caret (issue #56 se originó por un incidente puntual con las versiones `1.14.1`/`0.30.4` comprometidas en npm; #257 encontró que el proyecto había quedado en `1.16.1`, todavía dentro del rango general reportado como vulnerable — actualizado a `1.20.0`, fuera de ambos rangos de riesgo)
 
 ### Backend (`backend/`)
 - **FastAPI** + **Python 3.11** + **Poetry**
@@ -264,7 +264,6 @@ Issues se referencian con `#XX`. Cuando un issue depende de otro, se menciona en
 
 | # | Título | Bloquea |
 |---|--------|---------|
-| #56 | Axios Supply Chain Attack — NO hacer npm install | Cualquier npm install |
 | #65 | Adquisición de dominio | Cloudflare, Search Console, Resend, OAuth |
 | #72 | GDPR Compliance | Launch |
 | #50 | OWASP Top 10 protection | Launch |

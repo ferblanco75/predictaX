@@ -22,9 +22,18 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
+        # #257: pinned exact versions — this job runs with production admin
+        # credentials in its environment; an unpinned install of any of these
+        # (especially the small, single-maintainer pytrends-modern) would let
+        # a compromised release on it act with those credentials.
+        # google-genai matches the version locked in backend/poetry.lock.
         run: |
           pip install --upgrade pip
-          pip install requests google-genai python-Levenshtein pytrends-modern
+          pip install \
+            requests==2.34.2 \
+            google-genai==1.75.0 \
+            python-Levenshtein==0.27.4 \
+            pytrends-modern==0.2.13
           python -c "from pytrends_modern.rss import TrendsRSS; print('pytrends-modern OK')"
 
       - name: Run auto-polls script
