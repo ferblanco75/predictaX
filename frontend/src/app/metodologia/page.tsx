@@ -40,8 +40,8 @@ const STEPS = [
     badge: 'Paso 3',
     color: 'text-emerald-600 dark:text-emerald-400',
     bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-    title: 'Estimación de IA (Gemini)',
-    body: `Un modelo de lenguaje (Gemini de Google) recibe el tema trending, su categoría y el contexto disponible, y produce una estimación de probabilidad entre 10% y 90%. El modelo fue instruido para ser conservador: nunca asigna probabilidades extremas porque en predicción real siempre existe incertidumbre. La temperatura de generación es moderada (0.8) para balancear creatividad y realismo en la estimación.`,
+    title: 'Estimación de IA',
+    body: `Un modelo de lenguaje recibe el tema trending, su categoría y el contexto disponible, y produce una estimación de probabilidad entre 10% y 90%. El modelo fue instruido para ser conservador: nunca asigna probabilidades extremas porque en predicción real siempre existe incertidumbre. La temperatura de generación es moderada (0.8) para balancear creatividad y realismo en la estimación.`,
   },
   {
     icon: Users,
