@@ -58,13 +58,17 @@ function LegalCheckbox({
   label,
   error,
   optional = false,
+  checked,
   onChange,
 }: {
   id: string;
   label: ReactNode;
   error?: string;
   optional?: boolean;
-  onChange?: () => void;
+  // Uncontrolled (read via FormData on submit, like the register form) when
+  // omitted; controlled when passed (used by OTPLoginForm's consent step).
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
 }) {
   return (
     <div className="space-y-1">
@@ -76,7 +80,8 @@ function LegalCheckbox({
           className="mt-1 rounded border-gray-300"
           aria-invalid={!!error}
           aria-required={!optional}
-          onChange={onChange}
+          checked={checked}
+          onChange={(e) => onChange?.(e.target.checked)}
         />
         <label htmlFor={id} className="text-sm leading-5 text-gray-600">
           {label}
@@ -99,13 +104,21 @@ type OTPStep = 'email' | 'code';
 function OTPLoginForm({
   initialEmail,
   initialStep,
-}: { initialEmail?: string; initialStep?: OTPStep } = {}) {
+  requiresConsent = false,
+}: { initialEmail?: string; initialStep?: OTPStep; requiresConsent?: boolean } = {}) {
   const [step, setStep] = useState<OTPStep>(initialStep ?? 'email');
   const [email, setEmail] = useState(initialEmail ?? '');
   const [emailError, setEmailError] = useState<string>();
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string>();
   const [countdown, setCountdown] = useState(initialStep === 'code' ? 600 : 0);
+  // #258: only rendered/required when requiresConsent is true — this OTP
+  // flow is the only account-creation path that never asked for it, unlike
+  // /register.
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [isAdult, setIsAdult] = useState(false);
+  const [consentError, setConsentError] = useState<string>();
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   const requestOTP = useRequestOTP();
@@ -146,7 +159,26 @@ function OTPLoginForm({
       return;
     }
     setCodeError(undefined);
-    verifyOTP.mutate({ email, code }, { onError: (err) => setCodeError(err.message) });
+
+    if (requiresConsent && !(termsAccepted && privacyAccepted && isAdult)) {
+      setConsentError('Aceptá los términos, la privacidad y confirmá tu mayoría de edad.');
+      return;
+    }
+    setConsentError(undefined);
+
+    verifyOTP.mutate(
+      {
+        email,
+        code,
+        ...(requiresConsent && {
+          terms_accepted: termsAccepted,
+          privacy_accepted: privacyAccepted,
+          is_adult: isAdult,
+          legal_consent_version: LEGAL_CONSENT_VERSION,
+        }),
+      },
+      { onError: (err) => setCodeError(err.message) }
+    );
   };
 
   const handleResend = () => {
@@ -263,6 +295,58 @@ function OTPLoginForm({
           </div>
         )}
       </div>
+
+      {requiresConsent && (
+        <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+          <LegalCheckbox
+            id="otp-termsAccepted"
+            label={
+              <>
+                Acepto los{' '}
+                <Link href="/terms" className="text-blue-600 hover:underline">
+                  términos y condiciones
+                </Link>
+              </>
+            }
+            checked={termsAccepted}
+            onChange={(checked) => {
+              setTermsAccepted(checked);
+              setConsentError(undefined);
+            }}
+          />
+          <LegalCheckbox
+            id="otp-privacyAccepted"
+            label={
+              <>
+                Acepto la{' '}
+                <Link href="/privacy" className="text-blue-600 hover:underline">
+                  política de privacidad
+                </Link>
+              </>
+            }
+            checked={privacyAccepted}
+            onChange={(checked) => {
+              setPrivacyAccepted(checked);
+              setConsentError(undefined);
+            }}
+          />
+          <LegalCheckbox
+            id="otp-isAdult"
+            label="Declaro ser mayor de 18 años y entiendo que NeuroPredict usa puntos virtuales sin valor monetario."
+            checked={isAdult}
+            onChange={(checked) => {
+              setIsAdult(checked);
+              setConsentError(undefined);
+            }}
+          />
+          {consentError && (
+            <div className="flex items-center gap-1 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <span>{consentError}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <Button type="submit" className="w-full" disabled={verifyOTP.isPending || code.length !== 6}>
         {verifyOTP.isPending ? 'Verificando...' : 'Ingresar'}
@@ -413,7 +497,7 @@ function AuthPageContent() {
 
               {/* Login Tab — OTP flow */}
               <TabsContent value="login">
-                <OTPLoginForm />
+                <OTPLoginForm requiresConsent />
               </TabsContent>
 
               {/* Register Tab */}

@@ -163,7 +163,7 @@ export function ChatWidget() {
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                  className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed ${
                     m.role === 'user'
                       ? 'ml-auto bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
@@ -173,7 +173,7 @@ export function ChatWidget() {
                 </div>
               ))}
               {sendMessage.isPending && (
-                <div className="max-w-[85%] rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-400 dark:bg-gray-800">
+                <div className="max-w-[85%] rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                   Escribiendo…
                 </div>
               )}
@@ -188,13 +188,13 @@ export function ChatWidget() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Escribí tu pregunta..."
                 aria-label="Mensaje para el asistente"
-                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
               <button
                 onClick={handleSend}
                 disabled={sendMessage.isPending || !input.trim()}
                 aria-label="Enviar mensaje"
-                className="rounded-lg bg-blue-600 p-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-lg bg-blue-600 p-2 text-white transition-colors enabled:hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:enabled:hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -206,7 +206,7 @@ export function ChatWidget() {
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? 'Cerrar chat' : 'Abrir chat de ayuda'}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-colors hover:bg-blue-700"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all hover:scale-105 hover:bg-blue-700 hover:shadow-xl dark:bg-blue-500 dark:hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       >
         {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
       </button>

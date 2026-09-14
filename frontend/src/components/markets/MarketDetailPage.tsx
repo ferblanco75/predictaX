@@ -6,11 +6,16 @@ import Link from 'next/link';
 import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getCategoryColor } from '@/lib/data/categories';
+import { getCategoryById, getCategoryColor } from '@/lib/data/categories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
-import { generateMarketStructuredData } from '@/lib/utils/structured-data';
+import {
+  generateBreadcrumbStructuredData,
+  generateMarketStructuredData,
+} from '@/lib/utils/structured-data';
+import { StructuredData } from '@/components/seo/StructuredData';
+import { canonicalUrl } from '@/lib/site';
 import { useMarket } from '@/lib/hooks/useMarkets';
 import { useUserPredictions } from '@/lib/hooks/useUserPredictions';
 import type { Market } from '@/lib/types';
@@ -74,6 +79,13 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   const categoryColor = getCategoryColor(market.category);
   const endDate = formatEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
+  const categoryLabel = getCategoryById(market.category)?.name ?? market.category;
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: 'Inicio', url: canonicalUrl('/') },
+    { name: 'Mercados', url: canonicalUrl('/markets') },
+    { name: categoryLabel, url: canonicalUrl(`/markets/category/${market.category}`) },
+    { name: market.title, url: canonicalUrl(`/markets/${market.id}`) },
+  ]);
   const statusConfig = {
     active: {
       label: 'Activo',
@@ -123,16 +135,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData)
-            .replace(/</g, '\\u003c')
-            .replace(/>/g, '\\u003e')
-            .replace(/&/g, '\\u0026'),
-        }}
-        suppressHydrationWarning
-      />
+      <StructuredData data={[structuredData, breadcrumbData]} />
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
