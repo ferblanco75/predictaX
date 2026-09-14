@@ -146,7 +146,15 @@ def verify_otp(body: OTPVerify, request: Request, db: Session = Depends(get_db))
         settings.OTP_VERIFY_RATE_LIMIT_MAX,
         settings.OTP_VERIFY_RATE_LIMIT_WINDOW_SECONDS,
     )
-    user, is_new_user = otp_service.verify_otp(db, body.email, body.code)
+    user, is_new_user = otp_service.verify_otp(
+        db,
+        body.email,
+        body.code,
+        terms_accepted=body.terms_accepted,
+        privacy_accepted=body.privacy_accepted,
+        is_adult=body.is_adult,
+        legal_consent_version=body.legal_consent_version,
+    )
     access_token = auth_service.create_user_token(user)
     return OTPVerifyResponse(access_token=access_token, is_new_user=is_new_user)
 

@@ -81,15 +81,27 @@ export function useRequestOTP() {
   });
 }
 
+interface VerifyOTPParams {
+  email: string;
+  code: string;
+  // #258: only needed when this verification creates a brand-new account
+  // (the OTP flow used directly on the "Login" tab, without going through
+  // /register first, which already captured this consent).
+  terms_accepted?: boolean;
+  privacy_accepted?: boolean;
+  is_adult?: boolean;
+  legal_consent_version?: string;
+}
+
 export function useVerifyOTP() {
   const { login } = useAppStore();
   const router = useRouter();
 
-  return useMutation<{ isNewUser: boolean }, Error, { email: string; code: string }>({
-    mutationFn: async ({ email, code }) => {
+  return useMutation<{ isNewUser: boolean }, Error, VerifyOTPParams>({
+    mutationFn: async (params) => {
       const tokenRes = await api.post<TokenResponse & { is_new_user: boolean }>(
         '/auth/otp/verify',
-        { email, code }
+        params
       );
       const { access_token, is_new_user } = tokenRes.data;
       localStorage.setItem('token', access_token);

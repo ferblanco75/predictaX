@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 
 import { MarketsPageClient } from '@/components/markets/MarketsPageClient';
+import { StructuredData } from '@/components/seo/StructuredData';
 import { getServerMarkets } from '@/lib/api/server-markets';
 import { getCategoryById } from '@/lib/data/categories';
 import { canonicalUrl } from '@/lib/site';
+import { generateMarketListStructuredData } from '@/lib/utils/structured-data';
 import type { Market } from '@/lib/types';
 
 export const metadata: Metadata = {
@@ -43,13 +45,18 @@ export default async function MarketsPage({ searchParams }: MarketsPageProps) {
   }
 
   return (
-    <MarketsPageClient
-      key={`${initialPage}:${initialQuery}:${initialCategory ?? ''}`}
-      initialMarkets={initialMarkets}
-      initialPage={initialPage}
-      initialQuery={initialQuery}
-      initialCategory={initialCategory}
-      showWelcomeInitially={firstValue(query.welcome) === '1'}
-    />
+    <>
+      {initialMarkets && initialMarkets.length > 0 && (
+        <StructuredData data={generateMarketListStructuredData(initialMarkets)} />
+      )}
+      <MarketsPageClient
+        key={`${initialPage}:${initialQuery}:${initialCategory ?? ''}`}
+        initialMarkets={initialMarkets}
+        initialPage={initialPage}
+        initialQuery={initialQuery}
+        initialCategory={initialCategory}
+        showWelcomeInitially={firstValue(query.welcome) === '1'}
+      />
+    </>
   );
 }

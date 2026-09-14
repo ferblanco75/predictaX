@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { CategoryPageClient } from '@/components/markets/CategoryPageClient';
+import { StructuredData } from '@/components/seo/StructuredData';
 import { getServerMarkets } from '@/lib/api/server-markets';
 import { categories, getCategoryById } from '@/lib/data/categories';
 import { canonicalUrl } from '@/lib/site';
+import { generateBreadcrumbStructuredData } from '@/lib/utils/structured-data';
 import type { Market } from '@/lib/types';
 
 interface CategoryPageProps {
@@ -53,5 +55,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     // Omitting initialData lets React Query retry immediately in the browser.
   }
 
-  return <CategoryPageClient category={category} initialMarkets={initialMarkets} />;
+  const breadcrumbData = generateBreadcrumbStructuredData([
+    { name: 'Inicio', url: canonicalUrl('/') },
+    { name: 'Mercados', url: canonicalUrl('/markets') },
+    { name: category.name, url: canonicalUrl(`/markets/category/${category.id}`) },
+  ]);
+
+  return (
+    <>
+      <StructuredData data={breadcrumbData} />
+      <CategoryPageClient category={category} initialMarkets={initialMarkets} />
+    </>
+  );
 }

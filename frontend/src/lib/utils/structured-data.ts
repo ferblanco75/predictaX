@@ -34,12 +34,28 @@ export function generateOrganizationStructuredData() {
     '@type': 'Organization',
     name: 'NeuroPredict',
     url: canonicalUrl('/'),
-    logo: canonicalUrl('/logo.png'),
+    logo: canonicalUrl('/icons/icon-512.png'),
     description:
       'Plataforma de mercados de predicción de América Latina sobre economía, política, deportes y tecnología.',
     sameAs: [
       // Add social media links here when available
     ],
+  };
+}
+
+/**
+ * Generate JSON-LD ItemList structured data for a listing page (e.g. /markets)
+ */
+export function generateMarketListStructuredData(markets: Market[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: markets.map((market, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: canonicalUrl(`/markets/${market.id}`),
+      name: market.title,
+    })),
   };
 }
 

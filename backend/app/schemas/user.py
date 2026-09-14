@@ -165,6 +165,16 @@ class OTPRequest(BaseModel):
 class OTPVerify(BaseModel):
     email: EmailStr
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    # #258: only required when this verification creates a brand-new account
+    # (otp_service.verify_otp enforces that) — an existing user logging in
+    # via OTP has nothing new to consent to.
+    terms_accepted: bool | None = None
+    privacy_accepted: bool | None = None
+    is_adult: bool | None = None
+    legal_consent_version: str = Field(
+        default=settings.LEGAL_CONSENT_VERSION,
+        max_length=32,
+    )
 
     @field_validator("email", mode="before")
     @classmethod

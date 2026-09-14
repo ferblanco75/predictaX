@@ -98,11 +98,26 @@ def request_otp(db: Session, email: str) -> dict:
     }
 
 
-def verify_otp(db: Session, email: str, code: str) -> User:
+def verify_otp(
+    db: Session,
+    email: str,
+    code: str,
+    terms_accepted: bool | None = None,
+    privacy_accepted: bool | None = None,
+    is_adult: bool | None = None,
+    legal_consent_version: str | None = None,
+) -> User:
     """
     Verify OTP code and return (or create) the associated user.
 
-    Raises BadRequestException on invalid/expired/max-attempts code.
+    #258: signing up via OTP previously skipped the legal consent that
+    /register requires. When this call would create a brand-new account,
+    terms_accepted/privacy_accepted/is_adult must all be True — checked
+    before the code is consumed, so a user who forgets to tick a box can
+    resubmit the same code instead of requesting a new one.
+
+    Raises BadRequestException on invalid/expired/max-attempts code, or on
+    missing/incomplete consent for a new signup.
     Returns the User on success.
     """
     email = email.strip().lower()
@@ -143,13 +158,21 @@ def verify_otp(db: Session, email: str, code: str) -> User:
             f"Código incorrecto. {remaining} intento{plural} restante{plural}"
         )
 
+    # The code is correct — check consent for a new signup BEFORE consuming
+    # it, so a missing checkbox doesn't burn a valid code for no reason.
+    is_new_user = db.query(User).filter(User.email == email).first() is None
+    if is_new_user and not (terms_accepted and privacy_accepted and is_adult):
+        raise BadRequestException(
+            "Para crear tu cuenta necesitás aceptar los términos, la política de "
+            "privacidad y confirmar que sos mayor de edad."
+        )
+
     # Mark as used
     otp.used = True
     db.commit()
 
     # Get or create user
     user = db.query(User).filter(User.email == email).first()
-    is_new_user = user is None
 
     if user and (not user.is_active or user.deleted_at is not None):
         raise BadRequestException(
@@ -157,6 +180,7 @@ def verify_otp(db: Session, email: str, code: str) -> User:
         )
 
     if is_new_user:
+        now = datetime.now(timezone.utc)
         username = _derive_username(db, email)
         user = User(
             email=email,
@@ -164,6 +188,10 @@ def verify_otp(db: Session, email: str, code: str) -> User:
             hashed_password="",  # OTP users have no password
             email_verified=True,
             points=1000.0,
+            terms_accepted_at=now,
+            privacy_accepted_at=now,
+            age_confirmed_at=now,
+            legal_consent_version=legal_consent_version or settings.LEGAL_CONSENT_VERSION,
         )
         db.add(user)
         db.commit()
