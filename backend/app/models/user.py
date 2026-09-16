@@ -37,6 +37,10 @@ class User(Base):
     cookie_consent_version = Column(String(32), nullable=True)
     cookie_consent_updated_at = Column(DateTime(timezone=True), nullable=True)
     referral_code = Column(String(16), unique=True, index=True, nullable=True)
+    # #280: the code submitted at registration. It only becomes a Referral row
+    # once the account is verified via OTP, so pre-registering someone else's
+    # email never earns attribution on its own.
+    pending_referral_code = Column(String(16), nullable=True)
 
     # Relationships
     predictions = relationship(

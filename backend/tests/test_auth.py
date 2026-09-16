@@ -82,9 +82,11 @@ def test_register_requires_legal_consents(client: TestClient):
 
 
 def test_register_duplicate_email(client: TestClient):
+    """#283: a taken email gets the same 201 as a new one — see
+    test_user_enumeration_283.py for the full indistinguishability check."""
     client.post(REGISTER_URL, json=USER_DATA)
     response = client.post(REGISTER_URL, json=USER_DATA)
-    assert response.status_code == 400
+    assert response.status_code == 201
 
 
 def test_register_duplicate_username(client: TestClient):

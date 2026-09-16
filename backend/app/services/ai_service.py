@@ -20,14 +20,31 @@ from app.models.ai_usage_log import AIUsageLog
 logger = logging.getLogger(__name__)
 
 # Initialize Redis client for caching
-redis_client: Optional[redis.Redis] = None
-try:
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-    redis_client.ping()
-    logger.info("Redis connected for AI cache")
-except Exception as e:
-    logger.warning(f"Redis not available for AI cache: {e}. Caching disabled.")
-    redis_client = None
+
+
+def _build_redis_client(url: Optional[str]) -> Optional[redis.Redis]:
+    """Connect to Redis, validating the URL scheme first (#285).
+
+    An empty or mistyped REDIS_URL used to be swallowed by the try/except and
+    left redis_client as None forever, silently disabling the quota counter and
+    the chatbot rate limit. Same scheme check as core/rate_limit.py.
+    """
+    if not url or not any(url.startswith(s) for s in ("redis://", "rediss://", "unix://")):
+        logger.warning(
+            "Redis not available for AI cache: invalid or missing REDIS_URL. Caching disabled."
+        )
+        return None
+    try:
+        client = redis.from_url(url, decode_responses=True)
+        client.ping()
+        logger.info("Redis connected for AI cache")
+        return client
+    except Exception as e:
+        logger.warning(f"Redis not available for AI cache: {e}. Caching disabled.")
+        return None
+
+
+redis_client: Optional[redis.Redis] = _build_redis_client(settings.REDIS_URL)
 
 # Initialize Gemini client
 gemini_client: Optional[genai.Client] = None

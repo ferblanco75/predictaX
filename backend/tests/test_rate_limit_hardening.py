@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 
+from app.core.rate_limit import clear_rate_limits
 from app.core.request_ip import get_client_ip
 from app.services import ai_service, chatbot_service
 
@@ -55,10 +56,15 @@ def test_ai_rate_limit_fails_open_when_redis_never_configured(monkeypatch):
     ai_service.check_ai_rate_limit("some-market-id", "user:123")  # must not raise
 
 
-def test_chatbot_rate_limit_fails_open_when_redis_never_configured(monkeypatch):
+def test_chatbot_rate_limit_degrades_to_memory_when_redis_never_configured(monkeypatch):
+    """#285: no Redis means the in-process counter, not zero rate limiting.
+    A request under the limit must still go through."""
     monkeypatch.setattr(chatbot_service, "redis_client", None)
+    clear_rate_limits("chatbot_rate:")
 
     chatbot_service.check_chatbot_rate_limit("user:123")  # must not raise
+
+    clear_rate_limits("chatbot_rate:")
 
 
 def test_ai_rate_limit_fails_closed_on_redis_outage_mid_request(monkeypatch):
