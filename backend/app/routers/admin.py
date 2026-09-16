@@ -18,7 +18,7 @@ from app.models.ai_usage_log import AIUsageLog
 from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.services import ai_service
+from app.services import ai_service, prediction_service
 
 # --------------- Request schemas ---------------
 
@@ -965,7 +965,8 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
     Resolve a market with YES (True) or NO (False).
 
     Payout logic (fee=0 MVP):
-      - winner prediction: user receives points_wagered / (probability_at_bet / 100)
+      - winner prediction: user receives points_wagered divided by the market
+        probability of the side they bet, clamped to [1, 99]
         i.e. they get back their stake plus the gain
       - loser prediction: points were already deducted at bet time, nothing extra
       - predictions without probability_at_bet (legacy): refunded at 1:1
@@ -1000,10 +1001,12 @@ def resolve_market(market_id: str, body: MarketResolveRequest, db: Session = Dep
             pred.status = "won"
             prob = (
                 pred.probability_at_bet
-                if pred.probability_at_bet and pred.probability_at_bet > 0
+                if pred.probability_at_bet is not None
                 else 50.0
             )
-            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            payout = prediction_service.calculate_payout(
+                pred.points_wagered, prob, pred.probability
+            )
             pred.user.points = round(pred.user.points + payout, 2)
             total_paid += payout
             winners += 1
@@ -1041,10 +1044,12 @@ def unresolve_market(market_id: str, db: Session = Depends(get_db)):
         if pred.status == "won":
             prob = (
                 pred.probability_at_bet
-                if pred.probability_at_bet and pred.probability_at_bet > 0
+                if pred.probability_at_bet is not None
                 else 50.0
             )
-            payout = round(pred.points_wagered / (prob / 100.0), 2)
+            payout = prediction_service.calculate_payout(
+                pred.points_wagered, prob, pred.probability
+            )
             pred.user.points = round(pred.user.points - payout, 2)
             points_adjusted += payout
             pred.status = "pending"

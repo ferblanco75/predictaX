@@ -119,7 +119,10 @@ export function MultipleChoicePredictionForm({
   const selectedProbability = predictionValues.length > 0 ? Math.max(...predictionValues) : 0;
   const selectedOption = options.find((option) => predictions[option.id] === selectedProbability);
   const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
-  // Payout formula: stake / (probability / 100), net gain = payout - stake
+  // Payout formula: stake / (probability / 100), net gain = payout - stake.
+  // No side split here as in PredictionForm (#275): the probability already belongs to the
+  // chosen option, not to a YES/NO pair. The backend does not resolve multiple-choice markets
+  // yet, so there is no real payout to mirror until it does.
   const prob = selectedProbability > 0 ? selectedProbability : 50;
   const potentialGain = safeBetAmount / (prob / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
