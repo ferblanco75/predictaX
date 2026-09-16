@@ -15,7 +15,7 @@ potential_gain is rewritten to match: at 50 the payout is 2x the stake, so the
 net gain equals the stake (these rows stored 0.0, the old `prob > 0` branch).
 
 Revision ID: d1e2f3a4b5c6
-Revises: 78435615c50a
+Revises: a1c2e3d4f5b6
 Create Date: 2026-09-16 00:00:00.000000
 
 """
@@ -26,7 +26,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = 'd1e2f3a4b5c6'
-down_revision: Union[str, None] = '78435615c50a'
+down_revision: Union[str, None] = 'a1c2e3d4f5b6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
