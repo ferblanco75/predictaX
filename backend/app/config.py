@@ -3,7 +3,15 @@ from typing import List, Union
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_SECRET_KEY_PLACEHOLDER = "your-super-secret-key-change-this"
+# #284: the original constant never matched the value people actually copy
+# (backend/.env.example ships SECRET_KEY=CHANGE_ME_openssl_rand_hex_32), so
+# only the length check stood between the published placeholder and a booting
+# app. Every published placeholder belongs in this set, and the regression
+# test reads the real one out of .env.example so it cannot drift again.
+_SECRET_KEY_PLACEHOLDERS = frozenset({
+    "your-super-secret-key-change-this",
+    "CHANGE_ME_openssl_rand_hex_32",
+})
 _MIN_SECRET_KEY_LENGTH = 32
 
 
@@ -82,9 +90,19 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_secret_key_in_production(self) -> "Settings":
+        # #284: DEBUG was a single switch that turned off every startup
+        # protection (placeholder SECRET_KEY, public /api/docs, HSTS, the
+        # RESEND_API_KEY requirement). RENDER is set by the platform itself,
+        # not by us, so refusing to boot when both are on turns a mistyped
+        # env var into a failed deploy instead of silent unhardening.
+        if self.DEBUG and self.RENDER:
+            raise ValueError(
+                "DEBUG cannot be enabled in the Render environment (RENDER=true). "
+                "Set DEBUG=false."
+            )
         if self.DEBUG:
             return self
-        if self.SECRET_KEY == _SECRET_KEY_PLACEHOLDER:
+        if self.SECRET_KEY in _SECRET_KEY_PLACEHOLDERS:
             raise ValueError(
                 "SECRET_KEY is set to the published .env.example placeholder. "
                 "Generate a real one: openssl rand -hex 32"
