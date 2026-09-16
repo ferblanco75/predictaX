@@ -3,6 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.models.prediction import Prediction
 from app.models.user import User
 
 
@@ -51,7 +52,12 @@ def test_no_bet_wins_pays_with_complement_probability(
 def test_yes_bet_payout_is_finite_at_zero_probability(
     client: TestClient, db, user_headers, admin_headers, sample_market
 ):
-    """Mercado al 0% → el SÍ cobra con la probabilidad clampeada a 1%, no infinito."""
+    """Mercado al 0% → el SÍ cobra al clamp de 1% (100x), no un múltiplo ilimitado.
+
+    Antes de #275 el 0.0 era falsy y caía al fallback de 50 (2x). Ese reprecio afecta
+    solo a las apuestas nuevas: las filas que ya tenían 0.0 las reescribe a 50.0 la
+    migración d1e2f3a4b5c6, así que ninguna apuesta ya registrada cambia de valor.
+    """
     _set_market_probability(db, sample_market, 0.0)
     user = db.query(User).filter(User.email == "test@predictax.com").first()
     points_before = user.points
@@ -61,7 +67,7 @@ def test_yes_bet_payout_is_finite_at_zero_probability(
     _resolve(client, admin_headers, sample_market.id, resolution_value=True)
 
     db.refresh(user)
-    # payout = 100 / (1/100) = 10000 (clamp inferior), nunca división por cero
+    # payout = 100 / (1/100) = 10000 (clamp inferior), acotado en vez de ilimitado
     assert user.points == pytest.approx(points_before - 100 + 10000.0, abs=0.01)
 
 
@@ -118,6 +124,7 @@ def test_both_sides_arbitrage_loses_when_market_resolves_no(
 
 
 @pytest.mark.xfail(
+    strict=True,
     reason=(
         "Residual de #275: probability_at_bet se captura antes de la propia apuesta, "
         "así que el atacante todavía puede hundir el mercado a ~1% y tomar una "
@@ -167,3 +174,24 @@ def test_resolve_then_unresolve_restores_every_balance(
 
     predictions = client.get("/api/predictions", headers=user_headers).json()
     assert all(p["status"] == "pending" for p in predictions)
+
+
+def test_legacy_prediction_without_probability_at_bet_pays_1_to_1(
+    client: TestClient, db, user_headers, admin_headers, sample_market
+):
+    """Predicción vieja sin probability_at_bet → sigue cobrando al fallback de 50 (2x)."""
+    user = db.query(User).filter(User.email == "test@predictax.com").first()
+    points_before = user.points
+
+    res = _bet(client, user_headers, sample_market.id, probability=75, points=100)
+    assert res.status_code == 201
+
+    prediction = db.query(Prediction).filter(Prediction.user_id == user.id).one()
+    prediction.probability_at_bet = None
+    db.commit()
+
+    _resolve(client, admin_headers, sample_market.id, resolution_value=True)
+
+    db.refresh(user)
+    # payout = 100 / (50/100) = 200
+    assert user.points == pytest.approx(points_before - 100 + 200.0, abs=0.01)

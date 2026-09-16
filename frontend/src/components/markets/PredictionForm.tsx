@@ -78,9 +78,14 @@ export function PredictionForm({
   };
 
   const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
-  // Payout formula: stake / (marketProbability / 100), net gain = payout - stake
-  const prob = currentProbability > 0 ? currentProbability : 50;
-  const potentialGain = safeBetAmount / (prob / 100) - safeBetAmount;
+  // Payout formula, mirrors calculate_payout() in the backend (#275): the divisor is the
+  // probability of the side bet — the market probability for SÍ, its complement for NO —
+  // clamped to [1, 99] so an extreme market cannot show an unbounded gain.
+  // Until a side is picked we preview the SÍ side.
+  const marketProbability = Number.isFinite(currentProbability) ? currentProbability : 50;
+  const clampedProbability = Math.min(Math.max(marketProbability, 1), 99);
+  const sideProbability = prediction === 25 ? 100 - clampedProbability : clampedProbability;
+  const potentialGain = safeBetAmount / (sideProbability / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
   const closeDate = formatCloseDate(endDate);
 
