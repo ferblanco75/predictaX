@@ -8,6 +8,7 @@ from app.config import settings
 from app.core.exceptions import BadRequestException, UnauthorizedException
 from app.models.otp_code import OTPCode
 from app.models.user import User
+from app.services import referral_service
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,49 @@ def _send_otp_email(email: str, code: str) -> bool:
         return True
     except Exception as exc:
         logger.error("Failed to send OTP email to %s: %s", email, exc)
+        return False
+
+
+def send_registration_attempt_email(email: str) -> bool:
+    """Tell the owner that someone tried to register with their address.
+
+    #283: /register used to answer 400 "this email is already registered",
+    which enumerated the user base. The answer now goes to the inbox instead
+    of to the caller. Returns True on success, False if not configured.
+    """
+    resend = _get_resend()
+    if not resend:
+        logger.warning(
+            "RESEND_API_KEY not set — registration attempt notice for %s was not sent", email
+        )
+        return False
+
+    html = """
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+      <h2 style="font-size:24px;font-weight:700;color:#1d4ed8;margin-bottom:8px">NeuroPredict</h2>
+      <p style="color:#374151;margin-bottom:16px">
+        Alguien intentó crear una cuenta con tu email. Tu cuenta ya existe y no cambió nada.
+      </p>
+      <p style="color:#374151;margin-bottom:16px">
+        Si fuiste vos, iniciá sesión con el código que te enviamos por email.
+      </p>
+      <p style="color:#6b7280;font-size:14px">
+        Si no fuiste vos, podés ignorar este mensaje: nadie puede entrar a tu cuenta sin el
+        código que enviamos a esta dirección.
+      </p>
+    </div>
+    """
+
+    try:
+        resend.Emails.send({
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [email],
+            "subject": "Intento de registro con tu email — NeuroPredict",
+            "html": html,
+        })
+        return True
+    except Exception as exc:
+        logger.error("Failed to send registration attempt email to %s: %s", email, exc)
         return False
 
 
@@ -197,15 +241,25 @@ def verify_otp(
         db.commit()
         db.refresh(user)
     elif not user.email_verified:
-        # #252: this account has a password nobody has ever logged in with —
-        # either the real owner registered but always signs in via OTP, or an
-        # attacker pre-registered this email hoping to hijack it. Either way,
-        # whoever can complete the OTP flow for this address is the real
-        # owner (they control the inbox), so this is the moment to invalidate
-        # any pre-existing password and close the hijacking window for good.
+        # #252/#280: this account was created by /register, which proves
+        # nothing about who controls the inbox — the real owner may have
+        # registered themselves, or an attacker may have pre-registered the
+        # address hoping to hijack it. Whoever completes the OTP flow is the
+        # real owner, so this is the moment to drop everything the registrant
+        # could have forged: any pre-existing password, the marketing opt-in,
+        # and the consent stamps, which are re-recorded as of now — the first
+        # sign-in this address can actually be attributed to.
+        now = datetime.now(timezone.utc)
         user.hashed_password = ""
         user.email_verified = True
+        user.marketing_opt_in = False
+        user.marketing_opt_in_at = None
+        user.terms_accepted_at = now
+        user.privacy_accepted_at = now
+        user.age_confirmed_at = now
+        user.legal_consent_version = legal_consent_version or settings.LEGAL_CONSENT_VERSION
         db.commit()
+        referral_service.claim_pending_referral(db, user)
         db.refresh(user)
 
     return user, is_new_user

@@ -17,7 +17,7 @@ from app.schemas.user import (
     UserLogin,
     UserResponse,
 )
-from app.services import auth_service, otp_service, referral_service
+from app.services import auth_service, otp_service
 
 router = APIRouter()
 
@@ -43,21 +43,25 @@ def register(user_data: UserCreate, request: Request, db: Session = Depends(get_
         db: Database session
 
     Returns:
-        Created user
+        Created user. An email that already has an account gets the same
+        response as a new one (#283) — the owner is warned by email instead.
 
     Raises:
-        400: If email or username already exists
+        400: If the username already exists
     """
     enforce_rate_limit(
         _auth_rate_limit_key("register", request),
         settings.AUTH_REGISTER_RATE_LIMIT_MAX,
         settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
     )
-    user = auth_service.create_user(db, user_data)
-    if user_data.referral_code:
-        referral_service.process_referral_on_register(db, user, user_data.referral_code)
-        db.refresh(user)
-    return user
+    # #283: the IP bucket alone let an attacker spread over many IPs probe a
+    # single address (and mail its owner) without limit.
+    enforce_rate_limit(
+        _auth_email_rate_limit_key("register", user_data.email),
+        settings.AUTH_REGISTER_RATE_LIMIT_MAX,
+        settings.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+    )
+    return auth_service.create_user(db, user_data)
 
 
 @router.post("/login", response_model=Token)
