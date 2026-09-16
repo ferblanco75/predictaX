@@ -38,6 +38,36 @@ def calculate_market_probability(predictions: List[Prediction]) -> float:
     return round(yes_points / total_points * 100, 2)
 
 
+# Probability band used for payouts. A market pushed to 0% or 100% would
+# otherwise produce an unbounded multiplier for the opposite side.
+MIN_PAYOUT_PROBABILITY = 1.0
+MAX_PAYOUT_PROBABILITY = 99.0
+
+
+def calculate_payout(
+    points_wagered: float, probability_at_bet: float, bet_probability: float
+) -> float:
+    """
+    Payout a winning prediction collects, stake included (fee=0 MVP).
+
+    The divisor is the market probability of the side actually bet on: the YES
+    probability for a YES bet (probability > 50), its complement for a NO bet.
+    Using the YES probability for both sides made betting both ways on a skewed
+    market pay more than the combined stake, whatever the resolution.
+
+    Args:
+        points_wagered: Points staked on the prediction
+        probability_at_bet: Market YES probability when the bet was placed
+        bet_probability: Probability the user bet, > 50 is YES, < 50 is NO
+
+    Returns:
+        Points the winner receives, rounded to 2 decimals
+    """
+    prob = min(max(probability_at_bet, MIN_PAYOUT_PROBABILITY), MAX_PAYOUT_PROBABILITY)
+    side_probability = prob if bet_probability > 50 else 100.0 - prob
+    return round(points_wagered / (side_probability / 100.0), 2)
+
+
 def create_prediction(
     db: Session, user: User, prediction_data: PredictionCreate
 ) -> Prediction:
@@ -89,16 +119,13 @@ def create_prediction(
     # Capture market probability at bet time (used for payout calculation on resolve)
     prob_at_bet = float(market.probability_market)
 
-    # potential_gain = payout if winner - amount wagered
-    # payout = points_wagered / (probability_at_bet / 100)
-    # Using fee=0 for MVP
-    if prob_at_bet > 0:
-        potential_gain = (
-            prediction_data.points_wagered / (prob_at_bet / 100)
-            - prediction_data.points_wagered
+    # potential_gain = payout if winner - amount wagered (fee=0 for MVP)
+    potential_gain = (
+        calculate_payout(
+            prediction_data.points_wagered, prob_at_bet, prediction_data.probability
         )
-    else:
-        potential_gain = 0.0
+        - prediction_data.points_wagered
+    )
 
     # Create prediction
     prediction = Prediction(

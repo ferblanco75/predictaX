@@ -214,8 +214,8 @@ def test_prediction_no_wins(client, db, user_headers, admin_headers, sample_mark
     _resolve(client, admin_headers, sample_market.id, resolution_value=False)
 
     db.refresh(user)
-    # payout = 100 / (55/100) = 181.82
-    assert user.points == pytest.approx(points_before - 100 + 181.82, abs=0.5)
+    # NO bet: payout uses the NO side of the market, 100 / ((100-55)/100) = 222.22
+    assert user.points == pytest.approx(points_before - 100 + 222.22, abs=0.5)
 
 
 def test_prediction_no_loses(client, db, user_headers, admin_headers, sample_market):
