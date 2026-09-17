@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Float, String
+from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Float, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -12,6 +12,13 @@ class User(Base):
     """User model for authentication and predictions"""
 
     __tablename__ = "users"
+
+    # #276: last line of defence for the points economy. Every debit path is
+    # supposed to lock the row and check the balance first; if one ever forgets,
+    # the write fails here instead of leaving the account negative.
+    __table_args__ = (
+        CheckConstraint("points >= 0", name="ck_users_points_non_negative"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
