@@ -158,6 +158,7 @@ def verify_otp(body: OTPVerify, request: Request, db: Session = Depends(get_db))
         privacy_accepted=body.privacy_accepted,
         is_adult=body.is_adult,
         legal_consent_version=body.legal_consent_version,
+        signup_ip=get_client_ip(request),
     )
     access_token = auth_service.create_user_token(user)
     return OTPVerifyResponse(access_token=access_token, is_new_user=is_new_user)
