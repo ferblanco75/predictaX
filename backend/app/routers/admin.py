@@ -26,7 +26,9 @@ class UserRoleUpdate(BaseModel):
     role: str  # 'user' or 'admin'
 
 class UserPointsUpdate(BaseModel):
-    points: float
+    # #276: the balance carries a DB-level CHECK (points >= 0); a negative value
+    # here would come back as a 500 instead of a validation error.
+    points: float = Field(ge=0)
     reason: Optional[str] = None
 
 class MarketResolveRequest(BaseModel):
@@ -1038,8 +1040,10 @@ def unresolve_market(market_id: str, db: Session = Depends(get_db)):
 
     reverted = 0
     points_adjusted = 0.0
+    points_forgiven = 0.0
 
     predictions = db.query(Prediction).filter(Prediction.market_id == market.id).all()
+    prediction_service.lock_user_balances(db, [p.user_id for p in predictions])
     for pred in predictions:
         if pred.status == "won":
             prob = (
@@ -1050,8 +1054,17 @@ def unresolve_market(market_id: str, db: Session = Depends(get_db)):
             payout = prediction_service.calculate_payout(
                 pred.points_wagered, prob, pred.probability
             )
-            pred.user.points = round(pred.user.points - payout, 2)
-            points_adjusted += payout
+            # #281: the winner may already have re-wagered the payout. Taking it
+            # back blindly left the balance negative (and now trips the DB CHECK).
+            # Policy: claw back at most what they still hold and forgive the rest.
+            # An unresolve is the admin's correction path for a wrong resolution,
+            # so it must always be able to run; the alternative — refusing the
+            # unresolve — would leave the market stuck on the wrong outcome
+            # because of how one winner happened to spend.
+            clawback = min(payout, pred.user.points)
+            pred.user.points = round(pred.user.points - clawback, 2)
+            points_adjusted += clawback
+            points_forgiven += payout - clawback
             pred.status = "pending"
             reverted += 1
         elif pred.status == "lost":
@@ -1067,21 +1080,28 @@ def unresolve_market(market_id: str, db: Session = Depends(get_db)):
         "status": market.status,
         "reverted_predictions": reverted,
         "points_adjusted": round(points_adjusted, 2),
+        "points_forgiven": round(points_forgiven, 2),
     }
 
 
 @router.post("/markets/{market_id}/cancel")
 def cancel_market(market_id: str, db: Session = Depends(get_db)):
-    """Cancel an active market."""
+    """Cancel an active market, returning every open stake (#281)."""
     market = db.query(Market).filter(Market.id == market_id).first()
     if not market:
         raise HTTPException(status_code=404, detail="Mercado no encontrado")
     if market.status != MarketStatus.ACTIVE:
         raise HTTPException(status_code=400, detail="Solo se pueden cancelar mercados activos")
     market.status = MarketStatus.CANCELLED
+    refunded, points_refunded = prediction_service.refund_market_predictions(db, market.id)
     db.commit()
     db.refresh(market)
-    return {"id": str(market.id), "status": market.status}
+    return {
+        "id": str(market.id),
+        "status": market.status,
+        "refunded_predictions": refunded,
+        "points_refunded": points_refunded,
+    }
 
 
 @router.patch("/markets/{market_id}")
@@ -1164,19 +1184,39 @@ def create_market(body: MarketCreateRequest, db: Session = Depends(get_db)):
 
 @router.delete("/markets/{market_id}")
 def delete_market(market_id: str, db: Session = Depends(get_db)):
-    """Delete a market and all its predictions (CASCADE)."""
+    """Delete a market that nobody bet on.
+
+    #281: deletion cascades the predictions away, so a market with bets can only
+    be removed by destroying the record of the points it moved. Refunding first
+    would not help — the users would get points back with nothing left to explain
+    them. Cancelling refunds every open stake and keeps the history, so that is
+    the supported way out; deletion stays available for markets with no bets.
+    """
     market = db.query(Market).filter(Market.id == market_id).first()
     if not market:
         raise HTTPException(status_code=404, detail="Mercado no encontrado")
     predictions_count = db.query(Prediction).filter(Prediction.market_id == market.id).count()
+    if predictions_count:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"El mercado tiene {predictions_count} predicción(es) y no se puede "
+                "borrar. Cancelalo para devolver los puntos y conservar el historial."
+            ),
+        )
     db.delete(market)
     db.commit()
-    return {"id": market_id, "deleted": True, "predictions_deleted": predictions_count}
+    return {"id": market_id, "deleted": True, "predictions_deleted": 0}
 
 
 @router.post("/markets/expire-past")
 def expire_past_markets(db: Session = Depends(get_db)):
-    """Cancel all active markets whose end_date has already passed."""
+    """Cancel all active markets whose end_date has already passed, refunding
+    every open stake (#281).
+
+    This is the normal end-of-life path for a market that nobody resolved, so
+    before the refund it quietly took the stake of every participant.
+    """
     now = datetime.utcnow()
     expired = db.query(Market).filter(
         Market.status == MarketStatus.ACTIVE,
@@ -1184,9 +1224,21 @@ def expire_past_markets(db: Session = Depends(get_db)):
     ).all()
 
     count = len(expired)
+    refunded = 0
+    points_refunded = 0.0
     for market in expired:
         market.status = MarketStatus.CANCELLED
+        market_refunded, market_points = prediction_service.refund_market_predictions(
+            db, market.id
+        )
+        refunded += market_refunded
+        points_refunded += market_points
 
     db.commit()
-    return {"expired": count, "message": f"{count} mercado(s) expirado(s) cancelados"}
+    return {
+        "expired": count,
+        "refunded_predictions": refunded,
+        "points_refunded": round(points_refunded, 2),
+        "message": f"{count} mercado(s) expirado(s) cancelados",
+    }
 
