@@ -18,12 +18,24 @@ from app.models.ai_usage_log import AIUsageLog
 from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.services import ai_service, prediction_service
+from app.services import ai_service, category_visibility_service, prediction_service
 
 # --------------- Request schemas ---------------
 
 class UserRoleUpdate(BaseModel):
     role: str  # 'user' or 'admin'
+
+class CategoryVisibilityUpdate(BaseModel):
+    category: str
+    is_visible: bool
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str) -> str:
+        try:
+            return MarketCategory(value.lower()).value
+        except ValueError:
+            raise ValueError(f"Categoría inválida: {value}")
 
 class UserPointsUpdate(BaseModel):
     points: float
@@ -1189,4 +1201,25 @@ def expire_past_markets(db: Session = Depends(get_db)):
 
     db.commit()
     return {"expired": count, "message": f"{count} mercado(s) expirado(s) cancelados"}
+
+
+@router.get("/categories/visibility")
+def get_categories_visibility(db: Session = Depends(get_db)):
+    """Admin view of category visibility — same data as the public endpoint
+    in markets.py, exposed here too so the admin UI and auto_polls.py (which
+    already authenticates as admin) don't need a separate unauthenticated call."""
+    return category_visibility_service.get_all_visibility(db)
+
+
+@router.patch("/categories/visibility")
+def update_category_visibility(
+    body: CategoryVisibilityUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Toggle one category's visibility on the public site."""
+    category_visibility_service.set_visibility(
+        db, body.category, body.is_visible, admin_user_id=admin.id
+    )
+    return category_visibility_service.get_all_visibility(db)
 

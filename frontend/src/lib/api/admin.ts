@@ -73,6 +73,27 @@ export async function getMarketsRanking(token: string, sort = 'most_active', lim
   return adminFetch(`/metrics/markets/ranking?sort=${sort}&limit=${limit}`, token);
 }
 
+export interface CategoryVisibilityRow {
+  category: string;
+  is_visible: boolean;
+  updated_at: string | null;
+}
+
+export async function getCategoriesVisibility(token: string): Promise<CategoryVisibilityRow[]> {
+  return adminFetch('/categories/visibility', token);
+}
+
+export async function updateCategoryVisibility(
+  token: string,
+  category: string,
+  isVisible: boolean
+): Promise<CategoryVisibilityRow[]> {
+  return adminMutate('/categories/visibility', token, 'PATCH', {
+    category,
+    is_visible: isVisible,
+  });
+}
+
 export async function getPredictionsDaily(token: string, days = 30) {
   return adminFetch(`/metrics/predictions/daily?days=${days}`, token);
 }
