@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
-import { getAllServerMarkets } from '@/lib/api/server-markets';
+import { getAllServerMarkets, getServerVisibleCategories } from '@/lib/api/server-markets';
 import { categories } from '@/lib/data/categories';
+import { filterVisibleCategories } from '@/lib/data/category-visibility';
 import { CANONICAL_BASE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -44,11 +45,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
-    url: `${CANONICAL_BASE_URL}/markets/category/${cat.id}`,
-    changeFrequency: 'daily' as const,
-    priority: 0.8,
-  }));
+  const visibility = await getServerVisibleCategories();
+  const categoryPages: MetadataRoute.Sitemap = filterVisibleCategories(categories, visibility).map(
+    (cat) => ({
+      url: `${CANONICAL_BASE_URL}/markets/category/${cat.id}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    })
+  );
 
   const markets = await getAllServerMarkets();
   const marketPages = markets.map((market) => ({

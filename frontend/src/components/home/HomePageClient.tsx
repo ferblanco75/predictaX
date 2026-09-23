@@ -9,9 +9,10 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { useMarkets } from '@/lib/hooks/useMarkets';
-import { categories } from '@/lib/data/categories';
+import { categories as allCategories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/stores/app-store';
+import type { Category } from '@/lib/types';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -22,7 +23,11 @@ const fadeInUp = {
   }),
 };
 
-export function HomePageClient() {
+interface HomePageClientProps {
+  categories?: Category[];
+}
+
+export function HomePageClient({ categories = allCategories }: HomePageClientProps = {}) {
   const { data: trendingMarkets = [] } = useMarkets({ limit: 6 });
   const isLoggedIn = useAppStore((state) => state.isLoggedIn);
 

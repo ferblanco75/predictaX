@@ -8,9 +8,9 @@ import { MarketList } from '@/components/markets/MarketList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/Pagination';
 import { useMarkets } from '@/lib/hooks/useMarkets';
-import { categories } from '@/lib/data/categories';
+import { categories as allCategories } from '@/lib/data/categories';
 import { useAppStore } from '@/lib/stores/app-store';
-import type { Market, MarketCategory } from '@/lib/types';
+import type { Category, Market, MarketCategory } from '@/lib/types';
 
 const MARKETS_PER_PAGE = 12;
 
@@ -20,6 +20,7 @@ interface MarketsPageClientProps {
   initialQuery: string;
   initialCategory?: string;
   showWelcomeInitially: boolean;
+  categories?: Category[];
 }
 
 export function MarketsPageClient({
@@ -28,6 +29,7 @@ export function MarketsPageClient({
   initialQuery,
   initialCategory,
   showWelcomeInitially,
+  categories = allCategories,
 }: MarketsPageClientProps) {
   const router = useRouter();
   const {
@@ -88,7 +90,7 @@ export function MarketsPageClient({
     router.replace(cleanParams.size > 0 ? `/markets?${cleanParams.toString()}` : '/markets', {
       scroll: false,
     });
-  }, [initialCategory, router, setCategory]);
+  }, [initialCategory, router, setCategory, categories]);
 
   const { data: allMarkets = [], isLoading } = useMarkets({
     status: selectedStatus === 'all' ? undefined : (selectedStatus as 'active' | 'resolved'),

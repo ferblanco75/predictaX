@@ -14,6 +14,7 @@ import {
   Shield,
   ChevronLeft,
   Gauge,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: '/admin/predictions', label: 'Predicciones', icon: BarChart3 },
   { href: '/admin/ai', label: 'AI / LLM', icon: Bot },
   { href: '/admin/performance', label: 'Performance', icon: Gauge },
+  { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

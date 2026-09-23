@@ -8,6 +8,7 @@ from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.market_snapshot import MarketSnapshot
 from app.models.prediction import Prediction
 from app.schemas.market import MarketHistoryPoint
+from app.services import category_visibility_service
 
 
 def format_volume(amount: float) -> str:
@@ -39,6 +40,7 @@ def get_markets(
     status: Optional[MarketStatus] = None,
     limit: int = 20,
     offset: int = 0,
+    include_hidden_categories: bool = False,
 ) -> tuple[List[Market], int]:
     """
     Get list of markets with optional filters.
@@ -49,6 +51,10 @@ def get_markets(
         status: Filter by status
         limit: Maximum number of results
         offset: Offset for pagination
+        include_hidden_categories: Admin callers pass True to see markets in
+            categories an admin has hidden from the public site. Public
+            callers must keep the default so hidden categories stay hidden
+            everywhere except the admin panel.
 
     Returns:
         Tuple of (markets list, total count)
@@ -60,6 +66,12 @@ def get_markets(
 
     if status:
         query = query.filter(Market.status == status)
+
+    if not include_hidden_categories:
+        hidden = category_visibility_service.get_hidden_categories(db)
+        if hidden:
+            hidden_categories = [MarketCategory(value) for value in hidden]
+            query = query.filter(~Market.category.in_(hidden_categories))
 
     # Get total count before pagination
     total = query.count()
