@@ -100,6 +100,11 @@ export default function AdminSettingsPage() {
                 aria-checked={row.is_visible}
                 disabled={isPending}
                 onClick={() => toggle(row.category, !row.is_visible)}
+                title={
+                  row.is_visible
+                    ? `Ocultar ${meta?.name ?? row.category} del sitio público`
+                    : `Mostrar ${meta?.name ?? row.category} en el sitio público`
+                }
                 className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                   row.is_visible ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'
                 }`}
