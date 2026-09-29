@@ -150,6 +150,7 @@ def verify_otp(
     privacy_accepted: bool | None = None,
     is_adult: bool | None = None,
     legal_consent_version: str | None = None,
+    signup_ip: str | None = None,
 ) -> User:
     """
     Verify OTP code and return (or create) the associated user.
@@ -259,7 +260,7 @@ def verify_otp(
         user.age_confirmed_at = now
         user.legal_consent_version = legal_consent_version or settings.LEGAL_CONSENT_VERSION
         db.commit()
-        referral_service.claim_pending_referral(db, user)
+        referral_service.claim_pending_referral(db, user, signup_ip=signup_ip)
         db.refresh(user)
 
     return user, is_new_user

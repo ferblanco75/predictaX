@@ -164,12 +164,10 @@ def create_prediction(
     if abs(new_probability - old_probability) > 1.0:
         snapshot_service.create_snapshot(db, market.id, new_probability)
 
-    # Award referrer bonus on the referred user's first prediction
-    user_prediction_count = (
-        db.query(Prediction).filter(Prediction.user_id == user.id).count()
-    )
-    if user_prediction_count == 1:
-        referral_service.award_referrer_bonus_if_eligible(db, user)
+    # Try to vest the referral bonus. #282 replaced the "first prediction"
+    # trigger with an activity threshold, so referral_service decides whether
+    # this prediction is the one that earns it.
+    referral_service.award_referrer_bonus_if_eligible(db, user)
 
     return prediction
 
