@@ -122,7 +122,8 @@ jobs:
           CORS_ORIGINS=http://localhost:3000,http://localhost:8000
           REDIS_URL=redis://redis:6379/0
           GEMINI_API_KEY=
-          GEMINI_MODEL=gemini-3.6-flash
+          GEMINI_MODEL_CHAT=gemini-3.6-flash
+          GEMINI_MODEL_ANALYSIS=gemini-3.6-flash
           RENDER=false
           RESEND_API_KEY=ci-only-dummy-resend-key
           EOF
