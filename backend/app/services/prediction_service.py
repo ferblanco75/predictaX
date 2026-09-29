@@ -1,5 +1,6 @@
+from collections import defaultdict
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict, Iterable, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -68,6 +69,82 @@ def calculate_payout(
     return round(points_wagered / (side_probability / 100.0), 2)
 
 
+def lock_user_balances(db: Session, user_ids: Iterable[UUID]) -> Dict[UUID, User]:
+    """
+    Lock the given user rows for the rest of the transaction (#276).
+
+    Every path that moves points takes this lock before reading a balance, so a
+    bet, a refund and an unresolve can never all read the same balance and write
+    over each other. Rows are locked in id order so two callers touching the same
+    set of users queue up instead of deadlocking.
+
+    Args:
+        db: Database session
+        user_ids: Users whose balance is about to be read and written
+
+    Returns:
+        The locked users, keyed by id, with their columns refreshed from the row
+        that was locked (a stale identity-map value would defeat the lock)
+    """
+    ids = sorted(set(user_ids), key=str)
+    if not ids:
+        return {}
+
+    users = (
+        db.query(User)
+        .filter(User.id.in_(ids))
+        .order_by(User.id)
+        .with_for_update()
+        .populate_existing()
+        .all()
+    )
+    return {u.id: u for u in users}
+
+
+def refund_market_predictions(db: Session, market_id: UUID) -> Tuple[int, float]:
+    """
+    Give every open bet on a market its stake back (#281).
+
+    Used when a market ends without resolving — cancelled by an admin or expired
+    past its end date. Until this existed both paths only flipped the market
+    status, leaving the predictions `pending` and the points debited at bet time
+    gone for good.
+
+    Only `pending` predictions are refunded, so calling this twice on the same
+    market is a no-op the second time. Does not commit: the caller decides the
+    transaction boundary (expire-past refunds many markets at once).
+
+    Args:
+        db: Database session
+        market_id: Market whose open bets are being returned
+
+    Returns:
+        (number of predictions refunded, total points returned)
+    """
+    predictions = (
+        db.query(Prediction)
+        .filter(Prediction.market_id == market_id, Prediction.status == "pending")
+        .all()
+    )
+    if not predictions:
+        return 0, 0.0
+
+    totals: Dict[UUID, float] = defaultdict(float)
+    for pred in predictions:
+        totals[pred.user_id] += pred.points_wagered
+
+    users = lock_user_balances(db, totals.keys())
+    for user_id, amount in totals.items():
+        user = users.get(user_id)
+        if user is not None:
+            user.points = round(user.points + amount, 2)
+
+    for pred in predictions:
+        pred.status = "refunded"
+
+    return len(predictions), round(sum(totals.values()), 2)
+
+
 def create_prediction(
     db: Session, user: User, prediction_data: PredictionCreate
 ) -> Prediction:
@@ -75,6 +152,7 @@ def create_prediction(
     Create a new prediction.
 
     This function:
+    0. Locks the user's balance row for the transaction (#276)
     1. Validates user has enough points
     2. Creates the prediction
     3. Deducts points from user
@@ -94,6 +172,11 @@ def create_prediction(
         InsufficientPointsException: If user doesn't have enough points
         NotFoundException: If market not found
     """
+    # #276: lock the balance before reading it. The check here and the debit
+    # further down are not one statement, so without the lock two concurrent
+    # bets both pass against the same balance and the account ends up negative.
+    lock_user_balances(db, [user.id])
+
     # Validate user has enough points
     if user.points + 0.01 < prediction_data.points_wagered:
         raise InsufficientPointsException(
@@ -140,8 +223,10 @@ def create_prediction(
     db.add(prediction)
     db.flush()
 
-    # Deduct points from user
-    user.points -= prediction_data.points_wagered
+    # Deduct points from user. Clamped because the check above allows a 0.01
+    # float-fuzz overdraw, which would otherwise leave a sliver of a negative
+    # balance and trip the ck_users_points_non_negative constraint.
+    user.points = max(round(user.points - prediction_data.points_wagered, 2), 0.0)
 
     # Recalculate market probability
     all_predictions = (
