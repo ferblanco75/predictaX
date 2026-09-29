@@ -71,6 +71,24 @@ def test_market_response_format(client: TestClient, sample_market):
         assert field in data, f"Missing field: {field}"
 
 
+def test_market_response_exposes_yes_no_points(
+    client: TestClient, user_headers, sample_market
+):
+    """yesPoints/noPoints (#306) let the frontend preview the post-trade payout."""
+    response = client.post(
+        "/api/predictions",
+        headers=user_headers,
+        json={"market_id": str(sample_market.id), "probability": 75, "points_wagered": 100},
+    )
+    assert response.status_code == 201
+
+    response = client.get(f"/api/markets/{sample_market.id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["yesPoints"] == 100
+    assert data["noPoints"] == 0
+
+
 def test_format_volume_uses_virtual_points_label():
     """Market volume should not look like real-money currency."""
     assert format_volume(500) == "500 pts"

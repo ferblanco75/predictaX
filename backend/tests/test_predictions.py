@@ -71,8 +71,10 @@ def test_create_prediction_records_vote_and_updates_points(
     assert data["market_id"] == str(sample_market.id)
     assert data["probability"] == 70
     assert data["points_wagered"] == 100
-    # payout = 100 / (55/100) = 181.82; potential_gain = payout - stake = 81.82
-    assert data["potential_gain"] == pytest.approx(81.82, abs=0.01)
+    # #306: probability_at_bet is the POST-trade price. This is the market's only
+    # bet, so it moves the market to 100% YES, clamped to 99 -> payout = 100 /
+    # (99/100) = 101.01; potential_gain = payout - stake = 1.01
+    assert data["potential_gain"] == pytest.approx(1.01, abs=0.01)
     assert data["status"] == "pending"
 
     db.refresh(user)
@@ -185,8 +187,9 @@ def test_prediction_yes_wins(client, db, user_headers, admin_headers, sample_mar
     _resolve(client, admin_headers, sample_market.id, resolution_value=True)
 
     db.refresh(user)
-    # payout = 100 / (55/100) = 181.82
-    assert user.points == pytest.approx(points_before - 100 + 181.82, abs=0.5)
+    # #306: probability_at_bet is post-trade. This is the market's only bet, so
+    # it moves the market to 100% YES, clamped to 99 -> payout = 100/(99/100) = 101.01
+    assert user.points == pytest.approx(points_before - 100 + 101.01, abs=0.5)
 
 
 def test_prediction_yes_loses(client, db, user_headers, admin_headers, sample_market):
@@ -214,8 +217,9 @@ def test_prediction_no_wins(client, db, user_headers, admin_headers, sample_mark
     _resolve(client, admin_headers, sample_market.id, resolution_value=False)
 
     db.refresh(user)
-    # NO bet: payout uses the NO side of the market, 100 / ((100-55)/100) = 222.22
-    assert user.points == pytest.approx(points_before - 100 + 222.22, abs=0.5)
+    # #306: probability_at_bet is post-trade. This is the market's only bet, so
+    # it moves the market to 0% YES / 100% NO, clamped to 99 -> payout = 100/(99/100) = 101.01
+    assert user.points == pytest.approx(points_before - 100 + 101.01, abs=0.5)
 
 
 def test_prediction_no_loses(client, db, user_headers, admin_headers, sample_market):
@@ -240,12 +244,13 @@ def test_prediction_50_rejected(client, user_headers, sample_market):
 
 
 def test_payout_calculation(client, db, user_headers, sample_market):
-    """Verifica que potential_gain = stake / (prob_market/100) - stake."""
+    """Verifica que potential_gain = stake / (prob_market/100) - stake, con el
+    precio POST-trade (#306): esta es la única apuesta del mercado, así que lo
+    mueve a 100% YES, clamped a 99."""
     res = _bet(client, user_headers, sample_market.id, probability=75, points=200)
     assert res.status_code == 201
     data = res.json()
-    # sample_market.probability_market = 55.0
-    expected_gain = 200 / (55.0 / 100) - 200  # = 163.64
+    expected_gain = 200 / (99.0 / 100) - 200  # = 2.02
     assert data["potential_gain"] == pytest.approx(expected_gain, abs=0.01)
 
 

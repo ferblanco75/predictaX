@@ -174,6 +174,8 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
                 disabled={!isLoggedIn || prediction.isPending}
                 requiresAuth={!isLoggedIn}
                 existingPrediction={existingPrediction}
+                marketYesPoints={market.yesPoints}
+                marketNoPoints={market.noPoints}
               />
               {feedback && (
                 <div

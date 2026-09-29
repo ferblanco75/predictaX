@@ -31,6 +31,11 @@ export interface Market {
   relatedMarkets: string[];
   statsData?: Record<string, unknown> | null;
   fixtureId?: number | null;
+  // Total points wagered on each side (#306) — lets the prediction form
+  // preview the post-trade payout instead of pricing off the pre-trade probability.
+  // Optional: the mock data in lib/data/markets.ts predates this field.
+  yesPoints?: number;
+  noPoints?: number;
   // For multiple_choice type
   options?: MultipleChoiceOption[];
 }
