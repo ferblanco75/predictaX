@@ -15,6 +15,12 @@ interface PredictionFormProps {
   disabled?: boolean;
   requiresAuth?: boolean;
   existingPrediction?: { probability: number; points_wagered: number } | null;
+  // Total points already wagered on each side (#306) — used to preview the
+  // POST-trade payout (after this bet's own impact on the market), instead of
+  // pricing off the pre-trade probability. Falls back to currentProbability
+  // alone when absent (e.g. mock market data without a points breakdown).
+  marketYesPoints?: number;
+  marketNoPoints?: number;
 }
 
 function formatCloseDate(endDate: string) {
@@ -39,6 +45,8 @@ export function PredictionForm({
   disabled = false,
   requiresAuth = false,
   existingPrediction = null,
+  marketYesPoints,
+  marketNoPoints,
 }: PredictionFormProps) {
   const { user } = useAppStore();
   const [prediction, setPrediction] = useState<75 | 25 | null>(null);
@@ -78,12 +86,29 @@ export function PredictionForm({
   };
 
   const safeBetAmount = Number.isFinite(betAmount) ? Math.max(0, betAmount) : 0;
-  // Payout formula, mirrors calculate_payout() in the backend (#275): the divisor is the
+  // Payout formula mirrors calculate_payout() in the backend (#275): the divisor is the
   // probability of the side bet — the market probability for SÍ, its complement for NO —
   // clamped to [1, 99] so an extreme market cannot show an unbounded gain.
-  // Until a side is picked we preview the SÍ side.
+  //
+  // The probability it divides by is the POST-trade one (#306): this bet's own points,
+  // added to the chosen side, before recomputing the market split — mirroring
+  // create_prediction()/calculate_market_probability() in prediction_service.py. Pricing
+  // off the pre-trade probability let a user preview (and then collect) a payout based on
+  // a price only their own bet was about to create. Until a side is picked, or when the
+  // market doesn't expose a points breakdown (e.g. mock data), fall back to the current
+  // market probability with no bet simulated.
   const marketProbability = Number.isFinite(currentProbability) ? currentProbability : 50;
-  const clampedProbability = Math.min(Math.max(marketProbability, 1), 99);
+  const hasPointsBreakdown = marketYesPoints !== undefined && marketNoPoints !== undefined;
+
+  let postTradeProbability = marketProbability;
+  if (prediction !== null && hasPointsBreakdown) {
+    const yesPoints = marketYesPoints! + (prediction === 75 ? safeBetAmount : 0);
+    const noPoints = marketNoPoints! + (prediction === 25 ? safeBetAmount : 0);
+    const totalPoints = yesPoints + noPoints;
+    postTradeProbability = totalPoints > 0 ? (yesPoints / totalPoints) * 100 : 50;
+  }
+
+  const clampedProbability = Math.min(Math.max(postTradeProbability, 1), 99);
   const sideProbability = prediction === 25 ? 100 - clampedProbability : clampedProbability;
   const potentialGain = safeBetAmount / (sideProbability / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
@@ -205,8 +230,9 @@ export function PredictionForm({
             </div>
           </div>
           <p className="mt-2 text-xs text-blue-700/70 dark:text-blue-300/70">
-            Estimación MVP sobre probabilidad actual {currentProbability}%. La ganancia final puede
-            cambiar según reglas y resolución del mercado.
+            Estimación MVP: ya incluye el efecto de tu propia apuesta sobre el mercado (probabilidad
+            actual {currentProbability}%). La ganancia final puede cambiar según reglas y resolución
+            del mercado.
           </p>
         </div>
 
