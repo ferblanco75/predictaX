@@ -50,7 +50,7 @@ redis_client: Optional[redis.Redis] = _build_redis_client(settings.REDIS_URL)
 gemini_client: Optional[genai.Client] = None
 if settings.GEMINI_API_KEY:
     gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    logger.info(f"Gemini client initialized with model: {settings.GEMINI_MODEL}")
+    logger.info(f"Gemini client initialized with model: {settings.GEMINI_MODEL_ANALYSIS}")
 else:
     logger.warning("GEMINI_API_KEY not set. AI analysis disabled.")
 
@@ -120,7 +120,7 @@ def _log_usage(
             user_id=user_id,
             market_id=market_id,
             provider="gemini",
-            model=settings.GEMINI_MODEL,
+            model=settings.GEMINI_MODEL_ANALYSIS,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=cache_hit,
@@ -373,7 +373,7 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
 
     try:
         response = gemini_client.models.generate_content(
-            model=settings.GEMINI_MODEL,
+            model=settings.GEMINI_MODEL_ANALYSIS,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
