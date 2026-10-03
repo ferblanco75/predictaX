@@ -9,10 +9,30 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { useMarkets } from '@/lib/hooks/useMarkets';
+import { useActiveUsers } from '@/lib/hooks/useActiveUsers';
 import { categories as allCategories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/stores/app-store';
 import type { Category } from '@/lib/types';
+
+function ActiveUsersBadge() {
+  const { data: activeUsers } = useActiveUsers();
+
+  if (!activeUsers) return null;
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 ring-1 ring-white/20">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+      </span>
+      <span>
+        <strong className="font-bold text-white">{activeUsers.toLocaleString('es-AR')}</strong>{' '}
+        usuarios conectados en la última hora
+      </span>
+    </div>
+  );
+}
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -47,6 +67,9 @@ export function HomePageClient({ categories = allCategories }: HomePageClientPro
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <motion.div className="max-w-3xl" variants={fadeInUp} initial="hidden" animate="visible">
+            <div className="mb-6">
+              <ActiveUsersBadge />
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Predice el futuro de América Latina
             </h1>

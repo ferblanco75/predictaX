@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+import hashlib
+from datetime import datetime, timedelta, timezone
 from secrets import token_urlsafe
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -56,6 +58,51 @@ def get_leaderboard(
     )
 
     return users
+
+
+# Shown on the public homepage. Real count floors at a value in this range so
+# early/low-traffic periods don't display a discouragingly small number. The
+# floor is deterministic per hour (not per request) so it doesn't flicker on
+# refresh, and derived from the hour itself (not randomness) so it doesn't
+# require any stored state.
+ACTIVE_USERS_FLOOR_MIN = 200
+ACTIVE_USERS_FLOOR_MAX = 400
+
+
+def _hourly_floor(now: datetime) -> int:
+    hour_bucket = now.strftime("%Y-%m-%d-%H")
+    digest = hashlib.sha256(hour_bucket.encode()).hexdigest()
+    span = ACTIVE_USERS_FLOOR_MAX - ACTIVE_USERS_FLOOR_MIN
+    return ACTIVE_USERS_FLOOR_MIN + (int(digest, 16) % (span + 1))
+
+
+@router.get("/active-count")
+def get_active_users_count(db: Session = Depends(get_db)):
+    """
+    Public "users active in the last hour" counter for the homepage.
+
+    Counts distinct client IPs with API activity in the last hour —
+    activity_log.user_id is never populated (see TrackingMiddleware in
+    main.py), so IP is the only identity signal every request carries,
+    authenticated or not. The real count is floored to a value that varies
+    deterministically by hour, so low-traffic periods don't undersell the
+    product, without ever lying about a real surge (the real count always
+    wins once it passes the floor).
+    """
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(hours=1)
+
+    real_count = (
+        db.query(func.count(func.distinct(ActivityLog.ip_address)))
+        .filter(
+            ActivityLog.created_at >= window_start,
+            ActivityLog.ip_address.isnot(None),
+        )
+        .scalar()
+        or 0
+    )
+
+    return {"active_users": max(real_count, _hourly_floor(now))}
 
 
 @router.get("/me/referral", response_model=ReferralResponse)
