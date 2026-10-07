@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "NeuroPredict API"
     DEBUG: bool = False
     METRICS_ENABLED: bool = False
+    # Public origin of the live site, used to build links the backend hands to
+    # users (referral links). Was hardcoded to a domain that does not exist.
+    CANONICAL_BASE_URL: str = "https://www.neuropredict.io"
 
     # Database
     DATABASE_URL: str

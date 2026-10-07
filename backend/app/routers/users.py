@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password
 from app.dependencies import get_current_user
@@ -111,7 +112,7 @@ def get_my_referral(
     db: Session = Depends(get_db),
 ):
     stats = referral_service.get_referral_stats(db, current_user)
-    base_url = "https://neuropredict.com"
+    base_url = settings.CANONICAL_BASE_URL.rstrip("/")
     return ReferralResponse(
         referral_code=stats["referral_code"],
         referral_link=f"{base_url}/auth?ref={stats['referral_code']}",
