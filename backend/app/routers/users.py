@@ -21,7 +21,7 @@ from app.schemas.user import (
     ReferralResponse,
     UserDeleteRequest,
 )
-from app.services import referral_service
+from app.services import prediction_service, referral_service
 
 router = APIRouter()
 
@@ -142,10 +142,9 @@ def get_my_profile(
     lost = [p for p in predictions if p.status == "lost"]
     pending = [p for p in predictions if p.status == "pending"]
 
-    total_won = sum(
-        (p.points_wagered / ((p.probability_at_bet or 50) / 100.0))
-        for p in won
-    )
+    # Net gain, not the gross payout — and via calculate_payout, so the
+    # divisor follows the side actually bet (see winning_net_gain).
+    total_won = sum(prediction_service.winning_net_gain(p) for p in won)
     total_lost = sum(p.points_wagered for p in lost)
 
     first_prediction = predictions[-1].created_at.isoformat() if predictions else None

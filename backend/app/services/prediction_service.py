@@ -68,6 +68,29 @@ def calculate_payout(
     return round(points_wagered / (side_probability / 100.0), 2)
 
 
+def winning_net_gain(prediction: Prediction) -> float:
+    """Net points a winning prediction actually gained: payout minus stake.
+
+    Same shape as the potential_gain stored at bet time and as the payout
+    applied on resolution, so profile/admin stats can no longer drift from
+    what the user was paid. Reporting the gross payout as a "gain" inflated
+    the number by the whole stake, and reimplementing the divisor without
+    calculate_payout ignored the side bet (up to ~90x off on a NO bet at an
+    extreme probability).
+
+    Args:
+        prediction: A prediction with status "won"
+
+    Returns:
+        Points gained on top of the stake, rounded to 2 decimals
+    """
+    prob = (
+        prediction.probability_at_bet if prediction.probability_at_bet is not None else 50.0
+    )
+    payout = calculate_payout(prediction.points_wagered, prob, prediction.probability)
+    return round(payout - prediction.points_wagered, 2)
+
+
 def create_prediction(
     db: Session, user: User, prediction_data: PredictionCreate
 ) -> Prediction:
