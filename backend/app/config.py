@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     # AI - Google Gemini
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.6-flash"
+    # Models tried, in order, when the configured one answers 503/UNAVAILABLE.
+    # The whole Gemini Flash family saturates on Google's side from time to
+    # time while the `lite` variants keep answering, which is what took the
+    # chatbot down in production. Stored as str to avoid pydantic_settings
+    # auto JSON parsing, same as CORS_ORIGINS.
+    GEMINI_FALLBACK_MODELS: Union[List[str], str] = [
+        "gemini-3.5-flash-lite",
+        "gemini-2.5-flash",
+    ]
 
     # Football Data
     FOOTBALL_DATA_API_KEY: str = ""
@@ -89,6 +98,13 @@ class Settings(BaseSettings):
                 return json.loads(v)
             except (json.JSONDecodeError, ValueError):
                 return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
+    @field_validator("GEMINI_FALLBACK_MODELS", mode="before")
+    @classmethod
+    def parse_gemini_fallback_models(cls, v):
+        if isinstance(v, str):
+            return [model.strip() for model in v.split(",") if model.strip()]
         return v
 
     @model_validator(mode="after")
