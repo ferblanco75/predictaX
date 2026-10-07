@@ -1,7 +1,23 @@
+'use client';
+
 import Link from 'next/link';
 import { CookieSettingsButton } from '@/components/privacy/CookieConsentManager';
+import { categories } from '@/lib/data/categories';
+import { filterVisibleCategories } from '@/lib/data/category-visibility';
+import { useCategoryVisibility } from '@/lib/hooks/useCategoryVisibility';
+
+const FOOTER_CATEGORY_LINKS = 3;
 
 export function Footer() {
+  // The three category links used to be hardcoded, so hiding a category from
+  // /admin/settings left a 404 in the footer of every page. Same client-side
+  // hook as Navbar — it shares the React Query key, so there's no extra request.
+  const visibility = useCategoryVisibility();
+  const footerCategories = filterVisibleCategories(categories, visibility).slice(
+    0,
+    FOOTER_CATEGORY_LINKS
+  );
+
   return (
     <footer className="border-t bg-gray-50 dark:bg-gray-950 mt-auto">
       <div className="container mx-auto px-4 py-8">
@@ -24,30 +40,16 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Mercados</h3>
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <li>
-                <Link
-                  href="/markets/category/economia"
-                  className="hover:text-gray-900 dark:hover:text-gray-100"
-                >
-                  Economía
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/markets/category/politica"
-                  className="hover:text-gray-900 dark:hover:text-gray-100"
-                >
-                  Política
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/markets/category/deportes"
-                  className="hover:text-gray-900 dark:hover:text-gray-100"
-                >
-                  Deportes
-                </Link>
-              </li>
+              {footerCategories.map((category) => (
+                <li key={category.id}>
+                  <Link
+                    href={`/markets/category/${category.id}`}
+                    className="hover:text-gray-900 dark:hover:text-gray-100"
+                  >
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
