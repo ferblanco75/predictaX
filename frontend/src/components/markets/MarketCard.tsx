@@ -19,8 +19,8 @@ interface MarketCardProps {
 export function MarketCard({ market }: MarketCardProps) {
   // Calculate trend from history
   const trend =
-    market.history.length >= 2
-      ? market.probability - market.history[market.history.length - 2].probability
+    market.history.length >= 1
+      ? market.probability - market.history[market.history.length - 1].probability
       : 0;
 
   const isPositiveTrend = trend > 0;
