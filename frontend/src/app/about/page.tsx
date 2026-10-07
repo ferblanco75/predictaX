@@ -14,7 +14,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import type { Metadata } from 'next';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Acerca de',
@@ -24,6 +24,7 @@ export const metadata: Metadata = {
     canonical: canonicalUrl('/about'),
   },
   openGraph: {
+    ...openGraphDefaults,
     title: 'Acerca de NeuroPredict',
     description:
       'Mercados de predicción con IA para América Latina. Toma decisiones informadas con la sabiduría colectiva.',

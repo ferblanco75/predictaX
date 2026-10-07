@@ -5,7 +5,7 @@ import { StructuredData } from '@/components/seo/StructuredData';
 import { getServerMarkets, getServerVisibleCategories } from '@/lib/api/server-markets';
 import { categories, getCategoryById } from '@/lib/data/categories';
 import { filterVisibleCategories } from '@/lib/data/category-visibility';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 import { generateMarketListStructuredData } from '@/lib/utils/structured-data';
 import type { Market } from '@/lib/types';
 
@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     'Explorá mercados de predicción sobre economía, política, deportes, tecnología y criptomonedas en América Latina.',
   alternates: { canonical: canonicalUrl('/markets') },
   openGraph: {
+    ...openGraphDefaults,
+    type: 'website',
     title: 'Mercados de predicción',
     description:
       'Explorá mercados de predicción sobre economía, política, deportes, tecnología y criptomonedas en América Latina.',

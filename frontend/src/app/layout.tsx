@@ -10,7 +10,7 @@ import { CookieConsentManager } from '@/components/privacy/CookieConsentManager'
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { SessionValidator } from '@/components/providers/SessionValidator';
 import { ChatWidget } from '@/components/chatbot/ChatWidget';
-import { canonicalUrl, SITE_URL } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults, SITE_URL, twitterImages } from '@/lib/site';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -67,28 +67,19 @@ export const metadata: Metadata = {
   authors: [{ name: 'NeuroPredict' }],
   creator: 'NeuroPredict',
   openGraph: {
+    ...openGraphDefaults,
     type: 'website',
-    locale: 'es_LA',
     url: canonicalUrl('/'),
-    siteName: 'NeuroPredict',
     title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
       'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
-    images: [
-      {
-        url: '/icons/icon-512.png',
-        width: 512,
-        height: 512,
-        alt: 'NeuroPredict - Mercados de Predicción',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'NeuroPredict - Mercados de predicción en América Latina',
     description:
       'Polls y mercados de predicción sobre economía, política, deportes y tecnología en América Latina.',
-    images: ['/icons/icon-512.png'],
+    images: twitterImages,
   },
   robots: {
     index: true,

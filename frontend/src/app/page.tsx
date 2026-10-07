@@ -5,7 +5,7 @@ import { StructuredData } from '@/components/seo/StructuredData';
 import { getAllServerMarkets, getServerVisibleCategories } from '@/lib/api/server-markets';
 import { categories } from '@/lib/data/categories';
 import { filterVisibleCategories } from '@/lib/data/category-visibility';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 import { generateOrganizationStructuredData } from '@/lib/utils/structured-data';
 
 export const metadata: Metadata = {
@@ -13,6 +13,8 @@ export const metadata: Metadata = {
     canonical: canonicalUrl('/'),
   },
   openGraph: {
+    ...openGraphDefaults,
+    type: 'website',
     url: canonicalUrl('/'),
   },
 };
