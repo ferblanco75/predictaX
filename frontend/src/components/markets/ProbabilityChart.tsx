@@ -55,7 +55,7 @@ export function ProbabilityChart({ data, categoryColor }: ProbabilityChartProps)
     return (
       <ChartEmptyState
         title="Sin historial disponible"
-        message="El gráfico aparecerá cuando el mercado tenga snapshots de probabilidad válidos."
+        message="Todavía no registramos movimientos de probabilidad en este mercado. El gráfico aparece en cuanto haya datos."
       />
     );
   }

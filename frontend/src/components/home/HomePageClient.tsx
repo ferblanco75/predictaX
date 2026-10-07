@@ -71,10 +71,10 @@ export function HomePageClient({ categories = allCategories }: HomePageClientPro
               <ActiveUsersBadge />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Predice el futuro de América Latina
+              Predecí el futuro de América Latina
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Participa en mercados de predicción sobre economía, política, deportes y más.
+              Participá en mercados de predicción sobre economía, política, deportes y más.
               Decisiones informadas con inteligencia artificial.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -108,7 +108,7 @@ export function HomePageClient({ categories = allCategories }: HomePageClientPro
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
       >
-        <h2 className="text-3xl font-bold mb-8">Explora por categoría</h2>
+        <h2 className="text-3xl font-bold mb-8">Explorá por categoría</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {categories.map((category) => {
             const Icon = categoryIcons[category.icon as keyof typeof categoryIcons];
@@ -171,10 +171,10 @@ export function HomePageClient({ categories = allCategories }: HomePageClientPro
         >
           <div className="container mx-auto px-4 py-16 text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              ¿Listo para comenzar a predecir?
+              ¿Listo para empezar a predecir?
             </h2>
             <p className="text-xl mb-8 text-purple-100">
-              Únete a nuestra comunidad y empieza a participar en mercados de predicción.
+              Unite a nuestra comunidad y empezá a participar en mercados de predicción.
             </p>
             <Link href="/auth" className={cn(buttonVariants({ size: 'lg', variant: 'secondary' }))}>
               Crear cuenta gratis

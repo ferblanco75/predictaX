@@ -320,6 +320,9 @@ export function MarketsPageClient({
             <MarketList
               markets={paginated}
               isLoading={isLoading}
+              emptyMessage={
+                searchQuery ? `No hay mercados que coincidan con "${searchQuery}".` : undefined
+              }
               onClearFilters={() => {
                 resetFilters();
                 setCurrentPage(1);

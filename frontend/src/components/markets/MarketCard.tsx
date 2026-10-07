@@ -6,8 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Market } from '@/lib/types';
 import { getCategoryColor } from '@/lib/data/categories';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { formatMarketEndDate, formatParticipants } from '@/lib/utils/market-format';
 import { Progress } from '@/components/ui/progress';
 import { ProbabilityGauge } from './ProbabilityGauge';
 import { motion } from 'framer-motion';
@@ -43,16 +42,7 @@ export function MarketCard({ market }: MarketCardProps) {
     },
   }[market.status];
 
-  const endDate = market.endDate
-    ? (() => {
-        const d = new Date(market.endDate);
-        return format(
-          new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-          'dd MMM yyyy',
-          { locale: es }
-        );
-      })()
-    : '';
+  const endDate = market.endDate ? formatMarketEndDate(market.endDate) : '';
 
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
@@ -143,7 +133,7 @@ export function MarketCard({ market }: MarketCardProps) {
             <div className="grid grid-cols-2 gap-4 pt-2 border-t">
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <Users className="h-4 w-4" />
-                <span>{market.participants} predicciones</span>
+                <span>{formatParticipants(market.participants)}</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <TrendingUp className="h-4 w-4" />
