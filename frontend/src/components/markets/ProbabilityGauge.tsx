@@ -54,14 +54,17 @@ export function ProbabilityGauge({
   className = '',
 }: ProbabilityGaugeProps) {
   const [mounted, setMounted] = useState(false);
-  const { theme } = useTheme();
+  // resolvedTheme, not theme: with the layout's defaultTheme="system" an
+  // untouched toggle leaves theme === 'system', which painted the light track
+  // on a dark background.
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  const isDark = theme === 'dark';
+  const isDark = resolvedTheme === 'dark';
   const config = sizeConfig[size];
 
   // Colors
