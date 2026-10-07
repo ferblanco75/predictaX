@@ -124,7 +124,11 @@ export function HomePageClient({ categories = allCategories }: HomePageClientPro
                     </div>
                     <div>
                       <h3 className="font-semibold">{category.name}</h3>
-                      <p className="text-sm text-gray-500">{category.count} mercados</p>
+                      {category.count !== undefined && (
+                        <p className="text-sm text-gray-500">
+                          {category.count} {category.count === 1 ? 'mercado' : 'mercados'}
+                        </p>
+                      )}
                     </div>
                   </CardHeader>
                 </Card>

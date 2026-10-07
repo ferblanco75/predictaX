@@ -46,5 +46,7 @@ export interface Category {
   description: string;
   icon: string;
   color: string;
-  count: number;
+  // Number of active markets, counted from live data (app/page.tsx).
+  // Absent when the count isn't available (e.g. the markets API is down).
+  count?: number;
 }
