@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatMarketCloseDate } from '@/lib/utils/market-format';
 
 interface PredictionFormProps {
   currentProbability: number;
@@ -21,17 +22,6 @@ interface PredictionFormProps {
   // alone when absent (e.g. mock market data without a points breakdown).
   marketYesPoints?: number;
   marketNoPoints?: number;
-}
-
-function formatCloseDate(endDate: string) {
-  const date = new Date(endDate);
-  if (Number.isNaN(date.getTime())) return 'Fecha por confirmar';
-
-  return new Intl.DateTimeFormat('es-AR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'America/Argentina/Buenos_Aires',
-  }).format(date);
 }
 
 function formatPoints(points: number) {
@@ -112,7 +102,7 @@ export function PredictionForm({
   const sideProbability = prediction === 25 ? 100 - clampedProbability : clampedProbability;
   const potentialGain = safeBetAmount / (sideProbability / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
-  const closeDate = formatCloseDate(endDate);
+  const closeDate = formatMarketCloseDate(endDate);
 
   return (
     <Card>

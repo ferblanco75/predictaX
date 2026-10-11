@@ -7,9 +7,8 @@ import { Users, Calendar, Coins, ArrowLeft, Clock3, Share2, Check } from 'lucide
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getCategoryById, getCategoryColor } from '@/lib/data/categories';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { MarketDetailClient } from './MarketDetailClient';
+import { formatMarketEndDate, formatParticipants } from '@/lib/utils/market-format';
 import {
   generateBreadcrumbStructuredData,
   generateMarketStructuredData,
@@ -23,13 +22,6 @@ import type { Market } from '@/lib/types';
 interface MarketDetailPageProps {
   id: string;
   initialMarket?: Market;
-}
-
-function formatEndDate(endDate: string): string {
-  const d = new Date(endDate);
-  return format(new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()), 'dd MMM yyyy', {
-    locale: es,
-  });
 }
 
 export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
@@ -77,7 +69,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
   }
 
   const categoryColor = getCategoryColor(market.category);
-  const endDate = formatEndDate(market.endDate);
+  const endDate = formatMarketEndDate(market.endDate);
   const structuredData = generateMarketStructuredData(market);
   const categoryLabel = getCategoryById(market.category)?.name ?? market.category;
   const breadcrumbData = generateBreadcrumbStructuredData([
@@ -181,7 +173,7 @@ export function MarketDetailPage({ id, initialMarket }: MarketDetailPageProps) {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
-                      <span>{market.participants} participantes</span>
+                      <span>{formatParticipants(market.participants)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Coins className="h-4 w-4" />

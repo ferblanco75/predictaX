@@ -7,7 +7,7 @@ import logging
 import time
 from datetime import date, datetime, timezone
 from datetime import time as datetime_time
-from typing import Optional
+from typing import Any, Optional
 
 import redis
 from google import genai
@@ -72,6 +72,90 @@ class AIRateLimitError(RuntimeError):
     """Raised when an AI analysis request is intentionally throttled."""
 
 
+# Provider status that means "this model is saturated right now, another one
+# may still answer". Anything else (429 quota, auth failures) applies to every
+# model behind the same API key, so retrying would only burn the budget.
+UNAVAILABLE_STATUS = "UNAVAILABLE"
+
+
+def get_model_chain(primary_model: str) -> list[str]:
+    """Models to try in order: the caller's configured one, then the fallbacks.
+
+    The primary is required rather than read from settings, because since #274
+    there is no single GEMINI_MODEL to read: chat and analysis are configured
+    separately, so each call site passes its own.
+    """
+    chain = [primary_model]
+    for model in settings.GEMINI_FALLBACK_MODELS:
+        if model and model not in chain:
+            chain.append(model)
+    return chain
+
+
+def _is_model_unavailable(exc: Exception) -> bool:
+    """True only for a provider 503/UNAVAILABLE, which another model may survive.
+
+    The whole Gemini Flash family saturates on Google's side periodically
+    while the `lite` variants keep answering — that is what took the chatbot
+    down in production. A 429 (quota exhausted) or an auth error is shared by
+    every model under the same key and must not be retried.
+    """
+    code = getattr(exc, "code", None)
+    status = str(getattr(exc, "status", "") or "").upper()
+    if code == 503 or status == UNAVAILABLE_STATUS:
+        return True
+    if code is not None:
+        return False
+    return UNAVAILABLE_STATUS in str(exc).upper()
+
+
+def generate_with_fallback(client, primary_model: str, **kwargs) -> tuple[Any, str]:
+    """generate_content with the model fallback chain applied.
+
+    Args:
+        client: The Gemini client to call (passed in so each service keeps
+            using its own module-level client)
+        primary_model: Model to try first — GEMINI_MODEL_CHAT or
+            GEMINI_MODEL_ANALYSIS, depending on the caller
+        **kwargs: Forwarded to generate_content (contents, config, ...)
+
+    Returns:
+        Tuple of (response, resolved model that answered). Callers must log
+        the returned value, not the configured one: otherwise ai_usage_log
+        attributes the call to a model that never ran, and with an alias it
+        records the alias instead of the version behind it.
+
+    Raises:
+        The provider error, if every model in the chain is unavailable or the
+        first one fails for any other reason.
+    """
+    chain = get_model_chain(primary_model)
+    last_error: Optional[Exception] = None
+
+    for model in chain:
+        try:
+            response = client.models.generate_content(model=model, **kwargs)
+            # Report the model that actually answered. With an alias like
+            # gemini-flash-latest the requested name says nothing about which
+            # version ran, and ai_usage_log would record the alias forever.
+            # The response carries the resolved version, so prefer it.
+            answered = getattr(response, "model_version", None) or model
+            if model != chain[0]:
+                logger.warning(
+                    f"Gemini model {chain[0]} unavailable; answered with "
+                    f"fallback {model} (resolved: {answered})"
+                )
+            return response, answered
+        except Exception as e:
+            if not _is_model_unavailable(e):
+                raise
+            logger.warning(f"Gemini model {model} unavailable (503): {e}")
+            last_error = e
+
+    logger.error(f"Every Gemini model in the fallback chain is unavailable: {chain}")
+    raise last_error
+
+
 # Response schema for structured output
 ANALYSIS_SCHEMA = types.Schema(
     type=types.Type.OBJECT,
@@ -112,15 +196,21 @@ def _log_usage(
     total_tokens: Optional[int] = None,
     status: str = "success",
     error_message: Optional[str] = None,
+    model: Optional[str] = None,
 ):
-    """Log AI usage to database for tracking and quota monitoring."""
+    """Log AI usage to database for tracking and quota monitoring.
+
+    `model` is the model that actually answered, which is not always the
+    configured one once the fallback chain kicks in — the admin panel reads
+    this column, so defaulting it would misattribute every fallback call.
+    """
     try:
         db = SessionLocal()
         log = AIUsageLog(
             user_id=user_id,
             market_id=market_id,
             provider="gemini",
-            model=settings.GEMINI_MODEL_ANALYSIS,
+            model=model or settings.GEMINI_MODEL_ANALYSIS,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=cache_hit,
@@ -371,9 +461,11 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
     market_id = market.get("id")
     start_time = time.time()
 
+    model_used = settings.GEMINI_MODEL_ANALYSIS
     try:
-        response = gemini_client.models.generate_content(
-            model=settings.GEMINI_MODEL_ANALYSIS,
+        response, model_used = generate_with_fallback(
+            gemini_client,
+            settings.GEMINI_MODEL_ANALYSIS,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -398,11 +490,12 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
             response_time_ms=elapsed_ms,
             total_tokens=total_tokens,
             status="success",
+            model=model_used,
         )
 
         logger.info(
             f"AI analysis generated for market: {market.get('title', 'unknown')} "
-            f"({elapsed_ms}ms, tokens: {total_tokens})"
+            f"({elapsed_ms}ms, tokens: {total_tokens}, model: {model_used})"
         )
         return result
     except RuntimeError:
@@ -416,6 +509,7 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
             response_time_ms=elapsed_ms,
             status="error",
             error_message=str(e),
+            model=model_used,
         )
         logger.error(f"Gemini API error: {e}")
         raise RuntimeError(f"AI analysis failed: {str(e)}")

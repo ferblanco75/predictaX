@@ -5,7 +5,7 @@ import { CategoryPageClient } from '@/components/markets/CategoryPageClient';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { getServerMarkets, getServerVisibleCategories } from '@/lib/api/server-markets';
 import { categories, getCategoryById } from '@/lib/data/categories';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 import { generateBreadcrumbStructuredData } from '@/lib/utils/structured-data';
 import type { Market } from '@/lib/types';
 
@@ -38,6 +38,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     description: category.description,
     alternates: { canonical: url },
     openGraph: {
+      ...openGraphDefaults,
+      type: 'website',
       title: `Mercados de ${category.name}`,
       description: category.description,
       url,

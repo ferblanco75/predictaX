@@ -7,18 +7,28 @@ import { Compass, FileQuestion, Home, Search, Shield } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { categories } from '@/lib/data/categories';
+import { filterVisibleCategories } from '@/lib/data/category-visibility';
+import { useCategoryVisibility } from '@/lib/hooks/useCategoryVisibility';
 import { cn } from '@/lib/utils';
 
-const suggestedLinks = [
-  { href: '/markets', label: 'Todos los mercados' },
-  { href: '/markets/category/politica', label: 'Política' },
-  { href: '/markets/category/economia', label: 'Economía' },
-  { href: '/markets/category/crypto', label: 'Crypto' },
-];
+const SUGGESTED_CATEGORIES = 3;
 
 export default function NotFound() {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  // Suggesting a hardcoded category sent people from a 404 straight to another
+  // 404 once that category was hidden from /admin/settings.
+  const visibility = useCategoryVisibility();
+  const suggestedLinks = [
+    { href: '/markets', label: 'Todos los mercados' },
+    ...filterVisibleCategories(categories, visibility)
+      .slice(0, SUGGESTED_CATEGORIES)
+      .map((category) => ({
+        href: `/markets/category/${category.id}`,
+        label: category.name,
+      })),
+  ];
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,7 +62,7 @@ export default function NotFound() {
             <div className="p-8 md:p-12">
               <h2 className="text-2xl font-semibold">Buscá un mercado</h2>
               <p className="mt-2 text-muted-foreground">
-                Probá con una palabra clave como Argentina, dólar, Bitcoin o tecnología.
+                Probá con una palabra clave como Argentina, dólar, inflación o elecciones.
               </p>
 
               <form onSubmit={handleSearch} className="mt-6 flex flex-col gap-3 sm:flex-row">

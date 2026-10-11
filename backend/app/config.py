@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "NeuroPredict API"
     DEBUG: bool = False
     METRICS_ENABLED: bool = False
+    # Public origin of the live site, used to build links the backend hands to
+    # users (referral links). Was hardcoded to a domain that does not exist.
+    CANONICAL_BASE_URL: str = "https://www.neuropredict.io"
 
     # Database
     DATABASE_URL: str
@@ -59,6 +62,29 @@ class Settings(BaseSettings):
     # both of the above when they are not given explicitly — ignoring it would
     # silently change the model production runs on the next deploy.
     GEMINI_MODEL: Optional[str] = None
+    # Models tried, in order, when the configured one answers 503/UNAVAILABLE.
+    # Applies to both workloads above.
+    #
+    # Both the defaults and this chain are **aliases**, on purpose. Pinning a
+    # version put us on a treadmill we kept losing: the project ran
+    # gemini-3.7-flash through its deprecation without noticing, then
+    # gemini-3.6-flash, which retires 2026-11-19. An alias cannot be deprecated
+    # out from under us — Google routes it to whatever the current model is.
+    #
+    # The aliases also resolve into different capacity pools, which is the only
+    # redundancy available from a single provider. Measured 2026-10-11, 4 calls
+    # each: flash-lite-latest 4/4, flash-latest 3/4, and the pinned
+    # gemini-3.8-flash just 1/4 — the alias beat the version it resolves to.
+    #
+    # A third *Google* model was deliberately left out: same provider, same API
+    # key, same infrastructure, so it would look like redundancy without being
+    # any. Real redundancy needs another provider — see
+    # docs/ai-provider-strategy.md, not implemented yet.
+    #
+    # Stored as str-or-list to avoid pydantic_settings JSON-parsing a CSV env var.
+    GEMINI_FALLBACK_MODELS: Union[List[str], str] = [
+        "gemini-flash-lite-latest",
+    ]
 
     # Football Data
     FOOTBALL_DATA_API_KEY: str = ""
@@ -99,6 +125,13 @@ class Settings(BaseSettings):
                 return json.loads(v)
             except (json.JSONDecodeError, ValueError):
                 return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
+    @field_validator("GEMINI_FALLBACK_MODELS", mode="before")
+    @classmethod
+    def parse_gemini_fallback_models(cls, v):
+        if isinstance(v, str):
+            return [model.strip() for model in v.split(",") if model.strip()]
         return v
 
     @field_validator("GEMINI_MODEL_CHAT", "GEMINI_MODEL_ANALYSIS")

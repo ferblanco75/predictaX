@@ -57,7 +57,7 @@ def get_markets(
             everywhere except the admin panel.
 
     Returns:
-        Tuple of (markets list, total count)
+        Tuple of (markets list, total count), ordered by volume descending
     """
     query = db.query(Market)
 
@@ -76,8 +76,21 @@ def get_markets(
     # Get total count before pagination
     total = query.count()
 
-    # Apply pagination
-    markets = query.order_by(Market.created_at.desc()).offset(offset).limit(limit).all()
+    # Order by activity, not recency: ordering by created_at put the markets
+    # with 0 predictions and 0 points on the first page of /markets while the
+    # ones with real volume fell to page 2. created_at is kept as the final
+    # tiebreak so brand-new markets with no volume yet still come out newest
+    # first among themselves.
+    markets = (
+        query.order_by(
+            Market.volume.desc(),
+            Market.participants_count.desc(),
+            Market.created_at.desc(),
+        )
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
     return markets, total
 

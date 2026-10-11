@@ -46,7 +46,11 @@ export function CategoryPageClient({ category, initialMarkets }: CategoryPageCli
           <p className="text-gray-600 text-lg">{category.description}</p>
         </div>
 
-        <MarketList markets={markets} isLoading={isLoading} />
+        <MarketList
+          markets={markets}
+          isLoading={isLoading}
+          emptyMessage={`Todavía no hay mercados de ${category.name}. Probá con otra categoría.`}
+        />
       </div>
     </div>
   );

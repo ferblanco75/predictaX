@@ -8,7 +8,6 @@ export const categories: Category[] = [
       'Predicciones sobre indicadores económicos, mercados financieros y política económica de Argentina y la región',
     icon: 'TrendingUp',
     color: '#10b981', // green-500
-    count: 8,
   },
   {
     id: 'politica',
@@ -16,7 +15,6 @@ export const categories: Category[] = [
     description: 'Elecciones, reformas legislativas y eventos políticos de América Latina',
     icon: 'Users',
     color: '#3b82f6', // blue-500
-    count: 8,
   },
   {
     id: 'deportes',
@@ -24,7 +22,6 @@ export const categories: Category[] = [
     description: 'Resultados de fútbol, competencias internacionales y eventos deportivos',
     icon: 'Trophy',
     color: '#f59e0b', // amber-500
-    count: 5,
   },
   {
     id: 'tecnologia',
@@ -32,7 +29,6 @@ export const categories: Category[] = [
     description: 'Lanzamientos de productos, IPOs tech y adopción de tecnología en la región',
     icon: 'Smartphone',
     color: '#8b5cf6', // violet-500
-    count: 4,
   },
   {
     id: 'crypto',
@@ -40,7 +36,6 @@ export const categories: Category[] = [
     description: 'Precios de criptomonedas y regulación en América Latina',
     icon: 'Bitcoin',
     color: '#f97316', // orange-500
-    count: 3,
   },
 ];
 

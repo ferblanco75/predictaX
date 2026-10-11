@@ -334,10 +334,9 @@ def get_user_stats(user_id: str, db: Session = Depends(get_db)):
     lost = [p for p in preds if p.status == "lost"]
     pending = [p for p in preds if p.status == "pending"]
 
-    points_won = sum(
-        round(p.points_wagered / ((p.probability_at_bet or 50) / 100), 2) - p.points_wagered
-        for p in won
-    )
+    # Same net-gain helper the profile uses, so the divisor follows the side
+    # actually bet instead of always using the YES probability.
+    points_won = sum(prediction_service.winning_net_gain(p) for p in won)
     points_lost = sum(p.points_wagered for p in lost)
 
     from collections import Counter

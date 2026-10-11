@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password
 from app.dependencies import get_current_user
@@ -20,7 +21,7 @@ from app.schemas.user import (
     ReferralResponse,
     UserDeleteRequest,
 )
-from app.services import referral_service
+from app.services import prediction_service, referral_service
 
 router = APIRouter()
 
@@ -111,7 +112,7 @@ def get_my_referral(
     db: Session = Depends(get_db),
 ):
     stats = referral_service.get_referral_stats(db, current_user)
-    base_url = "https://neuropredict.com"
+    base_url = settings.CANONICAL_BASE_URL.rstrip("/")
     return ReferralResponse(
         referral_code=stats["referral_code"],
         referral_link=f"{base_url}/auth?ref={stats['referral_code']}",
@@ -141,10 +142,9 @@ def get_my_profile(
     lost = [p for p in predictions if p.status == "lost"]
     pending = [p for p in predictions if p.status == "pending"]
 
-    total_won = sum(
-        (p.points_wagered / ((p.probability_at_bet or 50) / 100.0))
-        for p in won
-    )
+    # Net gain, not the gross payout — and via calculate_payout, so the
+    # divisor follows the side actually bet (see winning_net_gain).
+    total_won = sum(prediction_service.winning_net_gain(p) for p in won)
     total_lost = sum(p.points_wagered for p in lost)
 
     first_prediction = predictions[-1].created_at.isoformat() if predictions else None
