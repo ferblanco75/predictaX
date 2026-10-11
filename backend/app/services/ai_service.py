@@ -121,9 +121,10 @@ def generate_with_fallback(
         **kwargs: Forwarded to generate_content (contents, config, ...)
 
     Returns:
-        Tuple of (response, model that answered) — callers must log the
-        returned model, not the configured one, or ai_usage_log attributes the
-        call to a model that never ran.
+        Tuple of (response, resolved model that answered). Callers must log
+        the returned value, not the configured one: otherwise ai_usage_log
+        attributes the call to a model that never ran, and with an alias it
+        records the alias instead of the version behind it.
 
     Raises:
         The provider error, if every model in the chain is unavailable or the
@@ -135,11 +136,17 @@ def generate_with_fallback(
     for model in chain:
         try:
             response = client.models.generate_content(model=model, **kwargs)
+            # Report the model that actually answered. With an alias like
+            # gemini-flash-latest the requested name says nothing about which
+            # version ran, and ai_usage_log would record the alias forever.
+            # The response carries the resolved version, so prefer it.
+            answered = getattr(response, "model_version", None) or model
             if model != chain[0]:
                 logger.warning(
-                    f"Gemini model {chain[0]} unavailable; answered with fallback {model}"
+                    f"Gemini model {chain[0]} unavailable; answered with "
+                    f"fallback {model} (resolved: {answered})"
                 )
-            return response, model
+            return response, answered
         except Exception as e:
             if not _is_model_unavailable(e):
                 raise

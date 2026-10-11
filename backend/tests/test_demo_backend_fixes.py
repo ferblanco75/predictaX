@@ -243,6 +243,51 @@ def _quota_error() -> Exception:
     )
 
 
+def test_resolved_model_is_reported_not_the_alias():
+    """With an alias, ai_usage_log must record the version behind it.
+
+    gemini-flash-latest resolves to whatever the current model is; logging the
+    alias would make the usage history useless for correlating output quality
+    or cost with an actual model.
+    """
+
+    class _Response:
+        model_version = "gemini-3.8-flash"
+
+    class _Models:
+        def generate_content(self, model, **kwargs):
+            return _Response()
+
+    class _Client:
+        models = _Models()
+
+    _, answered = ai_service.generate_with_fallback(
+        _Client(), "gemini-flash-latest", contents="hola"
+    )
+
+    assert answered == "gemini-3.8-flash"
+
+
+def test_requested_model_is_reported_when_no_version_is_returned():
+    """Older or stubbed responses carry no model_version; fall back to the name."""
+
+    class _Response:
+        pass
+
+    class _Models:
+        def generate_content(self, model, **kwargs):
+            return _Response()
+
+    class _Client:
+        models = _Models()
+
+    _, answered = ai_service.generate_with_fallback(
+        _Client(), "gemini-3.8-flash", contents="hola"
+    )
+
+    assert answered == "gemini-3.8-flash"
+
+
 def test_model_chain_starts_with_the_configured_model():
     chain = ai_service.get_model_chain("gemini-3.6-flash")
 
