@@ -1,12 +1,15 @@
-DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 
-# The whitelist exists to reject *retired* models (gemini-2.5-flash and older),
-# which would pass startup and only fail at the first API call. It is not a
-# health check: 3.7 and 3.8 answer 503 "high demand" as of 2026-09-29, but the
-# API still serves them, so they stay listed and 3.6 is the default (#274).
+# The whitelist exists to reject models the API no longer serves, which would
+# otherwise pass startup and only fail on the first call. It is not a health
+# check and not a deprecation list: Google deprecated gemini-3.7-flash and
+# gemini-3.5-flash on 2026-10-08 (requests route to 3.8 and 3.6 respectively),
+# and gemini-3.6-flash retires 2026-11-19 — but all of them still answer today,
+# so they stay accepted and an existing deployment does not break at startup.
+# What moves forward is the default. See GEMINI_FALLBACK_MODELS in config.py.
 SUPPORTED_GEMINI_MODELS = frozenset({
     DEFAULT_GEMINI_MODEL,
-    "gemini-3.8-flash",
+    "gemini-3.6-flash",
     "gemini-3.7-flash",
     "gemini-3.5-flash",
     "gemini-3.5-flash-lite",
