@@ -116,7 +116,7 @@ def _log_usage(
             user_id=user_id,
             market_id=None,
             provider="gemini",
-            model=settings.GEMINI_MODEL,
+            model=settings.GEMINI_MODEL_CHAT,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=False,
@@ -532,7 +532,7 @@ def send_message(
             _check_daily_quota()
             call_started = time.time()
             response = gemini_client.models.generate_content(
-                model=settings.GEMINI_MODEL,
+                model=settings.GEMINI_MODEL_CHAT,
                 contents=contents,
                 config=config,
             )

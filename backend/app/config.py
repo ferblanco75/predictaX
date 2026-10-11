@@ -1,7 +1,12 @@
-from typing import List, Union
+import logging
+from typing import List, Optional, Union
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.gemini_models import DEFAULT_GEMINI_MODEL, validate_gemini_model
+
+logger = logging.getLogger(__name__)
 
 # #284: the original constant never matched the value people actually copy
 # (backend/.env.example ships SECRET_KEY=CHANGE_ME_openssl_rand_hex_32), so
@@ -45,7 +50,15 @@ class Settings(BaseSettings):
 
     # AI - Google Gemini
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-3.6-flash"
+    # #274: the chatbot and market analysis are different workloads (latency +
+    # function calling vs. reasoning quality on a 6h-cached JSON answer), so
+    # each gets its own model and they can be moved independently.
+    GEMINI_MODEL_CHAT: str = DEFAULT_GEMINI_MODEL
+    GEMINI_MODEL_ANALYSIS: str = DEFAULT_GEMINI_MODEL
+    # Deprecated single-workload setting. Render still has it set, so it seeds
+    # both of the above when they are not given explicitly — ignoring it would
+    # silently change the model production runs on the next deploy.
+    GEMINI_MODEL: Optional[str] = None
 
     # Football Data
     FOOTBALL_DATA_API_KEY: str = ""
@@ -87,6 +100,37 @@ class Settings(BaseSettings):
             except (json.JSONDecodeError, ValueError):
                 return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+
+    @field_validator("GEMINI_MODEL_CHAT", "GEMINI_MODEL_ANALYSIS")
+    @classmethod
+    def validate_gemini_models(cls, v: str) -> str:
+        return validate_gemini_model(v)
+
+    @field_validator("GEMINI_MODEL")
+    @classmethod
+    def validate_legacy_gemini_model(cls, v: Optional[str]) -> Optional[str]:
+        if v is None or not v.strip():
+            return None
+        return validate_gemini_model(v)
+
+    @model_validator(mode="after")
+    def apply_legacy_gemini_model(self) -> "Settings":
+        if self.GEMINI_MODEL is None:
+            return self
+        inherited = [
+            field
+            for field in ("GEMINI_MODEL_CHAT", "GEMINI_MODEL_ANALYSIS")
+            if field not in self.model_fields_set
+        ]
+        for field in inherited:
+            setattr(self, field, self.GEMINI_MODEL)
+        if inherited:
+            logger.warning(
+                "GEMINI_MODEL is deprecated and applied to %s. Set GEMINI_MODEL_CHAT "
+                "and GEMINI_MODEL_ANALYSIS explicitly and drop it.",
+                ", ".join(inherited),
+            )
+        return self
 
     @model_validator(mode="after")
     def validate_secret_key_in_production(self) -> "Settings":
