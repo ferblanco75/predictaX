@@ -121,7 +121,7 @@ def _log_usage(
             user_id=user_id,
             market_id=None,
             provider="gemini",
-            model=model or settings.GEMINI_MODEL,
+            model=model or settings.GEMINI_MODEL_CHAT,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=False,
@@ -522,7 +522,7 @@ def send_message(
     user_id = str(user.id) if user else None
     start_time = time.time()
     total_tokens_used = 0
-    model_used = settings.GEMINI_MODEL
+    model_used = settings.GEMINI_MODEL_CHAT
 
     try:
         tools = _build_tools(has_user=user is not None)
@@ -541,6 +541,7 @@ def send_message(
             # Flash family saturating on Google's side left the chatbot dead.
             response, model_used = generate_with_fallback(
                 gemini_client,
+                settings.GEMINI_MODEL_CHAT,
                 contents=contents,
                 config=config,
             )

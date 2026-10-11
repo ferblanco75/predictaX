@@ -50,7 +50,7 @@ redis_client: Optional[redis.Redis] = _build_redis_client(settings.REDIS_URL)
 gemini_client: Optional[genai.Client] = None
 if settings.GEMINI_API_KEY:
     gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
-    logger.info(f"Gemini client initialized with model: {settings.GEMINI_MODEL}")
+    logger.info(f"Gemini client initialized with model: {settings.GEMINI_MODEL_ANALYSIS}")
 else:
     logger.warning("GEMINI_API_KEY not set. AI analysis disabled.")
 
@@ -78,14 +78,14 @@ class AIRateLimitError(RuntimeError):
 UNAVAILABLE_STATUS = "UNAVAILABLE"
 
 
-def get_model_chain(primary_model: Optional[str] = None) -> list[str]:
+def get_model_chain(primary_model: str) -> list[str]:
     """Models to try in order: the caller's configured one, then the fallbacks.
 
-    The primary is a parameter rather than read from settings here so each
-    call site passes the model it is configured with (chat and analysis are
-    about to be configured separately, see PR #318).
+    The primary is required rather than read from settings, because since #274
+    there is no single GEMINI_MODEL to read: chat and analysis are configured
+    separately, so each call site passes its own.
     """
-    chain = [primary_model or settings.GEMINI_MODEL]
+    chain = [primary_model]
     for model in settings.GEMINI_FALLBACK_MODELS:
         if model and model not in chain:
             chain.append(model)
@@ -109,15 +109,14 @@ def _is_model_unavailable(exc: Exception) -> bool:
     return UNAVAILABLE_STATUS in str(exc).upper()
 
 
-def generate_with_fallback(
-    client, primary_model: Optional[str] = None, **kwargs
-) -> tuple[Any, str]:
+def generate_with_fallback(client, primary_model: str, **kwargs) -> tuple[Any, str]:
     """generate_content with the model fallback chain applied.
 
     Args:
         client: The Gemini client to call (passed in so each service keeps
             using its own module-level client)
-        primary_model: Model to try first; defaults to settings.GEMINI_MODEL
+        primary_model: Model to try first — GEMINI_MODEL_CHAT or
+            GEMINI_MODEL_ANALYSIS, depending on the caller
         **kwargs: Forwarded to generate_content (contents, config, ...)
 
     Returns:
@@ -211,7 +210,7 @@ def _log_usage(
             user_id=user_id,
             market_id=market_id,
             provider="gemini",
-            model=model or settings.GEMINI_MODEL,
+            model=model or settings.GEMINI_MODEL_ANALYSIS,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=cache_hit,
@@ -462,10 +461,11 @@ def analyze_market(market: dict, user_id: Optional[str] = None) -> dict:
     market_id = market.get("id")
     start_time = time.time()
 
-    model_used = settings.GEMINI_MODEL
+    model_used = settings.GEMINI_MODEL_ANALYSIS
     try:
         response, model_used = generate_with_fallback(
             gemini_client,
+            settings.GEMINI_MODEL_ANALYSIS,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

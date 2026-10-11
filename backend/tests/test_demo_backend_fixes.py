@@ -337,7 +337,7 @@ def test_fallback_raises_when_the_whole_chain_is_unavailable(monkeypatch):
 
 def test_chatbot_falls_back_and_logs_the_model_that_answered(db, monkeypatch):
     """ai_usage_log.model must name the model that ran, not the configured one."""
-    monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-broken")
+    monkeypatch.setattr(settings, "GEMINI_MODEL_CHAT", "gemini-broken")
     monkeypatch.setattr(settings, "GEMINI_FALLBACK_MODELS", ["gemini-lite"])
     fake = _FakeClient({"gemini-broken": _unavailable_error()})
     monkeypatch.setattr(chatbot_service, "gemini_client", fake)
@@ -356,7 +356,7 @@ def test_chatbot_falls_back_and_logs_the_model_that_answered(db, monkeypatch):
 
 
 def test_analysis_logs_the_fallback_model(monkeypatch):
-    monkeypatch.setattr(settings, "GEMINI_MODEL", "gemini-broken")
+    monkeypatch.setattr(settings, "GEMINI_MODEL_ANALYSIS", "gemini-broken")
     monkeypatch.setattr(settings, "GEMINI_FALLBACK_MODELS", ["gemini-lite"])
     fake = _FakeClient({"gemini-broken": _unavailable_error()})
     fake.models.generate_content = _json_analysis_generator(fake.models)

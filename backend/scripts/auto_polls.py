@@ -36,13 +36,23 @@ from scripts.trends_config import (
 )
 from scripts.rss_medios import get_topics_from_rss
 
+from app.gemini_models import DEFAULT_GEMINI_MODEL, validate_gemini_model
+
 # ── Configuración desde variables de entorno ──────────────────────────────────
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@predictax.com")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin1234")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+# #274: generating a poll is structured JSON with nobody waiting on it — the
+# same shape as market analysis — so it shares GEMINI_MODEL_ANALYSIS instead of
+# keeping a third knob. GEMINI_MODEL stays as the deprecated fallback, as in
+# app/config.py. This script runs standalone (no pydantic), hence os.environ.
+GEMINI_MODEL = validate_gemini_model(
+    os.environ.get("GEMINI_MODEL_ANALYSIS")
+    or os.environ.get("GEMINI_MODEL")
+    or DEFAULT_GEMINI_MODEL
+)
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
