@@ -48,14 +48,22 @@ class Settings(BaseSettings):
 
     # AI - Google Gemini
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-3.6-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     # Models tried, in order, when the configured one answers 503/UNAVAILABLE.
-    # The whole Gemini Flash family saturates on Google's side from time to
-    # time while the `lite` variants keep answering, which is what took the
-    # chatbot down in production. Stored as str to avoid pydantic_settings
-    # auto JSON parsing, same as CORS_ORIGINS.
+    # The Flash family saturates on Google's side from time to time — 3.8 itself
+    # returned 503 on 2 of 3 calls on 2026-10-11 — so a fallback is what keeps the
+    # chatbot answering instead of erroring out.
+    #
+    # Deprecation matters here: on 2026-10-08 Google deprecated gemini-3.7-flash
+    # (routes to 3.8) and gemini-3.5-flash (routes to 3.6). gemini-3.6-flash
+    # retires 2026-11-19. So the chain deliberately avoids pinning a deprecated
+    # version: `gemini-flash-lite-latest` is an alias that tracks whatever the
+    # current lite model is and therefore never retires, and it draws from a
+    # different capacity pool than the full Flash models.
+    #
+    # Stored as str-or-list to avoid pydantic_settings JSON-parsing a CSV env var.
     GEMINI_FALLBACK_MODELS: Union[List[str], str] = [
-        "gemini-3.5-flash-lite",
+        "gemini-flash-lite-latest",
         "gemini-2.5-flash",
     ]
 
