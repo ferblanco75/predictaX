@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProbabilityChart } from './ProbabilityChart';
@@ -28,6 +28,8 @@ const timeframeDurationsMs: Partial<Record<Timeframe, number>> = {
   '1M': 30 * 24 * 60 * 60 * 1000,
 };
 
+const MIN_CHART_POINTS = 2;
+
 function filterHistoryByTimeframe(history: Market['history'], timeframe: Timeframe) {
   if (timeframe === 'ALL' || history.length === 0) return history;
 
@@ -41,24 +43,48 @@ function filterHistoryByTimeframe(history: Market['history'], timeframe: Timefra
   return filtered.length > 0 ? filtered : history;
 }
 
+/**
+ * Timeframes whose window leaves a single point: ProbabilityChart needs two to
+ * draw a trend, so picking one of these used to make the chart disappear.
+ */
+function unavailableTimeframes(history: Market['history']): Timeframe[] {
+  const allTimeframes = Object.keys(timeframeDurationsMs) as Timeframe[];
+
+  return allTimeframes.filter(
+    (timeframe) => filterHistoryByTimeframe(history, timeframe).length < MIN_CHART_POINTS
+  );
+}
+
 export function MarketDetailClient({ market, categoryColor, isLoggedIn }: MarketDetailClientProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('ALL');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null
   );
+  // Bumping this remounts the prediction form, clearing its internal state
+  // (side, points, override confirmation) after a successful bet (#221).
+  const [formKey, setFormKey] = useState(0);
   const prediction = useMakePrediction(market.id);
   const { data: existingPrediction } = useUserMarketPrediction(market.id);
+
+  useEffect(() => {
+    if (feedback?.type !== 'success') return;
+
+    const timer = window.setTimeout(() => setFeedback(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   const handlePredictionSubmit = (predictionValue: number, amount: number) => {
     setFeedback(null);
     prediction.mutate(
       { predictionValue, amount },
       {
-        onSuccess: () =>
+        onSuccess: () => {
           setFeedback({
             type: 'success',
             message: `Predicción registrada: ${predictionValue}% con ${amount} puntos`,
-          }),
+          });
+          setFormKey((key) => key + 1);
+        },
         onError: (err) => setFeedback({ type: 'error', message: err.message }),
       }
     );
@@ -74,8 +100,10 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
     prediction.mutate(
       { predictionValue: topOption[1], amount },
       {
-        onSuccess: () =>
-          setFeedback({ type: 'success', message: `Predicción registrada con ${amount} puntos` }),
+        onSuccess: () => {
+          setFeedback({ type: 'success', message: `Predicción registrada con ${amount} puntos` });
+          setFormKey((key) => key + 1);
+        },
         onError: (err) => setFeedback({ type: 'error', message: err.message }),
       }
     );
@@ -83,13 +111,15 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
 
   // Calculate trend
   const trend =
-    market.history.length >= 2
-      ? market.probability - market.history[market.history.length - 2].probability
+    market.history.length >= 1
+      ? market.probability - market.history[market.history.length - 1].probability
       : 0;
   const isPositiveTrend = trend > 0;
 
   const marketType = market.type || 'binary';
   const chartHistory = filterHistoryByTimeframe(market.history, timeframe);
+  const hasChartHistory = market.history.length >= MIN_CHART_POINTS;
+  const disabledTimeframes = unavailableTimeframes(market.history);
   const isExpired = market.status === 'active' && new Date(market.endDate) < new Date();
 
   return (
@@ -136,7 +166,13 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
                   </div>
                 )}
               </div>
-              <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+              {hasChartHistory && (
+                <TimeframeSelector
+                  value={timeframe}
+                  onChange={setTimeframe}
+                  disabledTimeframes={disabledTimeframes}
+                />
+              )}
             </CardHeader>
             <CardContent>
               <ProbabilityChart data={chartHistory} categoryColor={categoryColor} />
@@ -168,12 +204,15 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
           {market.status === 'active' && !isExpired && (
             <>
               <PredictionForm
+                key={formKey}
                 currentProbability={market.probability}
                 endDate={market.endDate}
                 onSubmit={handlePredictionSubmit}
                 disabled={!isLoggedIn || prediction.isPending}
                 requiresAuth={!isLoggedIn}
                 existingPrediction={existingPrediction}
+                marketYesPoints={market.yesPoints}
+                marketNoPoints={market.noPoints}
               />
               {feedback && (
                 <div
@@ -208,6 +247,7 @@ export function MarketDetailClient({ market, categoryColor, isLoggedIn }: Market
           {market.status === 'active' && !isExpired && (
             <>
               <MultipleChoicePredictionForm
+                key={formKey}
                 options={market.options}
                 endDate={market.endDate}
                 onSubmit={handleMultipleChoicePredictionSubmit}

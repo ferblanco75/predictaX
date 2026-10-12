@@ -282,8 +282,10 @@ def test_unresolve_never_produces_a_negative_balance(
 
     user = _test_user(db)
     db.refresh(user)
-    # payout = 100 / (55/100) = 181.82
-    payout = pytest.approx(1000 - 100 + 181.82, abs=0.01)
+    # Post-trade pricing (#306/#319): the bet is priced *after* it is applied,
+    # so a lone 100-point YES bet takes the market to 100%, clamped to 99.
+    # payout = 100 / (99/100) = 101.01, not 181.82 off the pre-bet 55%.
+    payout = pytest.approx(1000 - 100 + 101.01, abs=0.01)
     assert user.points == payout
 
     # The winner re-wagers almost everything elsewhere: only 10 pts left to claw back.
@@ -298,7 +300,8 @@ def test_unresolve_never_produces_a_negative_balance(
     )
     assert res.status_code == 200
     assert res.json()["points_adjusted"] == 10.0
-    assert res.json()["points_forgiven"] == pytest.approx(171.82, abs=0.01)
+    # 101.01 paid out, only 10 left to recover => 91.01 forgiven
+    assert res.json()["points_forgiven"] == pytest.approx(91.01, abs=0.01)
 
     db.refresh(user)
     assert user.points == 0.0

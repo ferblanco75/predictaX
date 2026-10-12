@@ -31,6 +31,11 @@ export interface Market {
   relatedMarkets: string[];
   statsData?: Record<string, unknown> | null;
   fixtureId?: number | null;
+  // Total points wagered on each side (#306) — lets the prediction form
+  // preview the post-trade payout instead of pricing off the pre-trade probability.
+  // Optional: the mock data in lib/data/markets.ts predates this field.
+  yesPoints?: number;
+  noPoints?: number;
   // For multiple_choice type
   options?: MultipleChoiceOption[];
 }
@@ -41,5 +46,7 @@ export interface Category {
   description: string;
   icon: string;
   color: string;
-  count: number;
+  // Number of active markets, counted from live data (app/page.tsx).
+  // Absent when the count isn't available (e.g. the markets API is down).
+  count?: number;
 }

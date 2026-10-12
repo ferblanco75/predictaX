@@ -61,6 +61,34 @@ export async function getAllServerMarkets(
   }
 }
 
+interface CategoryVisibilityRow {
+  category: string;
+  is_visible: boolean;
+}
+
+/**
+ * Which categories the admin has toggled visible on the public site.
+ * Fails open (everything visible) so an outage never hides the whole
+ * catalog — same criterion the project already uses for other infra gaps.
+ */
+export async function getServerVisibleCategories(): Promise<Record<string, boolean>> {
+  if (!API_URL) return {};
+
+  try {
+    const response = await fetch(`${API_URL}/markets/categories/visibility`, {
+      next: { revalidate: REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return {};
+
+    const rows: CategoryVisibilityRow[] = await response.json();
+    return Object.fromEntries(rows.map((row) => [row.category, row.is_visible]));
+  } catch {
+    return {};
+  }
+}
+
 export const getServerMarket = cache(async (id: string): Promise<Market | null> => {
   if (!UUID_PATTERN.test(id)) return null;
 

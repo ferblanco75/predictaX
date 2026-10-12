@@ -25,6 +25,7 @@ from app.services.ai_service import (
     DAILY_QUOTA_LIMIT,
     _increment_daily_quota,
     gemini_client,
+    generate_with_fallback,
     get_daily_usage_count,
     redis_client,
 )
@@ -98,6 +99,7 @@ def _log_usage(
     total_tokens: Optional[int] = None,
     status: str = "success",
     error_message: Optional[str] = None,
+    model: Optional[str] = None,
 ):
     """Log one Gemini call to the shared ai_usage_log table.
 
@@ -109,6 +111,9 @@ def _log_usage(
     so there is no per-request row with an IP in activity_log. Accepted for
     now — ai_usage_log holds no IP either, and adding chatbot traffic to
     activity_log is a tracking/retention decision (#243), not a chatbot one.
+
+    `model` is the model that actually answered the call, which differs from
+    the configured one whenever the fallback chain kicks in.
     """
     try:
         db = SessionLocal()
@@ -116,7 +121,7 @@ def _log_usage(
             user_id=user_id,
             market_id=None,
             provider="gemini",
-            model=settings.GEMINI_MODEL,
+            model=model or settings.GEMINI_MODEL_CHAT,
             total_tokens=total_tokens,
             response_time_ms=response_time_ms,
             cache_hit=False,
@@ -517,6 +522,7 @@ def send_message(
     user_id = str(user.id) if user else None
     start_time = time.time()
     total_tokens_used = 0
+    model_used = settings.GEMINI_MODEL_CHAT
 
     try:
         tools = _build_tools(has_user=user is not None)
@@ -531,8 +537,11 @@ def send_message(
         for _ in range(MAX_FUNCTION_CALL_ROUNDS):
             _check_daily_quota()
             call_started = time.time()
-            response = gemini_client.models.generate_content(
-                model=settings.GEMINI_MODEL,
+            # Falls through to the next model on 503/UNAVAILABLE — the whole
+            # Flash family saturating on Google's side left the chatbot dead.
+            response, model_used = generate_with_fallback(
+                gemini_client,
+                settings.GEMINI_MODEL_CHAT,
                 contents=contents,
                 config=config,
             )
@@ -548,6 +557,7 @@ def send_message(
                 response_time_ms=int((time.time() - call_started) * 1000),
                 total_tokens=call_tokens or None,
                 status="success",
+                model=model_used,
             )
 
             function_calls = getattr(response, "function_calls", None)
@@ -587,6 +597,7 @@ def send_message(
             total_tokens=total_tokens_used or None,
             status="error",
             error_message=str(e),
+            model=model_used,
         )
         # #237: never forward the raw provider error (e.g. Gemini's own
         # "503 UNAVAILABLE" payload) to the client — log it and raise a

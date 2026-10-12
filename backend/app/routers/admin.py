@@ -18,12 +18,24 @@ from app.models.ai_usage_log import AIUsageLog
 from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.prediction import Prediction
 from app.models.user import User
-from app.services import ai_service, prediction_service
+from app.services import ai_service, category_visibility_service, prediction_service
 
 # --------------- Request schemas ---------------
 
 class UserRoleUpdate(BaseModel):
     role: str  # 'user' or 'admin'
+
+class CategoryVisibilityUpdate(BaseModel):
+    category: str
+    is_visible: bool
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value: str) -> str:
+        try:
+            return MarketCategory(value.lower()).value
+        except ValueError:
+            raise ValueError(f"Categoría inválida: {value}")
 
 class UserPointsUpdate(BaseModel):
     # #276: the balance carries a DB-level CHECK (points >= 0); a negative value
@@ -324,10 +336,9 @@ def get_user_stats(user_id: str, db: Session = Depends(get_db)):
     lost = [p for p in preds if p.status == "lost"]
     pending = [p for p in preds if p.status == "pending"]
 
-    points_won = sum(
-        round(p.points_wagered / ((p.probability_at_bet or 50) / 100), 2) - p.points_wagered
-        for p in won
-    )
+    # Same net-gain helper the profile uses, so the divisor follows the side
+    # actually bet instead of always using the YES probability.
+    points_won = sum(prediction_service.winning_net_gain(p) for p in won)
     points_lost = sum(p.points_wagered for p in lost)
 
     from collections import Counter
@@ -1241,4 +1252,25 @@ def expire_past_markets(db: Session = Depends(get_db)):
         "points_refunded": round(points_refunded, 2),
         "message": f"{count} mercado(s) expirado(s) cancelados",
     }
+
+
+@router.get("/categories/visibility")
+def get_categories_visibility(db: Session = Depends(get_db)):
+    """Admin view of category visibility — same data as the public endpoint
+    in markets.py, exposed here too so the admin UI and auto_polls.py (which
+    already authenticates as admin) don't need a separate unauthenticated call."""
+    return category_visibility_service.get_all_visibility(db)
+
+
+@router.patch("/categories/visibility")
+def update_category_visibility(
+    body: CategoryVisibilityUpdate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Toggle one category's visibility on the public site."""
+    category_visibility_service.set_visibility(
+        db, body.category, body.is_visible, admin_user_id=admin.id
+    )
+    return category_visibility_service.get_all_visibility(db)
 

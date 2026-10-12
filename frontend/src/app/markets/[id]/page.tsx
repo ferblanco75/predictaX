@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { MarketDetailPage } from '@/components/markets/MarketDetailPage';
 import { getServerMarket } from '@/lib/api/server-markets';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults, twitterImages } from '@/lib/site';
 
 export async function generateMetadata({
   params,
@@ -33,6 +33,7 @@ export async function generateMetadata({
       canonical: url,
     },
     openGraph: {
+      ...openGraphDefaults,
       title: market.title,
       description: `Probabilidad actual: ${market.probability}%. ${description}`,
       type: 'article',
@@ -42,6 +43,7 @@ export async function generateMetadata({
       card: 'summary',
       title: market.title,
       description: `${market.probability}% de probabilidad`,
+      images: twitterImages,
     },
   };
 }

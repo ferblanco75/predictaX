@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 
 import { MarketsPageClient } from '@/components/markets/MarketsPageClient';
 import { StructuredData } from '@/components/seo/StructuredData';
-import { getServerMarkets } from '@/lib/api/server-markets';
-import { getCategoryById } from '@/lib/data/categories';
-import { canonicalUrl } from '@/lib/site';
+import { getServerMarkets, getServerVisibleCategories } from '@/lib/api/server-markets';
+import { categories, getCategoryById } from '@/lib/data/categories';
+import { filterVisibleCategories } from '@/lib/data/category-visibility';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 import { generateMarketListStructuredData } from '@/lib/utils/structured-data';
 import type { Market } from '@/lib/types';
 
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
     'Explorá mercados de predicción sobre economía, política, deportes, tecnología y criptomonedas en América Latina.',
   alternates: { canonical: canonicalUrl('/markets') },
   openGraph: {
+    ...openGraphDefaults,
+    type: 'website',
     title: 'Mercados de predicción',
     description:
       'Explorá mercados de predicción sobre economía, política, deportes, tecnología y criptomonedas en América Latina.',
@@ -44,6 +47,9 @@ export default async function MarketsPage({ searchParams }: MarketsPageProps) {
     // Omitting initialData lets React Query retry immediately in the browser.
   }
 
+  const visibility = await getServerVisibleCategories();
+  const visibleCategories = filterVisibleCategories(categories, visibility);
+
   return (
     <>
       {initialMarkets && initialMarkets.length > 0 && (
@@ -56,6 +62,7 @@ export default async function MarketsPage({ searchParams }: MarketsPageProps) {
         initialQuery={initialQuery}
         initialCategory={initialCategory}
         showWelcomeInitially={firstValue(query.welcome) === '1'}
+        categories={visibleCategories}
       />
     </>
   );

@@ -9,9 +9,20 @@ from app.core.request_ip import get_client_ip
 from app.core.security import decode_token
 from app.models.market import MarketCategory, MarketStatus
 from app.schemas.market import MarketHistoryPoint, MarketResponse
-from app.services import ai_service, market_service
+from app.services import ai_service, category_visibility_service, market_service
 
 router = APIRouter()
+
+
+@router.get("/categories/visibility")
+def get_categories_visibility(db: Session = Depends(get_db)):
+    """Public read of which categories are currently visible.
+
+    Consumed by the frontend to hide categories from listings/nav/sitemap,
+    and by auto_polls.py (via the admin-authenticated mirror of this data)
+    before creating new markets — see admin.py for the admin-facing version.
+    """
+    return category_visibility_service.get_all_visibility(db)
 
 
 def _get_ai_requester_id(request: Request) -> str:

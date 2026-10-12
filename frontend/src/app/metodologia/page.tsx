@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Brain, TrendingUp, Users, BarChart3, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { canonicalUrl } from '@/lib/site';
+import { canonicalUrl, openGraphDefaults } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Metodología — Cómo se forman los porcentajes',
@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     'Cómo NeuroPredict calcula la probabilidad de cada poll: tendencias, contexto histórico, estimación de IA y sabiduría colectiva.',
   alternates: { canonical: canonicalUrl('/metodologia') },
   openGraph: {
+    ...openGraphDefaults,
+    type: 'website',
     title: 'Metodología — Cómo se forman los porcentajes',
     description:
       'Cómo NeuroPredict calcula la probabilidad de cada poll: tendencias, contexto histórico, estimación de IA y sabiduría colectiva.',

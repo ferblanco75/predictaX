@@ -11,7 +11,7 @@ there is nothing to reconstruct from. The count is printed so the clamp is
 visible in the migration log.
 
 Revision ID: e1f2a3b4c5d6
-Revises: d1e2f3a4b5c6
+Revises: 5b4a44eb4ccf
 Create Date: 2026-09-17 00:00:00.000000
 
 """
@@ -22,7 +22,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = 'e1f2a3b4c5d6'
-down_revision: Union[str, None] = 'd1e2f3a4b5c6'
+down_revision: Union[str, None] = '5b4a44eb4ccf'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -9,9 +9,30 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { MarketCard } from '@/components/markets/MarketCard';
 import { useMarkets } from '@/lib/hooks/useMarkets';
-import { categories } from '@/lib/data/categories';
+import { useActiveUsers } from '@/lib/hooks/useActiveUsers';
+import { categories as allCategories } from '@/lib/data/categories';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/stores/app-store';
+import type { Category } from '@/lib/types';
+
+function ActiveUsersBadge() {
+  const { data: activeUsers } = useActiveUsers();
+
+  if (!activeUsers) return null;
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-blue-50 ring-1 ring-white/20">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+      </span>
+      <span>
+        <strong className="font-bold text-white">{activeUsers.toLocaleString('es-AR')}</strong>{' '}
+        usuarios conectados en la última hora
+      </span>
+    </div>
+  );
+}
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 24 },
@@ -22,7 +43,11 @@ const fadeInUp = {
   }),
 };
 
-export function HomePageClient() {
+interface HomePageClientProps {
+  categories?: Category[];
+}
+
+export function HomePageClient({ categories = allCategories }: HomePageClientProps = {}) {
   const { data: trendingMarkets = [] } = useMarkets({ limit: 6 });
   const isLoggedIn = useAppStore((state) => state.isLoggedIn);
 
@@ -42,11 +67,14 @@ export function HomePageClient() {
       <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <motion.div className="max-w-3xl" variants={fadeInUp} initial="hidden" animate="visible">
+            <div className="mb-6">
+              <ActiveUsersBadge />
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Predice el futuro de América Latina
+              Predecí el futuro de América Latina
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Participa en mercados de predicción sobre economía, política, deportes y más.
+              Participá en mercados de predicción sobre economía, política, deportes y más.
               Decisiones informadas con inteligencia artificial.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -80,7 +108,7 @@ export function HomePageClient() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
       >
-        <h2 className="text-3xl font-bold mb-8">Explora por categoría</h2>
+        <h2 className="text-3xl font-bold mb-8">Explorá por categoría</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {categories.map((category) => {
             const Icon = categoryIcons[category.icon as keyof typeof categoryIcons];
@@ -96,7 +124,11 @@ export function HomePageClient() {
                     </div>
                     <div>
                       <h3 className="font-semibold">{category.name}</h3>
-                      <p className="text-sm text-gray-500">{category.count} mercados</p>
+                      {category.count !== undefined && (
+                        <p className="text-sm text-gray-500">
+                          {category.count} {category.count === 1 ? 'mercado' : 'mercados'}
+                        </p>
+                      )}
                     </div>
                   </CardHeader>
                 </Card>
@@ -142,11 +174,9 @@ export function HomePageClient() {
           viewport={{ once: true, amount: 0.2 }}
         >
           <div className="container mx-auto px-4 py-16 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              ¿Listo para comenzar a predecir?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Listo para empezar a predecir?</h2>
             <p className="text-xl mb-8 text-purple-100">
-              Únete a nuestra comunidad y empieza a participar en mercados de predicción.
+              Unite a nuestra comunidad y empezá a participar en mercados de predicción.
             </p>
             <Link href="/auth" className={cn(buttonVariants({ size: 'lg', variant: 'secondary' }))}>
               Crear cuenta gratis
