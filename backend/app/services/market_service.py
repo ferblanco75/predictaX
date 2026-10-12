@@ -8,6 +8,7 @@ from app.models.market import Market, MarketCategory, MarketStatus
 from app.models.market_snapshot import MarketSnapshot
 from app.models.prediction import Prediction
 from app.schemas.market import MarketHistoryPoint
+from app.services import category_visibility_service
 
 
 def format_volume(amount: float) -> str:
@@ -39,6 +40,7 @@ def get_markets(
     status: Optional[MarketStatus] = None,
     limit: int = 20,
     offset: int = 0,
+    include_hidden_categories: bool = False,
 ) -> tuple[List[Market], int]:
     """
     Get list of markets with optional filters.
@@ -49,9 +51,13 @@ def get_markets(
         status: Filter by status
         limit: Maximum number of results
         offset: Offset for pagination
+        include_hidden_categories: Admin callers pass True to see markets in
+            categories an admin has hidden from the public site. Public
+            callers must keep the default so hidden categories stay hidden
+            everywhere except the admin panel.
 
     Returns:
-        Tuple of (markets list, total count)
+        Tuple of (markets list, total count), ordered by volume descending
     """
     query = db.query(Market)
 
@@ -61,11 +67,30 @@ def get_markets(
     if status:
         query = query.filter(Market.status == status)
 
+    if not include_hidden_categories:
+        hidden = category_visibility_service.get_hidden_categories(db)
+        if hidden:
+            hidden_categories = [MarketCategory(value) for value in hidden]
+            query = query.filter(~Market.category.in_(hidden_categories))
+
     # Get total count before pagination
     total = query.count()
 
-    # Apply pagination
-    markets = query.order_by(Market.created_at.desc()).offset(offset).limit(limit).all()
+    # Order by activity, not recency: ordering by created_at put the markets
+    # with 0 predictions and 0 points on the first page of /markets while the
+    # ones with real volume fell to page 2. created_at is kept as the final
+    # tiebreak so brand-new markets with no volume yet still come out newest
+    # first among themselves.
+    markets = (
+        query.order_by(
+            Market.volume.desc(),
+            Market.participants_count.desc(),
+            Market.created_at.desc(),
+        )
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
     return markets, total
 
@@ -167,6 +192,29 @@ def get_recent_market_history_by_market(
     return history_by_market
 
 
+def get_yes_no_points(db: Session, market_id) -> tuple[float, float]:
+    """
+    Total points wagered on each side of a binary market.
+
+    Same YES/NO split as calculate_market_probability (prediction_service.py):
+    probability > 50 is YES. Exposed so the frontend can preview the
+    post-trade payout (#306) before confirming a bet, instead of pricing
+    against the pre-trade probability.
+
+    Returns:
+        (yes_points, no_points)
+    """
+    rows = (
+        db.query(Prediction.probability, func.sum(Prediction.points_wagered))
+        .filter(Prediction.market_id == market_id)
+        .group_by(Prediction.probability)
+        .all()
+    )
+    yes_points = sum(total for probability, total in rows if probability > 50)
+    no_points = sum(total for probability, total in rows if probability <= 50)
+    return float(yes_points), float(no_points)
+
+
 def format_market_response(
     db: Session, market: Market, history: Optional[List[MarketHistoryPoint] | list[dict]] = None
 ) -> dict:
@@ -191,6 +239,8 @@ def format_market_response(
         for h in history
     ]
 
+    yes_points, no_points = get_yes_no_points(db, market.id)
+
     return {
         "id": str(market.id),  # Frontend expects string
         "title": market.title,
@@ -206,6 +256,8 @@ def format_market_response(
         "relatedMarkets": [],  # TODO: Implement related markets
         "statsData": market.stats_data,
         "fixtureId": market.fixture_id,
+        "yesPoints": yes_points,
+        "noPoints": no_points,
     }
 
 

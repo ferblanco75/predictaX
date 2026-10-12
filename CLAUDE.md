@@ -219,16 +219,32 @@ Solo accesible por usuarios con `role='admin'`. Protegido por:
 1. **Backend**: dependency `get_current_admin()` verifica JWT + rol
 2. **Frontend**: layout en `/admin` redirige si `user.role !== 'admin'`
 
-### Secciones (6 páginas)
+### Secciones (7 páginas)
 - `/admin` — Overview con KPIs, top users, activity feed, category breakdown
 - `/admin/users` — Tabla con 4 tabs (todos, top activos, inactivos, engagement)
 - `/admin/markets` — Ranking por actividad/volumen/participantes
 - `/admin/predictions` — Gráfico de predicciones diarias
 - `/admin/ai` — Quota, historial de uso, top markets analizados
 - `/admin/performance` — Latencia (p50/p95/p99), error rate, endpoints
+- `/admin/settings` — Mostrar/ocultar categorías de mercados en el sitio público (ver detalle abajo)
 
 ### Tracking automático
 Middleware en `main.py` logea cada API request en `activity_log` (endpoint, latencia, status code, IP). El admin panel usa estos datos para las métricas de performance.
+
+### Visibilidad de categorías (`/admin/settings`)
+
+El admin puede mostrar/ocultar cada una de las 5 categorías de mercados (economía, política, deportes, tecnología, crypto) desde `/admin/settings`. Ocultar una categoría la saca de **todo el sitio público** (listados, home, sitemap, SEO, rutas de categoría) pero **no borra ni bloquea** los mercados existentes: siguen en la DB, visibles en el admin, y un usuario que ya tenía una predicción ahí la sigue viendo en su historial.
+
+- **Backend**: tabla `category_visibility` (`category`, `is_visible`, `updated_at`, `updated_by`). Ausencia de fila = visible (fail-open, mismo criterio que rate limiting). Lógica en `app/services/category_visibility_service.py`.
+- **Filtro centralizado** en `market_service.get_markets(..., include_hidden_categories=False)` — el router público (`markets.py`) usa el default; el admin (`admin.py`, que arma sus propias queries con `db.query(Market)` directo, sin pasar por `get_markets`) ya ve todo sin cambios.
+- **Endpoints**: `GET /api/markets/categories/visibility` (público, sin auth) y `GET`/`PATCH /api/admin/categories/visibility` (admin).
+- **`auto_polls.py`** consulta el endpoint admin (reusa el token que ya obtiene para crear mercados) antes de clasificar un tema — si la categoría está oculta, descarta el tema sin gastar cuota de Gemini. Fail-open si la consulta falla.
+- **Frontend**: cada superficie pública tiene su propia fuente de categorías, así que el filtro se aplica en 4 lugares distintos, no en uno solo:
+  - `app/page.tsx` (home) y `app/markets/page.tsx`: server components, hacen `await getServerVisibleCategories()` (`lib/api/server-markets.ts`) y pasan la lista ya filtrada como prop a `HomePageClient`/`MarketsPageClient`.
+  - `app/markets/category/[category]/page.tsx`: usa `generateStaticParams()` (pre-renderiza las 5 rutas), así que necesita `export const revalidate = 300` explícito además del `fetch` con `revalidate` — sin esa declaración a nivel de página, el chequeo de `notFound()` por categoría oculta no se re-evalúa en cada request. Mismo chequeo duplicado en `generateMetadata` (evita indexar la categoría oculta).
+  - `app/sitemap.ts`: filtra `categoryPages` contra el mismo endpoint; los mercados (`getAllServerMarkets`) ya vienen filtrados por el backend sin cambios adicionales.
+  - `components/layout/Navbar.tsx`: **tiene su propio array hardcodeado de categorías**, independiente de `lib/data/categories.ts` — es un client component global (usado en el layout raíz), así que no puede hacer `await` de un fetch server-side. Usa el hook `lib/hooks/useCategoryVisibility.ts` (React Query) para filtrar en el cliente. Esto implica un flash breve del chip oculto en el HTML servido por SSR hasta que el navegador hidrata y resuelve el query — aceptado como tradeoff, no vale la complejidad de eliminarlo.
+- **Gotcha de caché en dev**: Next.js persiste el Data Cache (`fetch` con `next: { revalidate }`) en disco dentro del container, en `.next/dev/cache/fetch-cache`. Un `docker compose restart frontend` **no** lo limpia (el filesystem del container persiste). Si al probar un toggle en local no ves el cambio reflejado, borrar esa carpeta y reiniciar: `docker compose exec frontend sh -c "rm -rf /app/.next/dev/cache/fetch-cache"` — en producción esto no es un problema porque cada deploy reconstruye la imagen desde cero.
 
 ## Convenciones de Issues
 
@@ -289,6 +305,8 @@ Issues se referencian con `#XX`. Cuando un issue depende de otro, se menciona en
 7. **Docker port conflicts**: El usuario tiene varios servicios locales corriendo. Puertos 3000, 3002, 3003 están ocupados. Siempre preguntar antes de asumir puertos libres o usar env vars para hacer configurable todo.
 
 8. **Vercel Analytics meta tags**: Los `twitter:card`, `twitter:title` etc. en Open Graph son estándar y NO deben cambiarse a "X", aunque Twitter ahora se llame X. Solo cambiar referencias visibles al usuario.
+
+9. **Categorías duplicadas en el frontend**: hay al menos 3 fuentes independientes de la lista de categorías — `lib/data/categories.ts` (metadata: nombre/ícono/color, usada en la mayoría del sitio), un array hardcodeado propio en `admin/markets/page.tsx` (3 lugares), y otro en `components/layout/Navbar.tsx`. Ninguna importa de las otras. Al tocar algo relacionado a categorías (agregar una, cambiar su filtrado/visibilidad), grep por `Bitcoin` o `'crypto'` para encontrar los 3 lugares — ver también "Visibilidad de categorías" arriba.
 
 ## Memory System (`.claude/projects/.../memory/`)
 

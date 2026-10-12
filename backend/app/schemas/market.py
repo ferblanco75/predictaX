@@ -58,6 +58,8 @@ class MarketResponse(BaseModel):
     relatedMarkets: List[str] = []
     statsData: Optional[Dict[str, Any]] = None
     fixtureId: Optional[int] = None
+    yesPoints: float = 0.0
+    noPoints: float = 0.0
 
     class Config:
         from_attributes = True

@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/stores/app-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatMarketCloseDate } from '@/lib/utils/market-format';
 import { Slider } from '@/components/ui/slider';
 import { getOptionColor } from './MultipleChoiceBarChart';
 import type { MultipleChoiceOption } from '@/lib/types';
@@ -17,17 +18,6 @@ interface MultipleChoicePredictionFormProps {
   onSubmit: (predictions: Record<string, number>, betAmount: number) => void;
   disabled?: boolean;
   requiresAuth?: boolean;
-}
-
-function formatCloseDate(endDate: string) {
-  const date = new Date(endDate);
-  if (Number.isNaN(date.getTime())) return 'Fecha por confirmar';
-
-  return new Intl.DateTimeFormat('es-AR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'America/Argentina/Buenos_Aires',
-  }).format(date);
 }
 
 function formatPoints(points: number) {
@@ -126,7 +116,7 @@ export function MultipleChoicePredictionForm({
   const prob = selectedProbability > 0 ? selectedProbability : 50;
   const potentialGain = safeBetAmount / (prob / 100) - safeBetAmount;
   const maxLoss = safeBetAmount;
-  const closeDate = formatCloseDate(endDate);
+  const closeDate = formatMarketCloseDate(endDate);
 
   return (
     <Card>

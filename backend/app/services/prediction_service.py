@@ -68,6 +68,29 @@ def calculate_payout(
     return round(points_wagered / (side_probability / 100.0), 2)
 
 
+def winning_net_gain(prediction: Prediction) -> float:
+    """Net points a winning prediction actually gained: payout minus stake.
+
+    Same shape as the potential_gain stored at bet time and as the payout
+    applied on resolution, so profile/admin stats can no longer drift from
+    what the user was paid. Reporting the gross payout as a "gain" inflated
+    the number by the whole stake, and reimplementing the divisor without
+    calculate_payout ignored the side bet (up to ~90x off on a NO bet at an
+    extreme probability).
+
+    Args:
+        prediction: A prediction with status "won"
+
+    Returns:
+        Points gained on top of the stake, rounded to 2 decimals
+    """
+    prob = (
+        prediction.probability_at_bet if prediction.probability_at_bet is not None else 50.0
+    )
+    payout = calculate_payout(prediction.points_wagered, prob, prediction.probability)
+    return round(payout - prediction.points_wagered, 2)
+
+
 def create_prediction(
     db: Session, user: User, prediction_data: PredictionCreate
 ) -> Prediction:
@@ -116,25 +139,17 @@ def create_prediction(
     # Store old probability for snapshot comparison
     old_probability = float(market.probability_market)
 
-    # Capture market probability at bet time (used for payout calculation on resolve)
-    prob_at_bet = float(market.probability_market)
-
-    # potential_gain = payout if winner - amount wagered (fee=0 for MVP)
-    potential_gain = (
-        calculate_payout(
-            prediction_data.points_wagered, prob_at_bet, prediction_data.probability
-        )
-        - prediction_data.points_wagered
-    )
-
-    # Create prediction
+    # Create prediction first, without a price yet — the price has to reflect
+    # this bet's own impact on the market (#306), so it can only be known
+    # after the bet is in and the market is recalculated below. Pricing it
+    # from the pre-trade probability let a user move the market with a small
+    # bet on one side and then take a large position on the other side at a
+    # price they had just set themselves.
     prediction = Prediction(
         user_id=user.id,
         market_id=prediction_data.market_id,
         probability=prediction_data.probability,
-        probability_at_bet=prob_at_bet,
         points_wagered=prediction_data.points_wagered,
-        potential_gain=round(potential_gain, 2),
     )
 
     db.add(prediction)
@@ -143,7 +158,7 @@ def create_prediction(
     # Deduct points from user
     user.points -= prediction_data.points_wagered
 
-    # Recalculate market probability
+    # Recalculate market probability including this new bet
     all_predictions = (
         db.query(Prediction)
         .filter(Prediction.market_id == prediction_data.market_id)
@@ -152,6 +167,16 @@ def create_prediction(
 
     new_probability = calculate_market_probability(all_predictions)
     market.probability_market = new_probability
+
+    # Price this bet at the post-trade probability, then compute its payout
+    prediction.probability_at_bet = new_probability
+    potential_gain = (
+        calculate_payout(
+            prediction_data.points_wagered, new_probability, prediction_data.probability
+        )
+        - prediction_data.points_wagered
+    )
+    prediction.potential_gain = round(potential_gain, 2)
 
     # Update market stats
     market_service.update_market_stats(db, market.id)

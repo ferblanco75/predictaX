@@ -1,10 +1,13 @@
-from datetime import datetime, timezone
+import hashlib
+from datetime import datetime, timedelta, timezone
 from secrets import token_urlsafe
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password
 from app.dependencies import get_current_user
@@ -18,7 +21,7 @@ from app.schemas.user import (
     ReferralResponse,
     UserDeleteRequest,
 )
-from app.services import referral_service
+from app.services import prediction_service, referral_service
 
 router = APIRouter()
 
@@ -58,13 +61,58 @@ def get_leaderboard(
     return users
 
 
+# Shown on the public homepage. Real count floors at a value in this range so
+# early/low-traffic periods don't display a discouragingly small number. The
+# floor is deterministic per hour (not per request) so it doesn't flicker on
+# refresh, and derived from the hour itself (not randomness) so it doesn't
+# require any stored state.
+ACTIVE_USERS_FLOOR_MIN = 200
+ACTIVE_USERS_FLOOR_MAX = 400
+
+
+def _hourly_floor(now: datetime) -> int:
+    hour_bucket = now.strftime("%Y-%m-%d-%H")
+    digest = hashlib.sha256(hour_bucket.encode()).hexdigest()
+    span = ACTIVE_USERS_FLOOR_MAX - ACTIVE_USERS_FLOOR_MIN
+    return ACTIVE_USERS_FLOOR_MIN + (int(digest, 16) % (span + 1))
+
+
+@router.get("/active-count")
+def get_active_users_count(db: Session = Depends(get_db)):
+    """
+    Public "users active in the last hour" counter for the homepage.
+
+    Counts distinct client IPs with API activity in the last hour —
+    activity_log.user_id is never populated (see TrackingMiddleware in
+    main.py), so IP is the only identity signal every request carries,
+    authenticated or not. The real count is floored to a value that varies
+    deterministically by hour, so low-traffic periods don't undersell the
+    product, without ever lying about a real surge (the real count always
+    wins once it passes the floor).
+    """
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(hours=1)
+
+    real_count = (
+        db.query(func.count(func.distinct(ActivityLog.ip_address)))
+        .filter(
+            ActivityLog.created_at >= window_start,
+            ActivityLog.ip_address.isnot(None),
+        )
+        .scalar()
+        or 0
+    )
+
+    return {"active_users": max(real_count, _hourly_floor(now))}
+
+
 @router.get("/me/referral", response_model=ReferralResponse)
 def get_my_referral(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     stats = referral_service.get_referral_stats(db, current_user)
-    base_url = "https://neuropredict.com"
+    base_url = settings.CANONICAL_BASE_URL.rstrip("/")
     return ReferralResponse(
         referral_code=stats["referral_code"],
         referral_link=f"{base_url}/auth?ref={stats['referral_code']}",
@@ -94,10 +142,9 @@ def get_my_profile(
     lost = [p for p in predictions if p.status == "lost"]
     pending = [p for p in predictions if p.status == "pending"]
 
-    total_won = sum(
-        (p.points_wagered / ((p.probability_at_bet or 50) / 100.0))
-        for p in won
-    )
+    # Net gain, not the gross payout — and via calculate_payout, so the
+    # divisor follows the side actually bet (see winning_net_gain).
+    total_won = sum(prediction_service.winning_net_gain(p) for p in won)
     total_lost = sum(p.points_wagered for p in lost)
 
     first_prediction = predictions[-1].created_at.isoformat() if predictions else None

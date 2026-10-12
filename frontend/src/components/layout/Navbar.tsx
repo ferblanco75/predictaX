@@ -21,11 +21,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppStore } from '@/lib/stores/app-store';
+import { useCategoryVisibility } from '@/lib/hooks/useCategoryVisibility';
 import { cn } from '@/lib/utils';
 import type { MarketCategory } from '@/lib/types';
 import api from '@/lib/api/client';
 
-const categories = [
+const allCategories = [
   { id: 'economia', name: 'Economía', icon: TrendingUp, color: 'bg-green-500' },
   { id: 'politica', name: 'Política', icon: Users, color: 'bg-blue-500' },
   { id: 'deportes', name: 'Deportes', icon: Trophy, color: 'bg-amber-500' },
@@ -45,6 +46,8 @@ export function Navbar() {
     logout,
     login,
   } = useAppStore();
+  const visibility = useCategoryVisibility();
+  const categories = allCategories.filter((category) => visibility[category.id] !== false);
 
   // Refresh user data from DB on mount so points/role stay in sync after admin edits
   useEffect(() => {

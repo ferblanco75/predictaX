@@ -27,9 +27,18 @@ interface MarketListProps {
   markets: Market[];
   isLoading?: boolean;
   onClearFilters?: () => void;
+  // The same empty state served an empty category, a search with no hits and a
+  // filter with no hits, so an empty category blamed filters nobody had set.
+  // Callers that know why the list is empty pass their own copy.
+  emptyMessage?: string;
 }
 
-export function MarketList({ markets, isLoading = false, onClearFilters }: MarketListProps) {
+export function MarketList({
+  markets,
+  isLoading = false,
+  onClearFilters,
+  emptyMessage,
+}: MarketListProps) {
   // Show loading state
   if (isLoading) {
     return <MarketCardSkeletonGrid count={9} />;
@@ -61,7 +70,12 @@ export function MarketList({ markets, isLoading = false, onClearFilters }: Marke
           <Filter className="h-12 w-12 mx-auto" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No se encontraron mercados</h3>
-        <p className="text-gray-600 mb-4">Intenta ajustar tus filtros para ver más resultados</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          {emptyMessage ??
+            (onClearFilters
+              ? 'Probá ajustar los filtros o la búsqueda para ver más resultados'
+              : 'Todavía no hay mercados para mostrar acá')}
+        </p>
         {onClearFilters && <Button onClick={onClearFilters}>Limpiar filtros</Button>}
       </CardContent>
     </Card>

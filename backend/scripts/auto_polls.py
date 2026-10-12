@@ -36,13 +36,23 @@ from scripts.trends_config import (
 )
 from scripts.rss_medios import get_topics_from_rss
 
+from app.gemini_models import DEFAULT_GEMINI_MODEL, validate_gemini_model
+
 # ── Configuración desde variables de entorno ──────────────────────────────────
 
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8001")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@predictax.com")
 ADMIN_PASS = os.environ.get("ADMIN_PASS", "admin1234")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+# #274: generating a poll is structured JSON with nobody waiting on it — the
+# same shape as market analysis — so it shares GEMINI_MODEL_ANALYSIS instead of
+# keeping a third knob. GEMINI_MODEL stays as the deprecated fallback, as in
+# app/config.py. This script runs standalone (no pydantic), hence os.environ.
+GEMINI_MODEL = validate_gemini_model(
+    os.environ.get("GEMINI_MODEL_ANALYSIS")
+    or os.environ.get("GEMINI_MODEL")
+    or DEFAULT_GEMINI_MODEL
+)
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
@@ -320,6 +330,26 @@ def get_admin_token() -> str:
     return token
 
 
+def get_categorias_visibles(token: str) -> set[str]:
+    """Categorías que el admin no ocultó desde /admin/settings.
+
+    Fail-open: si la consulta falla, no bloquea el cron por un error
+    transitorio — se asume que todas las categorías están visibles, igual
+    que el comportamiento previo a este toggle.
+    """
+    try:
+        r = requests.get(
+            f"{BACKEND_URL}/api/admin/categories/visibility",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return {row["category"] for row in r.json() if row["is_visible"]}
+    except Exception as e:
+        print(f"[categorias] No se pudo consultar visibilidad, asumiendo todas visibles: {e}")
+        return set(CATEGORIAS.keys())
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -334,6 +364,9 @@ def main() -> None:
     except Exception as e:
         print(f"[auth] ERROR: No se pudo autenticar: {e}")
         sys.exit(1)
+
+    categorias_visibles = get_categorias_visibles(token)
+    print(f"[categorias] Visibles: {sorted(categorias_visibles)}")
 
     # Fuente 1: Google Trends
     trends_topics = get_trending_topics(geo="AR")
@@ -374,6 +407,11 @@ def main() -> None:
                 descartados += 1
                 continue
             categoria, _ = clasificacion
+
+        if categoria not in categorias_visibles:
+            print(f"[main] Categoría oculta, descartando: {categoria}")
+            descartados += 1
+            continue
 
         # Generar con Gemini
         poll_data = generar_poll_con_gemini(tema, categoria)

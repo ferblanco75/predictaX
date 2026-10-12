@@ -6,6 +6,7 @@ Import all models here so Alembic can detect them for migrations.
 
 from app.models.activity_log import ActivityLog
 from app.models.ai_usage_log import AIUsageLog
+from app.models.category_visibility import CategoryVisibility
 from app.models.market import Market, MarketCategory, MarketStatus, MarketType
 from app.models.market_snapshot import MarketSnapshot
 from app.models.otp_code import OTPCode
@@ -25,4 +26,5 @@ __all__ = [
     "ActivityLog",
     "OTPCode",
     "Referral",
+    "CategoryVisibility",
 ]
